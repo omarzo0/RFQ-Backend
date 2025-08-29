@@ -1,0 +1,660 @@
+-- RFQ Automation Platform - Complete Database Schema
+-- PostgreSQL with Multi-Tenant Architecture
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ==============================================
+-- CORE USER & AUTHENTICATION TABLES
+-- ==============================================
+
+-- Global Admins (Platform Level)
+CREATE TABLE admins (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'admin' CHECK (role IN ('admin', 'super_admin')),
+    is_active BOOLEAN DEFAULT true,
+    last_login_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Companies (Tenant Level)
+CREATE TABLE companies (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    domain VARCHAR(100), -- For email domain validation
+    phone VARCHAR(50),
+    address TEXT,
+    city VARCHAR(100),
+    country VARCHAR(100),
+    timezone VARCHAR(50) DEFAULT 'UTC',
+    
+    -- Subscription & Billing
+    subscription_plan VARCHAR(50) DEFAULT 'trial',
+    subscription_status VARCHAR(20) DEFAULT 'active' CHECK (subscription_status IN ('active', 'inactive', 'suspended', 'canceled')),
+    stripe_customer_id VARCHAR(100),
+    trial_ends_at TIMESTAMP,
+    
+    -- Company Settings
+    email_footer TEXT,
+    default_follow_up_days INTEGER DEFAULT 3,
+    auto_follow_up_enabled BOOLEAN DEFAULT true,
+    
+    -- Status
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Company Users (Tenant Users)
+CREATE TABLE company_users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    email VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'employee' CHECK (role IN ('admin', 'manager', 'employee')),
+    is_active BOOLEAN DEFAULT true,
+    last_login_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(company_id, email)
+);
+
+-- JWT Refresh Tokens
+CREATE TABLE refresh_tokens (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    token_hash VARCHAR(255) NOT NULL,
+    user_id UUID, -- Can be admin or company_user
+    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('admin', 'company_user')),
+    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+    expires_at TIMESTAMP NOT NULL,
+    is_revoked BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==============================================
+-- SHIPPING LINES & CONTACTS
+-- ==============================================
+
+-- Shipping Lines (Carriers)
+CREATE TABLE shipping_lines (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    code VARCHAR(50), -- SCAC code or internal code
+    website VARCHAR(255),
+    headquarters_location VARCHAR(100),
+    description TEXT,
+    is_active BOOLEAN DEFAULT true,
+    is_archived BOOLEAN DEFAULT false,
+    created_by UUID NOT NULL REFERENCES company_users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(company_id, name)
+);
+
+-- Contacts for Shipping Lines
+CREATE TABLE contacts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    shipping_line_id UUID NOT NULL REFERENCES shipping_lines(id) ON DELETE CASCADE,
+    
+    -- Contact Info
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(50),
+    job_title VARCHAR(100),
+    department VARCHAR(100),
+    
+    -- Contact Management
+    tags TEXT[], -- PostgreSQL array for tags
+    notes TEXT,
+    performance_score INTEGER DEFAULT 0 CHECK (performance_score >= 0 AND performance_score <= 100),
+    do_not_contact BOOLEAN DEFAULT false,
+    is_primary BOOLEAN DEFAULT false,
+    
+    -- Status
+    is_active BOOLEAN DEFAULT true,
+    is_archived BOOLEAN DEFAULT false,
+    created_by UUID NOT NULL REFERENCES company_users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(company_id, shipping_line_id, email)
+);
+
+-- ==============================================
+-- RFQ MANAGEMENT
+-- ==============================================
+
+-- RFQ Templates
+CREATE TABLE rfq_templates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    
+    -- RFQ Content
+    subject_template TEXT NOT NULL,
+    body_template TEXT NOT NULL,
+    
+    -- Shipping Details Template
+    origin_port VARCHAR(100),
+    destination_port VARCHAR(100),
+    commodity VARCHAR(255),
+    container_type VARCHAR(50),
+    container_quantity INTEGER,
+    cargo_weight DECIMAL(10,2),
+    cargo_volume DECIMAL(10,2),
+    incoterm VARCHAR(10),
+    
+    -- Additional Requirements
+    special_requirements TEXT,
+    required_services TEXT[], -- ['customs_clearance', 'insurance', 'door_delivery']
+    
+    is_default BOOLEAN DEFAULT false,
+    created_by UUID NOT NULL REFERENCES company_users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- RFQs (Request for Quotes)
+CREATE TABLE rfqs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    rfq_number VARCHAR(50) NOT NULL, -- Auto-generated or custom
+    
+    -- RFQ Details
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    
+    -- Shipping Details
+    origin_port VARCHAR(100) NOT NULL,
+    destination_port VARCHAR(100) NOT NULL,
+    commodity VARCHAR(255),
+    container_type VARCHAR(50), -- '20GP', '40GP', '40HC', etc.
+    container_quantity INTEGER DEFAULT 1,
+    cargo_weight DECIMAL(10,2),
+    cargo_volume DECIMAL(10,2),
+    incoterm VARCHAR(10) DEFAULT 'FOB',
+    
+    -- Timeline
+    cargo_ready_date DATE,
+    quote_deadline TIMESTAMP,
+    shipment_urgency VARCHAR(20) DEFAULT 'normal' CHECK (shipment_urgency IN ('urgent', 'normal', 'flexible')),
+    
+    -- Additional Requirements
+    special_requirements TEXT,
+    required_services TEXT[], -- JSON array of required services
+    preferred_carriers UUID[], -- Array of shipping_line IDs
+    
+    -- Email Content
+    email_subject TEXT,
+    email_body TEXT,
+    
+    -- Status & Workflow
+    status VARCHAR(20) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'sent', 'closed', 'awarded', 'expired')),
+    sent_at TIMESTAMP,
+    closed_at TIMESTAMP,
+    
+    -- Metrics
+    total_contacts_sent INTEGER DEFAULT 0,
+    total_quotes_received INTEGER DEFAULT 0,
+    best_quote_amount DECIMAL(12,2),
+    average_quote_amount DECIMAL(12,2),
+    
+    -- Audit
+    created_by UUID NOT NULL REFERENCES company_users(id),
+    assigned_to UUID REFERENCES company_users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(company_id, rfq_number)
+);
+
+-- RFQ Recipients (Contacts who received the RFQ)
+CREATE TABLE rfq_recipients (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    rfq_id UUID NOT NULL REFERENCES rfqs(id) ON DELETE CASCADE,
+    contact_id UUID NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
+    shipping_line_id UUID NOT NULL REFERENCES shipping_lines(id) ON DELETE CASCADE,
+    
+    -- Email Tracking
+    email_sent_at TIMESTAMP NOT NULL,
+    email_delivered_at TIMESTAMP,
+    email_opened_at TIMESTAMP,
+    email_clicked_at TIMESTAMP,
+    last_email_activity_at TIMESTAMP,
+    
+    -- Response Tracking
+    has_responded BOOLEAN DEFAULT false,
+    response_received_at TIMESTAMP,
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(rfq_id, contact_id)
+);
+
+-- ==============================================
+-- QUOTE MANAGEMENT
+-- ==============================================
+
+-- Quotes received for RFQs
+CREATE TABLE quotes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    rfq_id UUID NOT NULL REFERENCES rfqs(id) ON DELETE CASCADE,
+    contact_id UUID NOT NULL REFERENCES contacts(id),
+    shipping_line_id UUID NOT NULL REFERENCES shipping_lines(id),
+    
+    -- Quote Details
+    quote_reference VARCHAR(100), -- Carrier's internal quote reference
+    
+    -- Pricing
+    ocean_freight DECIMAL(12,2),
+    currency VARCHAR(3) DEFAULT 'USD',
+    
+    -- Additional Charges
+    baf DECIMAL(12,2), -- Bunker Adjustment Factor
+    caf DECIMAL(12,2), -- Currency Adjustment Factor
+    security_fee DECIMAL(12,2),
+    documentation_fee DECIMAL(12,2),
+    handling_charges DECIMAL(12,2),
+    other_charges JSONB, -- Flexible structure for other charges
+    
+    -- Total
+    total_amount DECIMAL(12,2) NOT NULL,
+    
+    -- Terms & Conditions
+    validity_date DATE NOT NULL,
+    payment_terms VARCHAR(100),
+    transit_time VARCHAR(50), -- "15-20 days"
+    free_time_at_origin INTEGER, -- days
+    free_time_at_destination INTEGER, -- days
+    
+    -- Additional Terms
+    terms_and_conditions TEXT,
+    special_notes TEXT,
+    
+    -- Source & Processing
+    source VARCHAR(20) DEFAULT 'email' CHECK (source IN ('email', 'manual', 'phone', 'whatsapp')),
+    is_parsed_by_ai BOOLEAN DEFAULT false,
+    confidence_score DECIMAL(3,2), -- AI parsing confidence (0.00-1.00)
+    raw_email_content TEXT, -- Store original email for reference
+    
+    -- Status
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'expired', 'withdrawn', 'awarded')),
+    is_winner BOOLEAN DEFAULT false,
+    
+    -- Audit
+    created_by UUID REFERENCES company_users(id), -- NULL if AI parsed
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==============================================
+-- EMAIL SYSTEM
+-- ==============================================
+
+-- Email Templates
+CREATE TABLE email_templates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    template_type VARCHAR(50) NOT NULL, -- 'rfq', 'follow_up', 'award', 'rejection'
+    
+    -- Template Content
+    subject VARCHAR(500) NOT NULL,
+    body_html TEXT NOT NULL,
+    body_text TEXT,
+    
+    -- Personalization
+    supported_tokens TEXT[], -- ['{{contact_name}}', '{{company_name}}', etc.]
+    
+    -- Multi-language Support
+    language VARCHAR(5) DEFAULT 'en',
+    
+    is_default BOOLEAN DEFAULT false,
+    is_active BOOLEAN DEFAULT true,
+    
+    created_by UUID NOT NULL REFERENCES company_users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(company_id, name)
+);
+
+-- Email Send Log
+CREATE TABLE email_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    
+    -- Email Details
+    to_email VARCHAR(255) NOT NULL,
+    from_email VARCHAR(255) NOT NULL,
+    subject VARCHAR(500) NOT NULL,
+    body_html TEXT,
+    body_text TEXT,
+    
+    -- Tracking
+    message_id VARCHAR(255), -- Provider message ID
+    status VARCHAR(20) DEFAULT 'queued' CHECK (status IN ('queued', 'sent', 'delivered', 'opened', 'clicked', 'bounced', 'failed')),
+    
+    -- Relationships
+    rfq_id UUID REFERENCES rfqs(id),
+    contact_id UUID REFERENCES contacts(id),
+    template_id UUID REFERENCES email_templates(id),
+    
+    -- Timestamps
+    queued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    sent_at TIMESTAMP,
+    delivered_at TIMESTAMP,
+    opened_at TIMESTAMP,
+    clicked_at TIMESTAMP,
+    bounced_at TIMESTAMP,
+    failed_at TIMESTAMP,
+    
+    -- Error Handling
+    error_message TEXT,
+    retry_count INTEGER DEFAULT 0,
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==============================================
+-- AUTOMATED FOLLOW-UPS
+-- ==============================================
+
+-- Follow-up Rules
+CREATE TABLE follow_up_rules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    
+    -- Trigger Conditions
+    days_after_send INTEGER NOT NULL DEFAULT 3,
+    only_if_not_opened BOOLEAN DEFAULT false,
+    only_if_not_replied BOOLEAN DEFAULT true,
+    max_follow_ups INTEGER DEFAULT 2,
+    
+    -- Email Template
+    email_template_id UUID REFERENCES email_templates(id),
+    
+    is_active BOOLEAN DEFAULT true,
+    created_by UUID NOT NULL REFERENCES company_users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Scheduled Follow-ups
+CREATE TABLE scheduled_follow_ups (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    rfq_id UUID NOT NULL REFERENCES rfqs(id) ON DELETE CASCADE,
+    contact_id UUID NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
+    follow_up_rule_id UUID NOT NULL REFERENCES follow_up_rules(id),
+    
+    -- Scheduling
+    scheduled_at TIMESTAMP NOT NULL,
+    sent_at TIMESTAMP,
+    
+    -- Status
+    status VARCHAR(20) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'sent', 'skipped', 'failed')),
+    skip_reason VARCHAR(100), -- 'already_replied', 'contact_inactive', etc.
+    
+    -- Sequence
+    follow_up_sequence INTEGER DEFAULT 1, -- 1st, 2nd, 3rd follow-up
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==============================================
+-- ANALYTICS & REPORTING
+-- ==============================================
+
+-- Carrier Performance Metrics (Materialized for performance)
+CREATE TABLE carrier_performance_metrics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    shipping_line_id UUID NOT NULL REFERENCES shipping_lines(id) ON DELETE CASCADE,
+    
+    -- Time Period
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    period_type VARCHAR(20) NOT NULL, -- 'monthly', 'quarterly', 'yearly'
+    
+    -- Metrics
+    rfqs_received INTEGER DEFAULT 0,
+    quotes_submitted INTEGER DEFAULT 0,
+    response_rate DECIMAL(5,2) DEFAULT 0, -- Percentage
+    average_response_time_hours DECIMAL(8,2),
+    quotes_won INTEGER DEFAULT 0,
+    win_rate DECIMAL(5,2) DEFAULT 0,
+    average_quote_amount DECIMAL(12,2),
+    
+    -- Calculated at end of period
+    calculated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(company_id, shipping_line_id, period_start, period_end, period_type)
+);
+
+-- Route Performance Metrics
+CREATE TABLE route_performance_metrics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    
+    -- Route Definition
+    origin_port VARCHAR(100) NOT NULL,
+    destination_port VARCHAR(100) NOT NULL,
+    
+    -- Time Period
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    period_type VARCHAR(20) NOT NULL,
+    
+    -- Metrics
+    total_rfqs INTEGER DEFAULT 0,
+    total_quotes INTEGER DEFAULT 0,
+    average_quote_amount DECIMAL(12,2),
+    lowest_quote_amount DECIMAL(12,2),
+    highest_quote_amount DECIMAL(12,2),
+    most_competitive_carrier_id UUID REFERENCES shipping_lines(id),
+    
+    calculated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(company_id, origin_port, destination_port, period_start, period_end, period_type)
+);
+
+-- ==============================================
+-- SYSTEM FEATURES & BILLING
+-- ==============================================
+
+-- System Features (for subscription management)
+CREATE TABLE system_features (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    feature_key VARCHAR(50) NOT NULL UNIQUE, -- 'max_rfqs_per_month', 'email_tracking', etc.
+    feature_type VARCHAR(20) NOT NULL CHECK (feature_type IN ('boolean', 'limit', 'addon')),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Subscription Plans
+CREATE TABLE subscription_plans (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    price_monthly DECIMAL(10,2),
+    price_yearly DECIMAL(10,2),
+    
+    -- Limits
+    max_users INTEGER,
+    max_rfqs_per_month INTEGER,
+    max_contacts INTEGER,
+    max_email_sends_per_month INTEGER,
+    
+    -- Features
+    features JSONB, -- {'email_tracking': true, 'ai_parsing': true, 'analytics': 'advanced'}
+    
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Usage Tracking
+CREATE TABLE usage_metrics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    
+    -- Period
+    period_month INTEGER NOT NULL,
+    period_year INTEGER NOT NULL,
+    
+    -- Usage Counts
+    rfqs_created INTEGER DEFAULT 0,
+    emails_sent INTEGER DEFAULT 0,
+    ai_parsing_requests INTEGER DEFAULT 0,
+    api_calls INTEGER DEFAULT 0,
+    
+    -- Storage Usage (in MB)
+    file_storage_mb DECIMAL(10,2) DEFAULT 0,
+    
+    last_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(company_id, period_month, period_year)
+);
+
+-- ==============================================
+-- INTEGRATIONS & API
+-- ==============================================
+
+-- Webhook Endpoints
+CREATE TABLE webhook_endpoints (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    
+    name VARCHAR(255) NOT NULL,
+    url VARCHAR(500) NOT NULL,
+    secret VARCHAR(255), -- For HMAC signature verification
+    
+    -- Event Subscriptions
+    events TEXT[] NOT NULL, -- ['quote.received', 'rfq.sent', 'email.opened']
+    
+    -- Status & Health
+    is_active BOOLEAN DEFAULT true,
+    last_success_at TIMESTAMP,
+    last_failure_at TIMESTAMP,
+    failure_count INTEGER DEFAULT 0,
+    
+    created_by UUID NOT NULL REFERENCES company_users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- API Keys (for external integrations)
+CREATE TABLE api_keys (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    
+    key_name VARCHAR(255) NOT NULL,
+    api_key VARCHAR(255) UNIQUE NOT NULL, -- Hashed
+    
+    -- Permissions
+    scopes TEXT[] NOT NULL, -- ['rfq:read', 'rfq:write', 'quotes:read']
+    
+    -- Rate Limiting
+    rate_limit_per_hour INTEGER DEFAULT 1000,
+    
+    -- Status
+    is_active BOOLEAN DEFAULT true,
+    last_used_at TIMESTAMP,
+    expires_at TIMESTAMP,
+    
+    created_by UUID NOT NULL REFERENCES company_users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==============================================
+-- SUPPORT SYSTEM
+-- ==============================================
+
+-- Support Tickets
+CREATE TABLE support_tickets (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID REFERENCES companies(id) ON DELETE SET NULL,
+    user_id UUID, -- Can be admin or company user
+    user_type VARCHAR(20) CHECK (user_type IN ('admin', 'company_user')),
+    
+    -- Ticket Details
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    priority VARCHAR(20) DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent')),
+    category VARCHAR(50), -- 'bug', 'feature_request', 'billing', 'general'
+    
+    -- Status
+    status VARCHAR(20) DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved', 'closed')),
+    assigned_to UUID REFERENCES admins(id),
+    
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resolved_at TIMESTAMP,
+    closed_at TIMESTAMP
+);
+
+-- ==============================================
+-- INDEXES FOR PERFORMANCE
+-- ==============================================
+
+-- Authentication & Users
+CREATE INDEX idx_company_users_email ON company_users(email);
+CREATE INDEX idx_company_users_company ON company_users(company_id);
+CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id, user_type);
+
+-- Multi-tenant indexes
+CREATE INDEX idx_shipping_lines_company ON shipping_lines(company_id);
+CREATE INDEX idx_contacts_company ON contacts(company_id);
+CREATE INDEX idx_contacts_shipping_line ON contacts(shipping_line_id);
+CREATE INDEX idx_rfqs_company ON rfqs(company_id);
+CREATE INDEX idx_rfqs_status ON rfqs(status);
+CREATE INDEX idx_quotes_rfq ON quotes(rfq_id);
+
+-- Email system indexes
+CREATE INDEX idx_email_logs_company ON email_logs(company_id);
+CREATE INDEX idx_email_logs_status ON email_logs(status);
+CREATE INDEX idx_email_logs_rfq ON email_logs(rfq_id);
+
+-- Performance metrics indexes
+CREATE INDEX idx_carrier_metrics_company ON carrier_performance_metrics(company_id);
+CREATE INDEX idx_carrier_metrics_period ON carrier_performance_metrics(period_start, period_end);
+CREATE INDEX idx_route_metrics_company ON route_performance_metrics(company_id);
+
+-- ==============================================
+-- TRIGGERS FOR UPDATED_AT
+-- ==============================================
+
+-- Function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Apply to relevant tables
+CREATE TRIGGER update_companies_updated_at BEFORE UPDATE ON companies FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_company_users_updated_at BEFORE UPDATE ON company_users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_shipping_lines_updated_at BEFORE UPDATE ON shipping_lines FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_contacts_updated_at BEFORE UPDATE ON contacts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_rfqs_updated_at BEFORE UPDATE ON rfqs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_quotes_updated_at BEFORE UPDATE ON quotes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

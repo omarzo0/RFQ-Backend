@@ -1,0 +1,75 @@
+RFQ-Backend/
+├── 📂 src/
+│   ├── 📂 config/
+│   │   ├── database.js
+│   │   └── constants.js
+│   ├── 📂 controllers/
+│   │   ├── 📂 admin/
+│   │   │   ├── authController.js
+│   │   │   ├── tenantController.js
+│   │   │   └── adminController.js
+│   │   ├── 📂 tenant/
+│   │   │   ├── authController.js
+│   │   │   ├── userController.js
+│   │   │   └── employeeController.js
+│   │   └── 📂 company/
+│   │       └── authController.js
+│   ├── 📂 middleware/
+│   │   ├── auth.js
+│   │   ├── tenantAuth.js
+│   │   ├── error.js
+│   │   └── validation.js
+│   ├── 📂 models/
+│   │   ├── 📂 admin/
+│   │   │   ├── Admin.js
+│   │   │   └── Tenant.js
+│   │   ├── 📂 tenantSchemas/
+│   │   │   ├── User.js
+│   │   │   ├── Employee.js
+│   │   │   └── index.js
+│   │   └── index.js
+│   ├── 📂 services/
+│   │   ├── 📂 admin/
+│   │   │   ├── tenantService.js
+│   │   │   └── adminService.js
+│   │   ├── 📂 tenant/
+│   │   │   ├── authService.js
+│   │   │   ├── userService.js
+│   │   │   └── employeeService.js
+│   │   └── 📂 company/
+│   │       └── authService.js
+│   ├── 📂 utils/
+│   │   ├── tenantDbManager.js
+│   │   ├── emailService.js
+│   │   ├── cacheManager.js
+│   │   ├── responseFormat.js
+│   │   └── helpers.js
+│   ├── 📂 routes/
+│   │   ├── 📂 admin/
+│   │   │   ├── tenants.js
+│   │   │   ├── admins.js
+│   │   │   └── auth.js
+│   │   ├── 📂 tenant/
+│   │   │   ├── auth.js
+│   │   │   ├── users.js
+│   │   │   └── employees.js
+│   │   ├── 📂 company/
+│   │   │   └── auth.js
+│   │   └── index.js
+│   ├── 📂 validators/
+│   │   ├── adminValidator.js
+│   │   ├── tenantValidator.js
+│   │   └── userValidator.js
+│   ├── 📂 docs/
+│   │   ├── API.md
+│   │   └── SETUP.md
+│   └── app.js
+├── 📂 scripts/
+│   ├── create-tenant.js
+│   └── backup-tenant.js
+├── .env
+├── .env.example
+├── package.json
+├── package-lock.json
+├── server.js
+└── README.md
