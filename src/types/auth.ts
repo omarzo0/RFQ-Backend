@@ -1,3 +1,5 @@
+import { Request } from "express";
+
 export interface JWTPayload {
   userId: string;
   companyId?: string;

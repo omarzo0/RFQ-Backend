@@ -150,3 +150,64 @@ export class JWTUtils {
     logger.info(`Revoked all tokens for user ${userId} (${userType})`);
   }
 }
+
+// Authentication middleware
+export const authenticate = async (req: any, res: any, next: any) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    const token = authHeader.substring(7);
+    const payload = JWTUtils.verifyAccessToken(token);
+
+    // Get user details from database
+    let user;
+    if (payload.userType === "admin") {
+      user = await prisma.admin.findUnique({
+        where: { id: payload.userId },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+        },
+      });
+    } else {
+      user = await prisma.companyUser.findUnique({
+        where: { id: payload.userId },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          companyId: true,
+        },
+      });
+    }
+
+    if (!user) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    // Add user to request object
+    req.user = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      userType: payload.userType,
+      companyId: (user as any).companyId,
+    };
+
+    next();
+  } catch (error) {
+    logger.error("Authentication error:", error);
+    return res.status(401).json({ error: "Invalid token" });
+  }
+};
