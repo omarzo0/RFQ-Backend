@@ -1,0 +1,959 @@
+{
+  "info": {
+    "name": "RFQ Admin APIs",
+    "description": "Complete collection of Admin APIs for RFQ Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{adminAccessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1/admin",
+      "type": "string"
+    },
+    {
+      "key": "adminAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminRefreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "companyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ticketId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "systemFeatureId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Admin Authentication",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@rfq.com\",\n  \"password\": \"AdminPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('adminAccessToken', response.data.tokens.accessToken);",
+                  "    pm.collectionVariables.set('adminRefreshToken', response.data.tokens.refreshToken);",
+                  "    pm.collectionVariables.set('adminId', response.data.admin.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Admin Profile",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Change Admin Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"AdminPassword123!\",\n  \"newPassword\": \"NewAdminPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "change-password"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Admin Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{adminRefreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Admin Logout",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Management",
+      "item": [
+        {
+          "name": "List All Admins",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/management/admins?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["management", "admins"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newadmin@rfq.com\",\n  \"password\": \"NewAdminPassword123!\",\n  \"firstName\": \"New\",\n  \"lastName\": \"Admin\",\n  \"role\": \"ADMIN\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/management/admins",
+              "host": ["{{baseUrl}}"],
+              "path": ["management", "admins"]
+            }
+          }
+        },
+        {
+          "name": "Get Admin by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/management/admins/{{adminId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["management", "admins", "{{adminId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Admin",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Updated\",\n  \"lastName\": \"Admin\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/management/admins/{{adminId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["management", "admins", "{{adminId}}"]
+            }
+          }
+        },
+        {
+          "name": "Change Admin Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newPassword\": \"UpdatedAdminPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/management/admins/{{adminId}}/password",
+              "host": ["{{baseUrl}}"],
+              "path": ["management", "admins", "{{adminId}}", "password"]
+            }
+          }
+        },
+        {
+          "name": "Deactivate Admin",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/management/admins/{{adminId}}/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["management", "admins", "{{adminId}}", "deactivate"]
+            }
+          }
+        },
+        {
+          "name": "Activate Admin",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/management/admins/{{adminId}}/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["management", "admins", "{{adminId}}", "activate"]
+            }
+          }
+        },
+        {
+          "name": "Delete Admin",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/management/admins/{{adminId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["management", "admins", "{{adminId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Admin Statistics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/management/admins/statistics",
+              "host": ["{{baseUrl}}"],
+              "path": ["management", "admins", "statistics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Company Management",
+      "item": [
+        {
+          "name": "List All Companies",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/companies?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Company",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Shipping Company\",\n  \"email\": \"contact@testshipping.com\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Test Street\",\n  \"city\": \"Test City\",\n  \"state\": \"CA\",\n  \"zipCode\": \"12345\",\n  \"country\": \"USA\",\n  \"website\": \"https://testshipping.com\",\n  \"industry\": \"Shipping\",\n  \"companySize\": \"MEDIUM\",\n  \"description\": \"Test shipping company for testing purposes\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/companies",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('companyId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Company by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/companies/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "{{companyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Company",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Test Shipping Company\",\n  \"phone\": \"+1987654321\",\n  \"address\": \"456 Updated Street\",\n  \"city\": \"Updated City\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/companies/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "{{companyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Activate Company",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/companies/{{companyId}}/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "{{companyId}}", "activate"]
+            }
+          }
+        },
+        {
+          "name": "Deactivate Company",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/companies/{{companyId}}/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "{{companyId}}", "deactivate"]
+            }
+          }
+        },
+        {
+          "name": "Delete Company",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/companies/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "{{companyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Company Statistics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/companies/statistics",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "statistics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Overview",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/overview",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "overview"]
+            }
+          }
+        },
+        {
+          "name": "Get Comprehensive Dashboard",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/comprehensive",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "comprehensive"]
+            }
+          }
+        },
+        {
+          "name": "Get Recent Activity",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/recent-activity",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "recent-activity"]
+            }
+          }
+        },
+        {
+          "name": "Get System Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/system-health",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "system-health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Analytics",
+      "item": [
+        {
+          "name": "Get Company Growth Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/analytics/company-growth",
+              "host": ["{{baseUrl}}"],
+              "path": ["analytics", "company-growth"]
+            }
+          }
+        },
+        {
+          "name": "Get Revenue Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/analytics/revenue",
+              "host": ["{{baseUrl}}"],
+              "path": ["analytics", "revenue"]
+            }
+          }
+        },
+        {
+          "name": "Get User Activity Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/analytics/user-activity",
+              "host": ["{{baseUrl}}"],
+              "path": ["analytics", "user-activity"]
+            }
+          }
+        },
+        {
+          "name": "Get Email Performance Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/analytics/email-performance",
+              "host": ["{{baseUrl}}"],
+              "path": ["analytics", "email-performance"]
+            }
+          }
+        },
+        {
+          "name": "Get RFQ Quote Performance Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/analytics/rfq-quote-performance",
+              "host": ["{{baseUrl}}"],
+              "path": ["analytics", "rfq-quote-performance"]
+            }
+          }
+        },
+        {
+          "name": "Get System Health Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/analytics/system-health",
+              "host": ["{{baseUrl}}"],
+              "path": ["analytics", "system-health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Subscription Management",
+      "item": [
+        {
+          "name": "List All Subscriptions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "{{companyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Subscription",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"professional\",\n  \"billingCycle\": \"monthly\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "{{companyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Suspend Subscription",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/{{companyId}}/suspend",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "{{companyId}}", "suspend"]
+            }
+          }
+        },
+        {
+          "name": "Reactivate Subscription",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/{{companyId}}/reactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "{{companyId}}", "reactivate"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Subscription",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/{{companyId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "{{companyId}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Extend Trial",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trialDays\": 30\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/{{companyId}}/extend-trial",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "{{companyId}}", "extend-trial"]
+            }
+          }
+        },
+        {
+          "name": "Get Usage Metrics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/{{companyId}}/usage",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "{{companyId}}", "usage"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "analytics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Ticket Management",
+      "item": [
+        {
+          "name": "List All Tickets",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/tickets?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Support Ticket\",\n  \"description\": \"This is a test support ticket\",\n  \"priority\": \"MEDIUM\",\n  \"category\": \"TECHNICAL\",\n  \"companyId\": \"{{companyId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('ticketId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Ticket by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/tickets/{{ticketId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets", "{{ticketId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Ticket",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Test Support Ticket\",\n  \"description\": \"This is an updated test support ticket\",\n  \"priority\": \"HIGH\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tickets/{{ticketId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets", "{{ticketId}}"]
+            }
+          }
+        },
+        {
+          "name": "Assign Ticket",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignedTo\": \"{{adminId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tickets/{{ticketId}}/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets", "{{ticketId}}", "assign"]
+            }
+          }
+        },
+        {
+          "name": "Close Ticket",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/tickets/{{ticketId}}/close",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets", "{{ticketId}}", "close"]
+            }
+          }
+        },
+        {
+          "name": "Get Ticket Statistics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/tickets/statistics",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets", "statistics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin System Features Management",
+      "item": [
+        {
+          "name": "List All System Features",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/system-features?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["system-features"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create System Feature",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Advanced Analytics\",\n  \"description\": \"Advanced analytics and reporting features\",\n  \"category\": \"ANALYTICS\",\n  \"isActive\": true,\n  \"isPremium\": true,\n  \"permissions\": [\"read\", \"write\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/system-features",
+              "host": ["{{baseUrl}}"],
+              "path": ["system-features"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('systemFeatureId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get System Feature by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/system-features/{{systemFeatureId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["system-features", "{{systemFeatureId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update System Feature",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Advanced Analytics\",\n  \"description\": \"Updated advanced analytics and reporting features\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/system-features/{{systemFeatureId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["system-features", "{{systemFeatureId}}"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Feature for Company",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"companyId\": \"{{companyId}}\",\n  \"isEnabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/system-features/{{systemFeatureId}}/toggle-company",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "system-features",
+                "{{systemFeatureId}}",
+                "toggle-company"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete System Feature",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/system-features/{{systemFeatureId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["system-features", "{{systemFeatureId}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

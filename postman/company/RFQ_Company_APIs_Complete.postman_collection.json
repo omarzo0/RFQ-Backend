@@ -1,0 +1,3380 @@
+{
+  "info": {
+    "name": "RFQ Company APIs - Complete Collection",
+    "description": "Complete collection of all RFQ Platform Company APIs with all implemented endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{company_access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set tokens from login response",
+          "if (pm.response && pm.response.json() && pm.response.json().data && pm.response.json().data.tokens) {",
+          "    const tokens = pm.response.json().data.tokens;",
+          "    pm.environment.set('company_access_token', tokens.accessToken);",
+          "    pm.environment.set('company_refresh_token', tokens.refreshToken);",
+          "    pm.environment.set('company_id', pm.response.json().data.user.companyId);",
+          "    pm.environment.set('user_id', pm.response.json().data.user.id);",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1/company"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Company Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{company_user_email}}\",\n  \"password\": \"{{company_user_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.tokens) {",
+                  "        pm.environment.set('company_access_token', response.data.tokens.accessToken);",
+                  "        pm.environment.set('company_refresh_token', response.data.tokens.refreshToken);",
+                  "        pm.environment.set('company_id', response.data.user.companyId);",
+                  "        pm.environment.set('user_id', response.data.user.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{company_user_password}}\",\n  \"newPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "change-password"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{company_refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/users?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@company.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"New\",\n  \"lastName\": \"User\",\n  \"role\": \"EMPLOYEE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Updated\",\n  \"lastName\": \"User\",\n  \"role\": \"MANAGER\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update User Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"ADMIN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}/role",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}", "role"]
+            }
+          }
+        },
+        {
+          "name": "Reset User Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}/reset-password",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "Get User Roles",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/users/roles",
+              "host": ["{{base_url}}"],
+              "path": ["users", "roles"]
+            }
+          }
+        },
+        {
+          "name": "Get User Permissions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/users/permissions",
+              "host": ["{{base_url}}"],
+              "path": ["users", "permissions"]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Email Management",
+      "item": [
+        {
+          "name": "Send Single Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"toEmail\": \"recipient@example.com\",\n  \"fromEmail\": \"sender@company.com\",\n  \"subject\": \"Test Email\",\n  \"bodyHtml\": \"<p>This is a test email</p>\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/send",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "send"]
+            }
+          }
+        },
+        {
+          "name": "Create Bulk Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bulk Email Campaign\",\n  \"subject\": \"Bulk Email Subject\",\n  \"bodyHtml\": \"<p>Bulk email content</p>\",\n  \"contactIds\": [\"{{contact_id}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "bulk"]
+            }
+          }
+        },
+        {
+          "name": "Send Bulk Email",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/emails/bulk/{{bulk_email_id}}/send",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "bulk", "{{bulk_email_id}}", "send"]
+            }
+          }
+        },
+        {
+          "name": "Get Email Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/analytics?dateFrom=2024-01-01&dateTo=2024-12-31",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "analytics"],
+              "query": [
+                {
+                  "key": "dateFrom",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "dateTo",
+                  "value": "2024-12-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Retry Failed Emails",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"emailLogIds\": [\"{{email_log_id}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/retry",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "retry"]
+            }
+          }
+        },
+        {
+          "name": "Track Email Engagement",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"engagementType\": \"OPEN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/track/{{tracking_pixel_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "track", "{{tracking_pixel_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Handle Email Bounce",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"emailLogId\": \"{{email_log_id}}\",\n  \"bounceType\": \"HARD\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/bounce",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "bounce"]
+            }
+          }
+        },
+        {
+          "name": "Handle Unsubscribe",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/emails/unsubscribe/{{unsubscribe_token}}",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "unsubscribe", "{{unsubscribe_token}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Email Templates",
+      "item": [
+        {
+          "name": "List Email Templates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/templates?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "templates"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Email Template by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/templates/{{template_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "templates", "{{template_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Email Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Email Template\",\n  \"templateType\": \"RFQ\",\n  \"subject\": \"RFQ Request - {{commodity}}\",\n  \"bodyHtml\": \"<p>Please find RFQ details for {{commodity}}</p>\",\n  \"supportedTokens\": [\"{{commodity}}\", \"{{originPort}}\", \"{{destinationPort}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/templates",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "templates"]
+            }
+          }
+        },
+        {
+          "name": "Update Email Template",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Email Template\",\n  \"subject\": \"Updated RFQ Request\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/templates/{{template_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "templates", "{{template_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Email Template",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/emails/templates/{{template_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "templates", "{{template_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Duplicate Email Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newName\": \"Duplicated Template\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/templates/{{template_id}}/duplicate",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "templates", "{{template_id}}", "duplicate"]
+            }
+          }
+        },
+        {
+          "name": "Set Default Template",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/emails/templates/{{template_id}}/default",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "templates", "{{template_id}}", "default"]
+            }
+          }
+        },
+        {
+          "name": "Preview Template",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/emails/templates/{{template_id}}/preview",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "templates", "{{template_id}}", "preview"]
+            }
+          }
+        },
+        {
+          "name": "Get Template Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/templates/{{template_id}}/stats",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "templates", "{{template_id}}", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Template Types",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/templates/types",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "templates", "types"]
+            }
+          }
+        },
+        {
+          "name": "Get Supported Tokens",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/templates/tokens",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "templates", "tokens"]
+            }
+          }
+        },
+        {
+          "name": "Get Template Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/templates/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "templates", "analytics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Follow-up Rules",
+      "item": [
+        {
+          "name": "List Follow-up Rules",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/follow-up-rules?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "follow-up-rules"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Follow-up Rule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Standard Follow-up\",\n  \"daysAfterSend\": 3,\n  \"maxFollowUps\": 2,\n  \"emailTemplateId\": \"{{template_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/follow-up-rules",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "follow-up-rules"]
+            }
+          }
+        },
+        {
+          "name": "Update Follow-up Rule",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Follow-up Rule\",\n  \"daysAfterSend\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/follow-up-rules/{{rule_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "follow-up-rules", "{{rule_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Follow-up Rule",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/emails/follow-up-rules/{{rule_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "follow-up-rules", "{{rule_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Process Scheduled Follow-ups",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/emails/follow-up-rules/process",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "follow-up-rules", "process"]
+            }
+          }
+        },
+        {
+          "name": "Get Follow-up Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/follow-up-rules/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "follow-up-rules", "analytics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Email Campaigns",
+      "item": [
+        {
+          "name": "List Email Campaigns",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/campaigns?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "campaigns"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Email Campaign by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/campaigns/{{campaign_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "campaigns", "{{campaign_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Email Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Campaign\",\n  \"campaignType\": \"RFQ_BLAST\",\n  \"startDate\": \"2024-02-01T00:00:00Z\",\n  \"endDate\": \"2024-02-28T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/campaigns",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "campaigns"]
+            }
+          }
+        },
+        {
+          "name": "Update Email Campaign",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Campaign\",\n  \"status\": \"SCHEDULED\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/campaigns/{{campaign_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "campaigns", "{{campaign_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Email Campaign",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/emails/campaigns/{{campaign_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "campaigns", "{{campaign_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Start Email Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target\": {\n    \"contactIds\": [\"{{contact_id}}\"]\n  },\n  \"emailContent\": {\n    \"subject\": \"Campaign Subject\",\n    \"bodyHtml\": \"<p>Campaign content</p>\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/campaigns/{{campaign_id}}/start",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "campaigns", "{{campaign_id}}", "start"]
+            }
+          }
+        },
+        {
+          "name": "Pause Email Campaign",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/emails/campaigns/{{campaign_id}}/pause",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "campaigns", "{{campaign_id}}", "pause"]
+            }
+          }
+        },
+        {
+          "name": "Resume Email Campaign",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/emails/campaigns/{{campaign_id}}/resume",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "campaigns", "{{campaign_id}}", "resume"]
+            }
+          }
+        },
+        {
+          "name": "Complete Email Campaign",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/emails/campaigns/{{campaign_id}}/complete",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "campaigns", "{{campaign_id}}", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Get Campaign Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/campaigns/{{campaign_id}}/stats",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "campaigns", "{{campaign_id}}", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Campaign Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/campaigns/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "campaigns", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "Get Campaign Types",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/campaigns/types",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "campaigns", "types"]
+            }
+          }
+        },
+        {
+          "name": "Get Campaign Statuses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/campaigns/statuses",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "campaigns", "statuses"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Quote Management",
+      "item": [
+        {
+          "name": "List Quotes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/quotes?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["quotes"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Quote by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/quotes/{{quote_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "{{quote_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfqId\": \"{{rfq_id}}\",\n  \"contactId\": \"{{contact_id}}\",\n  \"shippingLineId\": \"{{shipping_line_id}}\",\n  \"oceanFreight\": 1500.00,\n  \"currency\": \"USD\",\n  \"totalAmount\": 2000.00,\n  \"validityDate\": \"2024-03-01T00:00:00Z\",\n  \"terms\": \"FOB\",\n  \"notes\": \"Test quote\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/quotes",
+              "host": ["{{base_url}}"],
+              "path": ["quotes"]
+            }
+          }
+        },
+        {
+          "name": "Update Quote",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oceanFreight\": 1600.00,\n  \"totalAmount\": 2100.00,\n  \"notes\": \"Updated quote\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/quotes/{{quote_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "{{quote_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Quote",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/quotes/{{quote_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "{{quote_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Quotes by RFQ",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/quotes/rfq/{{rfq_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "rfq", "{{rfq_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Compare Quotes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quoteIds\": [\"{{quote_id}}\", \"{{quote_id_2}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/quotes/{{quote_id}}/compare",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "{{quote_id}}", "compare"]
+            }
+          }
+        },
+        {
+          "name": "Award Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Awarded to best quote\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/quotes/{{quote_id}}/award",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "{{quote_id}}", "award"]
+            }
+          }
+        },
+        {
+          "name": "Reject Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Price too high\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/quotes/{{quote_id}}/reject",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "{{quote_id}}", "reject"]
+            }
+          }
+        },
+        {
+          "name": "Verify Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isVerified\": true,\n  \"verificationNotes\": \"Quote verified\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/quotes/{{quote_id}}/verify",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "{{quote_id}}", "verify"]
+            }
+          }
+        },
+        {
+          "name": "Update Quote Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"AWARDED\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/quotes/{{quote_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "{{quote_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Get Quote Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/quotes/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "Get Price Analysis",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/quotes/price-analysis",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "price-analysis"]
+            }
+          }
+        },
+        {
+          "name": "Get Carrier Performance",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/quotes/carrier-performance",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "carrier-performance"]
+            }
+          }
+        },
+        {
+          "name": "Get Market Trends",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/quotes/market-trends",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "market-trends"]
+            }
+          }
+        },
+        {
+          "name": "Get Historical Comparison",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/quotes/historical-comparison",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "historical-comparison"]
+            }
+          }
+        },
+        {
+          "name": "Get Rate Optimization",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/quotes/rate-optimization",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "rate-optimization"]
+            }
+          }
+        },
+        {
+          "name": "Get Quote Tags",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/quotes/tags",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "tags"]
+            }
+          }
+        },
+        {
+          "name": "Get Quote Currencies",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/quotes/currencies",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "currencies"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Import Quotes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quotes\": [\n    {\n      \"rfqId\": \"{{rfq_id}}\",\n      \"contactId\": \"{{contact_id}}\",\n      \"shippingLineId\": \"{{shipping_line_id}}\",\n      \"oceanFreight\": 1500.00,\n      \"currency\": \"USD\",\n      \"totalAmount\": 2000.00\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/quotes/bulk-import",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "bulk-import"]
+            }
+          }
+        },
+        {
+          "name": "Duplicate Quote",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/quotes/{{quote_id}}/duplicate",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "{{quote_id}}", "duplicate"]
+            }
+          }
+        },
+        {
+          "name": "Get Expired Quotes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/quotes/expired",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "expired"]
+            }
+          }
+        },
+        {
+          "name": "Validate Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quoteId\": \"{{quote_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/quotes/validate",
+              "host": ["{{base_url}}"],
+              "path": ["quotes", "validate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics & Reporting",
+      "item": [
+        {
+          "name": "Get Performance Metrics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/analytics/performance-metrics",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "performance-metrics"]
+            }
+          }
+        },
+        {
+          "name": "Get RFQ Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/analytics/rfq-analytics",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "rfq-analytics"]
+            }
+          }
+        },
+        {
+          "name": "Get Quote Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/analytics/quote-analytics",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "quote-analytics"]
+            }
+          }
+        },
+        {
+          "name": "Get Carrier Performance Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/analytics/carrier-performance",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "carrier-performance"]
+            }
+          }
+        },
+        {
+          "name": "Get Contact Engagement Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/analytics/contact-engagement",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "contact-engagement"]
+            }
+          }
+        },
+        {
+          "name": "Get Route Performance Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/analytics/route-performance",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "route-performance"]
+            }
+          }
+        },
+        {
+          "name": "Get Historical Benchmarking",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/analytics/historical-benchmarking",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "historical-benchmarking"]
+            }
+          }
+        },
+        {
+          "name": "Get Cost Analysis",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/analytics/cost-analysis",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "cost-analysis"]
+            }
+          }
+        },
+        {
+          "name": "Get Market Intelligence",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/analytics/market-intelligence",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "market-intelligence"]
+            }
+          }
+        },
+        {
+          "name": "List Scheduled Reports",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/analytics/scheduled-reports",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "scheduled-reports"]
+            }
+          }
+        },
+        {
+          "name": "Create Scheduled Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Weekly RFQ Report\",\n  \"reportType\": \"RFQ_ANALYTICS\",\n  \"schedule\": \"WEEKLY\",\n  \"recipients\": [\"admin@company.com\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/analytics/scheduled-reports",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "scheduled-reports"]
+            }
+          }
+        },
+        {
+          "name": "Update Scheduled Report",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Weekly Report\",\n  \"schedule\": \"DAILY\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/analytics/scheduled-reports/{{report_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "scheduled-reports", "{{report_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Scheduled Report",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/analytics/scheduled-reports/{{report_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "scheduled-reports", "{{report_id}}"]
+            }
+          }
+        },
+        {
+          "name": "List Custom Reports",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/analytics/custom-reports",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "custom-reports"]
+            }
+          }
+        },
+        {
+          "name": "Create Custom Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Custom Quote Analysis\",\n  \"description\": \"Custom report for quote analysis\",\n  \"filters\": {\n    \"dateRange\": \"30d\",\n    \"status\": \"ACTIVE\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/analytics/custom-reports",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "custom-reports"]
+            }
+          }
+        },
+        {
+          "name": "Update Custom Report",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Custom Report\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/analytics/custom-reports/{{report_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "custom-reports", "{{report_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Custom Report",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/analytics/custom-reports/{{report_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "custom-reports", "{{report_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Export Analytics",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reportType\": \"RFQ_ANALYTICS\",\n  \"format\": \"CSV\",\n  \"dateRange\": \"30d\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/analytics/export",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "export"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reply Ingestion & AI Parsing",
+      "item": [
+        {
+          "name": "List Email Replies",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/replies?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "replies"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Email Reply by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/replies/{{reply_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "replies", "{{reply_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Review Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requiresReview\": false,\n  \"reviewNotes\": \"Reviewed and approved\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/replies/{{reply_id}}/review",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "replies", "{{reply_id}}", "review"]
+            }
+          }
+        },
+        {
+          "name": "Create Quote from Reply",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfqId\": \"{{rfq_id}}\",\n  \"contactId\": \"{{contact_id}}\",\n  \"shippingLineId\": \"{{shipping_line_id}}\",\n  \"quoteData\": {\n    \"oceanFreight\": 1500.00,\n    \"currency\": \"USD\",\n    \"totalAmount\": 2000.00,\n    \"validityDate\": \"2024-03-01T00:00:00Z\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/replies/{{reply_id}}/quote",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "replies", "{{reply_id}}", "quote"]
+            }
+          }
+        },
+        {
+          "name": "Get Replies Requiring Review",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/replies-requiring-review",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "replies-requiring-review"]
+            }
+          }
+        },
+        {
+          "name": "Get Email Reply Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/stats",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Reprocess Email Reply",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/replies/{{reply_id}}/reprocess",
+              "host": ["{{base_url}}"],
+              "path": [
+                "reply-ingestion",
+                "replies",
+                "{{reply_id}}",
+                "reprocess"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Email Reply",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/replies/{{reply_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "replies", "{{reply_id}}"]
+            }
+          }
+        },
+        {
+          "name": "List IMAP Configs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/imap-configs",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "imap-configs"]
+            }
+          }
+        },
+        {
+          "name": "Get IMAP Config by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/imap-configs/{{config_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "imap-configs", "{{config_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create IMAP Config",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Gmail IMAP\",\n  \"host\": \"imap.gmail.com\",\n  \"port\": 993,\n  \"secure\": true,\n  \"username\": \"user@gmail.com\",\n  \"password\": \"app_password\",\n  \"folder\": \"INBOX\",\n  \"checkInterval\": 300,\n  \"maxEmailsPerCheck\": 50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/imap-configs",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "imap-configs"]
+            }
+          }
+        },
+        {
+          "name": "Update IMAP Config",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated IMAP Config\",\n  \"checkInterval\": 600\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/imap-configs/{{config_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "imap-configs", "{{config_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete IMAP Config",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/imap-configs/{{config_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "imap-configs", "{{config_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Test IMAP Connection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"host\": \"imap.gmail.com\",\n  \"port\": 993,\n  \"secure\": true,\n  \"username\": \"user@gmail.com\",\n  \"password\": \"app_password\",\n  \"folder\": \"INBOX\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/imap-configs/test-connection",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "imap-configs", "test-connection"]
+            }
+          }
+        },
+        {
+          "name": "Process IMAP Emails",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/imap-configs/{{config_id}}/process",
+              "host": ["{{base_url}}"],
+              "path": [
+                "reply-ingestion",
+                "imap-configs",
+                "{{config_id}}",
+                "process"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Webhook Configs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/webhook-configs",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "webhook-configs"]
+            }
+          }
+        },
+        {
+          "name": "Create Webhook Config",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"SendGrid Webhook\",\n  \"provider\": \"SENDGRID\",\n  \"webhookUrl\": \"https://api.company.com/webhooks/email\",\n  \"secret\": \"webhook_secret\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/webhook-configs",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "webhook-configs"]
+            }
+          }
+        },
+        {
+          "name": "Update Webhook Config",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Webhook Config\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/webhook-configs/{{webhook_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "webhook-configs", "{{webhook_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Webhook Config",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/webhook-configs/{{webhook_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "webhook-configs", "{{webhook_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Webhook Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/webhook-stats",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "webhook-stats"]
+            }
+          }
+        },
+        {
+          "name": "Test Webhook Endpoint",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/webhook-configs/{{webhook_id}}/test",
+              "host": ["{{base_url}}"],
+              "path": [
+                "reply-ingestion",
+                "webhook-configs",
+                "{{webhook_id}}",
+                "test"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Parsing Results",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/replies/{{reply_id}}/parsing-results",
+              "host": ["{{base_url}}"],
+              "path": [
+                "reply-ingestion",
+                "replies",
+                "{{reply_id}}",
+                "parsing-results"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Validate Parsing Result",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"validationStatus\": \"VALIDATED\",\n  \"validationNotes\": \"Parsing result validated\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/parsing-results/{{result_id}}/validate",
+              "host": ["{{base_url}}"],
+              "path": [
+                "reply-ingestion",
+                "parsing-results",
+                "{{result_id}}",
+                "validate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Parsing Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/parsing-stats",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "parsing-stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Thread History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/rfqs/{{rfq_id}}/thread-history",
+              "host": ["{{base_url}}"],
+              "path": [
+                "reply-ingestion",
+                "rfqs",
+                "{{rfq_id}}",
+                "thread-history"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Unmatched Emails",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/unmatched-emails",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "unmatched-emails"]
+            }
+          }
+        },
+        {
+          "name": "Link Email to RFQ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfqId\": \"{{rfq_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/replies/{{reply_id}}/link-rfq",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "replies", "{{reply_id}}", "link-rfq"]
+            }
+          }
+        },
+        {
+          "name": "Handle Webhook (Public)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"email.received\",\n  \"data\": {\n    \"from\": \"sender@example.com\",\n    \"subject\": \"Re: RFQ Request\",\n    \"body\": \"Quote details...\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reply-ingestion/webhooks/{{webhook_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reply-ingestion", "webhooks", "{{webhook_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Company Profile & Billing",
+      "item": [
+        {
+          "name": "Get Company Profile",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Company Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Company Name\",\n  \"phone\": \"+1987654321\",\n  \"address\": \"456 Updated Street\",\n  \"city\": \"Updated City\",\n  \"emailFooter\": \"Best regards, Updated Company\",\n  \"defaultFollowUpDays\": 5,\n  \"autoFollowUpEnabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            }
+          }
+        },
+        {
+          "name": "Upload Company Logo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "logo",
+                  "type": "file",
+                  "src": "path/to/logo.png"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/logo",
+              "host": ["{{base_url}}"],
+              "path": ["logo"]
+            }
+          }
+        },
+        {
+          "name": "Get User Preferences",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/user-preferences",
+              "host": ["{{base_url}}"],
+              "path": ["user-preferences"]
+            }
+          }
+        },
+        {
+          "name": "Update User Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"language\": \"en\",\n  \"timezone\": \"UTC\",\n  \"emailNotifications\": true,\n  \"dashboardLayout\": \"default\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user-preferences",
+              "host": ["{{base_url}}"],
+              "path": ["user-preferences"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/subscription",
+              "host": ["{{base_url}}"],
+              "path": ["subscription"]
+            }
+          }
+        },
+        {
+          "name": "Update Subscription",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"premium\",\n  \"billingCycle\": \"MONTHLY\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/subscription",
+              "host": ["{{base_url}}"],
+              "path": ["subscription"]
+            }
+          }
+        },
+        {
+          "name": "Get Usage Metrics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/usage",
+              "host": ["{{base_url}}"],
+              "path": ["usage"]
+            }
+          }
+        },
+        {
+          "name": "Get Billing History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/billing-history",
+              "host": ["{{base_url}}"],
+              "path": ["billing-history"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment Methods",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/payment-methods",
+              "host": ["{{base_url}}"],
+              "path": ["payment-methods"]
+            }
+          }
+        },
+        {
+          "name": "Add Payment Method",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"card\",\n  \"cardToken\": \"tok_visa\",\n  \"isDefault\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment-methods",
+              "host": ["{{base_url}}"],
+              "path": ["payment-methods"]
+            }
+          }
+        },
+        {
+          "name": "Delete Payment Method",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/payment-methods/{{payment_method_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["payment-methods", "{{payment_method_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Set Default Payment Method",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/payment-methods/{{payment_method_id}}/default",
+              "host": ["{{base_url}}"],
+              "path": ["payment-methods", "{{payment_method_id}}", "default"]
+            }
+          }
+        },
+        {
+          "name": "Get Billing Settings",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/billing-settings",
+              "host": ["{{base_url}}"],
+              "path": ["billing-settings"]
+            }
+          }
+        },
+        {
+          "name": "Update Billing Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"billingEmail\": \"billing@company.com\",\n  \"invoiceDelivery\": \"EMAIL\",\n  \"taxId\": \"TAX123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/billing-settings",
+              "host": ["{{base_url}}"],
+              "path": ["billing-settings"]
+            }
+          }
+        },
+        {
+          "name": "Get API Keys",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api-keys",
+              "host": ["{{base_url}}"],
+              "path": ["api-keys"]
+            }
+          }
+        },
+        {
+          "name": "Create API Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Production API Key\",\n  \"permissions\": [\"read\", \"write\"],\n  \"expiresAt\": \"2025-12-31T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api-keys",
+              "host": ["{{base_url}}"],
+              "path": ["api-keys"]
+            }
+          }
+        },
+        {
+          "name": "Revoke API Key",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/api-keys/{{api_key_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api-keys", "{{api_key_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Webhooks",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/webhooks",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks"]
+            }
+          }
+        },
+        {
+          "name": "Create Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Quote Webhook\",\n  \"url\": \"https://api.company.com/webhooks/quotes\",\n  \"events\": [\"quote.created\", \"quote.updated\"],\n  \"secret\": \"webhook_secret\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks"]
+            }
+          }
+        },
+        {
+          "name": "Update Webhook",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Webhook\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/{{webhook_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "{{webhook_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Webhook",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/webhooks/{{webhook_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "{{webhook_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Integrations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/integrations",
+              "host": ["{{base_url}}"],
+              "path": ["integrations"]
+            }
+          }
+        },
+        {
+          "name": "Connect Integration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiKey\": \"integration_api_key\",\n  \"settings\": {\n    \"webhookUrl\": \"https://api.company.com/webhooks/integration\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/integrations/{{integration_type}}/connect",
+              "host": ["{{base_url}}"],
+              "path": ["integrations", "{{integration_type}}", "connect"]
+            }
+          }
+        },
+        {
+          "name": "Disconnect Integration",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/integrations/{{integration_type}}/disconnect",
+              "host": ["{{base_url}}"],
+              "path": ["integrations", "{{integration_type}}", "disconnect"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shipping Line Management",
+      "item": [
+        {
+          "name": "List Shipping Lines",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/shipping-lines?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["shipping-lines"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Shipping Line",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Shipping Line\",\n  \"code\": \"TSL\",\n  \"scacCode\": \"TSL\",\n  \"website\": \"https://testshipping.com\",\n  \"headquartersLocation\": \"Test City\",\n  \"headquartersCountry\": \"USA\",\n  \"description\": \"Test shipping line\",\n  \"tags\": [\"test\", \"shipping\"],\n  \"tradeLanes\": [\"Asia-Europe\"],\n  \"services\": [\"Container\", \"Breakbulk\"],\n  \"specialization\": \"Container Shipping\",\n  \"reliability\": 4,\n  \"serviceQuality\": 4\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/shipping-lines",
+              "host": ["{{base_url}}"],
+              "path": ["shipping-lines"]
+            }
+          }
+        },
+        {
+          "name": "Get Shipping Line by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/shipping-lines/{{shipping_line_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["shipping-lines", "{{shipping_line_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Shipping Line",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Shipping Line\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/shipping-lines/{{shipping_line_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["shipping-lines", "{{shipping_line_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Shipping Line Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/shipping-lines/{{shipping_line_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["shipping-lines", "{{shipping_line_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Archive Shipping Line",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/shipping-lines/{{shipping_line_id}}/archive",
+              "host": ["{{base_url}}"],
+              "path": ["shipping-lines", "{{shipping_line_id}}", "archive"]
+            }
+          }
+        },
+        {
+          "name": "Restore Shipping Line",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/shipping-lines/{{shipping_line_id}}/restore",
+              "host": ["{{base_url}}"],
+              "path": ["shipping-lines", "{{shipping_line_id}}", "restore"]
+            }
+          }
+        },
+        {
+          "name": "Get Trade Lanes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/shipping-lines/trade-lanes",
+              "host": ["{{base_url}}"],
+              "path": ["shipping-lines", "trade-lanes"]
+            }
+          }
+        },
+        {
+          "name": "Get Services",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/shipping-lines/services",
+              "host": ["{{base_url}}"],
+              "path": ["shipping-lines", "services"]
+            }
+          }
+        },
+        {
+          "name": "Get Tags",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/shipping-lines/tags",
+              "host": ["{{base_url}}"],
+              "path": ["shipping-lines", "tags"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Import Shipping Lines",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shippingLines\": [\n    {\n      \"name\": \"Bulk Shipping Line\",\n      \"code\": \"BSL\",\n      \"description\": \"Bulk imported shipping line\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/shipping-lines/bulk-import",
+              "host": ["{{base_url}}"],
+              "path": ["shipping-lines", "bulk-import"]
+            }
+          }
+        },
+        {
+          "name": "Delete Shipping Line",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/shipping-lines/{{shipping_line_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["shipping-lines", "{{shipping_line_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Contact Management",
+      "item": [
+        {
+          "name": "List Contacts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/contacts?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["contacts"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Contact",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@shipping.com\",\n  \"phone\": \"+1234567890\",\n  \"jobTitle\": \"Sales Manager\",\n  \"department\": \"Sales\",\n  \"shippingLineId\": \"{{shipping_line_id}}\",\n  \"tags\": [\"primary\", \"sales\"],\n  \"notes\": \"Test contact\",\n  \"seniority\": \"SENIOR\",\n  \"specialization\": \"Container Shipping\",\n  \"quoteQuality\": 4,\n  \"reliability\": 4,\n  \"isPrimary\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/contacts",
+              "host": ["{{base_url}}"],
+              "path": ["contacts"]
+            }
+          }
+        },
+        {
+          "name": "Get Contact by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/contacts/{{contact_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["contacts", "{{contact_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Contact",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Updated\",\n  \"lastName\": \"Contact\",\n  \"notes\": \"Updated notes\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/contacts/{{contact_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["contacts", "{{contact_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Contact Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/contacts/{{contact_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["contacts", "{{contact_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Set Primary Contact",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/contacts/{{contact_id}}/primary",
+              "host": ["{{base_url}}"],
+              "path": ["contacts", "{{contact_id}}", "primary"]
+            }
+          }
+        },
+        {
+          "name": "Update Do Not Contact",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doNotContact\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/contacts/{{contact_id}}/do-not-contact",
+              "host": ["{{base_url}}"],
+              "path": ["contacts", "{{contact_id}}", "do-not-contact"]
+            }
+          }
+        },
+        {
+          "name": "Archive Contact",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/contacts/{{contact_id}}/archive",
+              "host": ["{{base_url}}"],
+              "path": ["contacts", "{{contact_id}}", "archive"]
+            }
+          }
+        },
+        {
+          "name": "Restore Contact",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/contacts/{{contact_id}}/restore",
+              "host": ["{{base_url}}"],
+              "path": ["contacts", "{{contact_id}}", "restore"]
+            }
+          }
+        },
+        {
+          "name": "Get Performance Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/contacts/performance-stats",
+              "host": ["{{base_url}}"],
+              "path": ["contacts", "performance-stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Departments",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/contacts/departments",
+              "host": ["{{base_url}}"],
+              "path": ["contacts", "departments"]
+            }
+          }
+        },
+        {
+          "name": "Get Tags",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/contacts/tags",
+              "host": ["{{base_url}}"],
+              "path": ["contacts", "tags"]
+            }
+          }
+        },
+        {
+          "name": "Get Seniority Levels",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/contacts/seniority-levels",
+              "host": ["{{base_url}}"],
+              "path": ["contacts", "seniority-levels"]
+            }
+          }
+        },
+        {
+          "name": "Get Specializations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/contacts/specializations",
+              "host": ["{{base_url}}"],
+              "path": ["contacts", "specializations"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Import Contacts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contacts\": [\n    {\n      \"firstName\": \"Bulk\",\n      \"lastName\": \"Contact\",\n      \"email\": \"bulk@example.com\",\n      \"shippingLineId\": \"{{shipping_line_id}}\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/contacts/bulk-import",
+              "host": ["{{base_url}}"],
+              "path": ["contacts", "bulk-import"]
+            }
+          }
+        },
+        {
+          "name": "Delete Contact",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/contacts/{{contact_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["contacts", "{{contact_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "RFQ Management",
+      "item": [
+        {
+          "name": "List RFQs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/rfqs?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create RFQ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test RFQ for Container Shipping\",\n  \"description\": \"Test RFQ description\",\n  \"originPort\": \"Shanghai\",\n  \"destinationPort\": \"Los Angeles\",\n  \"commodity\": \"Electronics\",\n  \"containerType\": \"40GP\",\n  \"containerQuantity\": 1,\n  \"cargoWeight\": 20000,\n  \"cargoVolume\": 67,\n  \"incoterm\": \"FOB\",\n  \"cargoReadyDate\": \"2024-02-01\",\n  \"quoteDeadline\": \"2024-01-25\",\n  \"shipmentUrgency\": \"NORMAL\",\n  \"specialRequirements\": \"None\",\n  \"requiredServices\": [\"Container\"],\n  \"preferredCarriers\": [\"Test Shipping Line\"],\n  \"tradeLane\": \"Asia-North America\",\n  \"estimatedValue\": 50000,\n  \"currency\": \"USD\",\n  \"notes\": \"Test RFQ\",\n  \"tags\": [\"test\", \"container\"],\n  \"priority\": \"MEDIUM\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/rfqs",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs"]
+            }
+          }
+        },
+        {
+          "name": "Get RFQ by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/rfqs/{{rfq_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "{{rfq_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update RFQ",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Test RFQ\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/rfqs/{{rfq_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "{{rfq_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update RFQ Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SENT\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/rfqs/{{rfq_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "{{rfq_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Send RFQ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contactIds\": [\"{{contact_id}}\"],\n  \"emailSubject\": \"RFQ Request\",\n  \"emailBody\": \"Please find attached RFQ details.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/rfqs/{{rfq_id}}/send",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "{{rfq_id}}", "send"]
+            }
+          }
+        },
+        {
+          "name": "Close RFQ",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/rfqs/{{rfq_id}}/close",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "{{rfq_id}}", "close"]
+            }
+          }
+        },
+        {
+          "name": "Award RFQ",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"winningQuoteId\": \"{{quote_id}}\",\n  \"notes\": \"Awarded to best quote\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/rfqs/{{rfq_id}}/award",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "{{rfq_id}}", "award"]
+            }
+          }
+        },
+        {
+          "name": "Get RFQ Recipients",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/rfqs/{{rfq_id}}/recipients",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "{{rfq_id}}", "recipients"]
+            }
+          }
+        },
+        {
+          "name": "Get RFQ Quotes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/rfqs/{{rfq_id}}/quotes",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "{{rfq_id}}", "quotes"]
+            }
+          }
+        },
+        {
+          "name": "Get RFQ Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/rfqs/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "Get Trade Lanes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/rfqs/trade-lanes",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "trade-lanes"]
+            }
+          }
+        },
+        {
+          "name": "Get Tags",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/rfqs/tags",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "tags"]
+            }
+          }
+        },
+        {
+          "name": "Get RFQ Templates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/rfqs/templates",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "templates"]
+            }
+          }
+        },
+        {
+          "name": "Create RFQ Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Standard Container RFQ\",\n  \"description\": \"Template for container shipping RFQs\",\n  \"originPort\": \"Shanghai\",\n  \"destinationPort\": \"Los Angeles\",\n  \"commodity\": \"Electronics\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/rfqs/templates",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "templates"]
+            }
+          }
+        },
+        {
+          "name": "Duplicate RFQ",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/rfqs/duplicate/{{rfq_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "duplicate", "{{rfq_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete RFQ",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/rfqs/{{rfq_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs", "{{rfq_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Template Management",
+      "item": [
+        {
+          "name": "List Templates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/templates?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["templates"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test RFQ Template\",\n  \"description\": \"Test template for container shipping\",\n  \"subjectTemplate\": \"RFQ Request - {{commodity}} from {{originPort}} to {{destinationPort}}\",\n  \"bodyTemplate\": \"Please find attached RFQ details for {{commodity}} shipping.\",\n  \"originPort\": \"Shanghai\",\n  \"destinationPort\": \"Los Angeles\",\n  \"commodity\": \"Electronics\",\n  \"containerType\": \"40GP\",\n  \"containerQuantity\": 1,\n  \"cargoWeight\": 20000,\n  \"cargoVolume\": 67,\n  \"incoterm\": \"FOB\",\n  \"specialRequirements\": \"None\",\n  \"requiredServices\": [\"Container\"],\n  \"category\": \"Container Shipping\",\n  \"tradeLane\": \"Asia-North America\",\n  \"language\": \"en\",\n  \"tags\": [\"test\", \"container\"],\n  \"isPublic\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/templates",
+              "host": ["{{base_url}}"],
+              "path": ["templates"]
+            }
+          }
+        },
+        {
+          "name": "Get Template by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/templates/{{template_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "{{template_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Template",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Test Template\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/templates/{{template_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "{{template_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Template",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/templates/{{template_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "{{template_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Use Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variables\": {\n    \"commodity\": \"Electronics\",\n    \"originPort\": \"Shanghai\",\n    \"destinationPort\": \"Los Angeles\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/templates/{{template_id}}/use",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "{{template_id}}", "use"]
+            }
+          }
+        },
+        {
+          "name": "Create Template from RFQ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Template from RFQ\",\n  \"description\": \"Template created from existing RFQ\",\n  \"category\": \"Container Shipping\",\n  \"tags\": [\"template\", \"rfq\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/templates/from-rfq/{{rfq_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "from-rfq", "{{rfq_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Duplicate Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicated Template\",\n  \"description\": \"Duplicated description\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/templates/{{template_id}}/duplicate",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "{{template_id}}", "duplicate"]
+            }
+          }
+        },
+        {
+          "name": "Set Default Template",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/templates/{{template_id}}/default",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "{{template_id}}", "default"]
+            }
+          }
+        },
+        {
+          "name": "Update Template Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/templates/{{template_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "{{template_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Get Template Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/templates/categories",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Get Template Languages",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/templates/languages",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "languages"]
+            }
+          }
+        },
+        {
+          "name": "Get Template Tags",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/templates/tags",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "tags"]
+            }
+          }
+        },
+        {
+          "name": "Get Template Trade Lanes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/templates/trade-lanes",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "trade-lanes"]
+            }
+          }
+        },
+        {
+          "name": "Get Template Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/templates/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "Get Public Templates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/templates/public",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "public"]
+            }
+          }
+        },
+        {
+          "name": "Import Public Template",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/templates/{{template_id}}/import",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "{{template_id}}", "import"]
+            }
+          }
+        },
+        {
+          "name": "Get Template Variables",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/templates/{{template_id}}/variables",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "{{template_id}}", "variables"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Import Templates",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"templates\": [\n    {\n      \"name\": \"Bulk Template\",\n      \"description\": \"Bulk imported template\",\n      \"category\": \"Container Shipping\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/templates/bulk-import",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "bulk-import"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

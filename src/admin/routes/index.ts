@@ -8,13 +8,11 @@ import adminManagementRoutes from "./adminManagement";
 import adminTicketsRoutes from "./adminTickets";
 import adminSystemFeaturesRoutes from "./adminSystemFeatures";
 import adminComprehensiveDashboardRoutes from "./adminComprehensiveDashboard";
-import authRoutes from "./auth";
 
 const router = Router();
 
 // Admin authentication routes
 router.use("/auth", adminAuthRoutes);
-router.use("/auth", authRoutes);
 
 // Admin dashboard routes
 router.use("/dashboard", adminDashboardRoutes);

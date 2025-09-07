@@ -150,6 +150,29 @@ export class JWTUtils {
       throw new AppError("Invalid or expired refresh token", 401);
     }
 
+    // Get user details to get the correct role
+    let userRole = "ADMIN"; // Default role
+    if (validToken.userType === "ADMIN" && validToken.adminUserId) {
+      const admin = await prisma.admin.findUnique({
+        where: { id: validToken.adminUserId },
+        select: { role: true },
+      });
+      if (admin) {
+        userRole = admin.role;
+      }
+    } else if (
+      validToken.userType === "COMPANY_USER" &&
+      validToken.companyUserId
+    ) {
+      const companyUser = await prisma.companyUser.findUnique({
+        where: { id: validToken.companyUserId },
+        select: { role: true },
+      });
+      if (companyUser) {
+        userRole = companyUser.role;
+      }
+    }
+
     // Revoke the used refresh token
     await prisma.refreshToken.update({
       where: { id: validToken.id },
@@ -160,7 +183,7 @@ export class JWTUtils {
     return this.generateTokenPair(
       validToken.adminUserId || validToken.companyUserId!,
       validToken.userType,
-      "employee", // Default role, should be fetched from user record
+      userRole,
       validToken.companyId || undefined
     );
   }
