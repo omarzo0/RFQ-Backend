@@ -7,7 +7,8 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://rfq_user:password@db:5432/rfq_platform
+      - DATABASE_URL=postgresql://rfq_user:simplepass123@localhost:5432/rfq_platform
+
       - REDIS_URL=redis://redis:6379
     depends_on:
       - db

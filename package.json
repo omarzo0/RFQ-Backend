@@ -20,7 +20,8 @@
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "setup": "chmod +x scripts/setup.sh && ./scripts/setup.sh",
-    "dev-setup": "chmod +x scripts/dev-setup.sh && ./scripts/dev-setup.sh"
+    "dev-setup": "chmod +x scripts/dev-setup.sh && ./scripts/dev-setup.sh",
+    "create-super-admin": "node scripts/create-super-admin.js"
   },
   "keywords": [],
   "author": "",
