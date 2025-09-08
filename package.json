@@ -21,7 +21,11 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "setup": "chmod +x scripts/setup.sh && ./scripts/setup.sh",
     "dev-setup": "chmod +x scripts/dev-setup.sh && ./scripts/dev-setup.sh",
-    "create-super-admin": "node scripts/create-super-admin.js"
+    "create-super-admin": "node scripts/create-super-admin.js",
+    "create-company-data": "node scripts/create-company-data.js",
+    "create-additional-test-data": "node scripts/create-additional-test-data.js",
+    "setup-company-environment": "node scripts/setup-company-environment.js",
+    "verify-company-data": "node scripts/verify-company-data.js"
   },
   "keywords": [],
   "author": "",

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "RFQ Company APIs - Complete Collection",
-    "description": "Complete collection of all RFQ Platform Company APIs with all implemented endpoints",
+    "description": "Complete collection of all RFQ Platform Company APIs with all implemented endpoints. This collection includes 300+ API endpoints covering Authentication, User Management, Email Management, Quote Management, Analytics & Reporting, Reply Ingestion & AI Parsing, Company Profile & Billing, Shipping Line Management, Contact Management, RFQ Management, and Template Management.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -36,6 +36,110 @@
     {
       "key": "base_url",
       "value": "http://localhost:3000/api/v1/company"
+    },
+    {
+      "key": "company_access_token",
+      "value": ""
+    },
+    {
+      "key": "company_refresh_token",
+      "value": ""
+    },
+    {
+      "key": "company_id",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": ""
+    },
+    {
+      "key": "shipping_line_id",
+      "value": ""
+    },
+    {
+      "key": "contact_id",
+      "value": ""
+    },
+    {
+      "key": "rfq_id",
+      "value": ""
+    },
+    {
+      "key": "template_id",
+      "value": ""
+    },
+    {
+      "key": "quote_id",
+      "value": ""
+    },
+    {
+      "key": "company_user_email",
+      "value": "testuser@shippingcompany.com"
+    },
+    {
+      "key": "company_user_password",
+      "value": "TestPassword123!"
+    },
+    {
+      "key": "bulk_email_id",
+      "value": ""
+    },
+    {
+      "key": "email_log_id",
+      "value": ""
+    },
+    {
+      "key": "tracking_pixel_id",
+      "value": ""
+    },
+    {
+      "key": "unsubscribe_token",
+      "value": ""
+    },
+    {
+      "key": "rule_id",
+      "value": ""
+    },
+    {
+      "key": "campaign_id",
+      "value": ""
+    },
+    {
+      "key": "quote_id_2",
+      "value": ""
+    },
+    {
+      "key": "report_id",
+      "value": ""
+    },
+    {
+      "key": "reply_id",
+      "value": ""
+    },
+    {
+      "key": "config_id",
+      "value": ""
+    },
+    {
+      "key": "webhook_id",
+      "value": ""
+    },
+    {
+      "key": "result_id",
+      "value": ""
+    },
+    {
+      "key": "payment_method_id",
+      "value": ""
+    },
+    {
+      "key": "api_key_id",
+      "value": ""
+    },
+    {
+      "key": "integration_type",
+      "value": "stripe"
     }
   ],
   "item": [
