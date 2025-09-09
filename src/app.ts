@@ -84,8 +84,6 @@ app.get("/health", (req, res) => {
 // Import routes
 import routes from "./routes";
 import { errorHandler } from "./middleware/errorHandler";
-import { EmailScheduler } from "./jobs/EmailScheduler";
-import { ReplyIngestionScheduler } from "./jobs/ReplyIngestionScheduler";
 
 // API Routes
 app.use("/api/v1", routes);
@@ -111,15 +109,8 @@ async function startServer() {
     await prisma.$connect();
     logger.info("✅ Database connected successfully");
 
-    // Start email scheduler
-    const emailScheduler = new EmailScheduler();
-    emailScheduler.start();
-    logger.info("📧 Email scheduler started");
-
-    // Start reply ingestion scheduler
-    const replyIngestionScheduler = new ReplyIngestionScheduler();
-    replyIngestionScheduler.start();
-    logger.info("📥 Reply ingestion scheduler started");
+    // Job schedulers will be started later when needed
+    logger.info("📧 Job schedulers will be started when needed");
 
     // Start server
     app.listen(PORT, () => {

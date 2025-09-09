@@ -3,6 +3,7 @@ import { AdminManagementService } from "../services/AdminManagementService";
 import { successResponse, errorResponse } from "../../utils/response";
 import { AppError } from "../../utils/errors";
 import logger from "../../utils/logger";
+import { AdminRole } from "@prisma/client";
 
 export class AdminManagementController {
   private adminManagementService: AdminManagementService;
@@ -21,14 +22,11 @@ export class AdminManagementController {
 
       // Validate required fields
       if (!email || !password || !firstName || !lastName || !role) {
-        res
-          .status(400)
-          .json(
-            errorResponse(
-              "Email, password, firstName, lastName, and role are required",
-              400
-            )
-          );
+        errorResponse(
+          res,
+          "Email, password, firstName, lastName, and role are required",
+          400
+        );
         return;
       }
 
@@ -43,18 +41,14 @@ export class AdminManagementController {
 
       const newAdmin = await this.adminManagementService.createAdmin(adminData);
 
-      res
-        .status(201)
-        .json(successResponse(newAdmin, "Admin created successfully"));
+      successResponse(res, newAdmin, "Admin created successfully", 201);
     } catch (error) {
       logger.error("Create admin error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -70,7 +64,7 @@ export class AdminManagementController {
       const filters = {
         page: parseInt(page as string),
         limit: parseInt(limit as string),
-        role: role as string,
+        role: role ? (role as AdminRole) : undefined,
         isActive:
           isActive === "true" ? true : isActive === "false" ? false : undefined,
         search: search as string,
@@ -78,18 +72,14 @@ export class AdminManagementController {
 
       const adminsData = await this.adminManagementService.getAdmins(filters);
 
-      res
-        .status(200)
-        .json(successResponse(adminsData, "Admins retrieved successfully"));
+      successResponse(res, adminsData, "Admins retrieved successfully");
     } catch (error) {
       logger.error("Get admins error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -103,24 +93,20 @@ export class AdminManagementController {
       const { id } = req.params;
 
       if (!id) {
-        res.status(400).json(errorResponse("Admin ID is required", 400));
+        errorResponse(res, "Admin ID is required", 400);
         return;
       }
 
       const admin = await this.adminManagementService.getAdminById(id);
 
-      res
-        .status(200)
-        .json(successResponse(admin, "Admin retrieved successfully"));
+      successResponse(res, admin, "Admin retrieved successfully");
     } catch (error) {
       logger.error("Get admin by ID error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -135,7 +121,7 @@ export class AdminManagementController {
       const updateData = req.body;
 
       if (!id) {
-        res.status(400).json(errorResponse("Admin ID is required", 400));
+        errorResponse(res, "Admin ID is required", 400);
         return;
       }
 
@@ -144,18 +130,14 @@ export class AdminManagementController {
         updateData
       );
 
-      res
-        .status(200)
-        .json(successResponse(updatedAdmin, "Admin updated successfully"));
+      successResponse(res, updatedAdmin, "Admin updated successfully");
     } catch (error) {
       logger.error("Update admin error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -169,24 +151,20 @@ export class AdminManagementController {
       const { id } = req.params;
 
       if (!id) {
-        res.status(400).json(errorResponse("Admin ID is required", 400));
+        errorResponse(res, "Admin ID is required", 400);
         return;
       }
 
       const deletedAdmin = await this.adminManagementService.deleteAdmin(id);
 
-      res
-        .status(200)
-        .json(successResponse(deletedAdmin, "Admin deactivated successfully"));
+      successResponse(res, deletedAdmin, "Admin deactivated successfully");
     } catch (error) {
       logger.error("Delete admin error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -200,24 +178,20 @@ export class AdminManagementController {
       const { id } = req.params;
 
       if (!id) {
-        res.status(400).json(errorResponse("Admin ID is required", 400));
+        errorResponse(res, "Admin ID is required", 400);
         return;
       }
 
       const restoredAdmin = await this.adminManagementService.restoreAdmin(id);
 
-      res
-        .status(200)
-        .json(successResponse(restoredAdmin, "Admin restored successfully"));
+      successResponse(res, restoredAdmin, "Admin restored successfully");
     } catch (error) {
       logger.error("Restore admin error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -232,19 +206,16 @@ export class AdminManagementController {
       const { newPassword } = req.body;
 
       if (!id) {
-        res.status(400).json(errorResponse("Admin ID is required", 400));
+        errorResponse(res, "Admin ID is required", 400);
         return;
       }
 
       if (!newPassword || newPassword.length < 6) {
-        res
-          .status(400)
-          .json(
-            errorResponse(
-              "New password is required and must be at least 6 characters",
-              400
-            )
-          );
+        errorResponse(
+          res,
+          "New password is required and must be at least 6 characters",
+          400
+        );
         return;
       }
 
@@ -253,18 +224,14 @@ export class AdminManagementController {
         newPassword
       );
 
-      res
-        .status(200)
-        .json(successResponse(result, "Password changed successfully"));
+      successResponse(res, result, "Password changed successfully");
     } catch (error) {
       logger.error("Change admin password error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -277,20 +244,18 @@ export class AdminManagementController {
     try {
       const statistics = await this.adminManagementService.getAdminStatistics();
 
-      res
-        .status(200)
-        .json(
-          successResponse(statistics, "Admin statistics retrieved successfully")
-        );
+      successResponse(
+        res,
+        statistics,
+        "Admin statistics retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get admin statistics error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -305,7 +270,7 @@ export class AdminManagementController {
       const { limit = 50 } = req.query;
 
       if (!id) {
-        res.status(400).json(errorResponse("Admin ID is required", 400));
+        errorResponse(res, "Admin ID is required", 400);
         return;
       }
 
@@ -315,23 +280,18 @@ export class AdminManagementController {
           parseInt(limit as string)
         );
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            activityLogs,
-            "Admin activity logs retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        activityLogs,
+        "Admin activity logs retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get admin activity logs error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };

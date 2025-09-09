@@ -26,26 +26,20 @@ export class AdminCompanyController {
 
       // Validate required fields
       if (!companyData.name || !companyData.email) {
-        res
-          .status(400)
-          .json(errorResponse("Company name and email are required", 400));
+        errorResponse(res, "Company name and email are required", 400);
         return;
       }
 
       const company = await this.adminCompanyService.createCompany(companyData);
 
-      res
-        .status(201)
-        .json(successResponse(company, "Company created successfully"));
+      successResponse(res, company, "Company created successfully", 201);
     } catch (error) {
       logger.error("Create company error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -68,18 +62,14 @@ export class AdminCompanyController {
           status
         );
 
-      res
-        .status(200)
-        .json(successResponse(result, "Companies retrieved successfully"));
+      successResponse(res, result, "Companies retrieved successfully");
     } catch (error) {
       logger.error("Get companies error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -92,24 +82,20 @@ export class AdminCompanyController {
       const { companyId } = req.params;
 
       if (!companyId) {
-        res.status(400).json(errorResponse("Company ID is required", 400));
+        errorResponse(res, "Company ID is required", 400);
         return;
       }
 
       const company = await this.adminCompanyService.getCompanyById(companyId);
 
-      res
-        .status(200)
-        .json(successResponse(company, "Company retrieved successfully"));
+      successResponse(res, company, "Company retrieved successfully");
     } catch (error) {
       logger.error("Get company by ID error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -123,7 +109,7 @@ export class AdminCompanyController {
       const updateData: Omit<UpdateCompanyData, "id"> = req.body;
 
       if (!companyId) {
-        res.status(400).json(errorResponse("Company ID is required", 400));
+        errorResponse(res, "Company ID is required", 400);
         return;
       }
 
@@ -132,18 +118,14 @@ export class AdminCompanyController {
         ...updateData,
       });
 
-      res
-        .status(200)
-        .json(successResponse(company, "Company updated successfully"));
+      successResponse(res, company, "Company updated successfully");
     } catch (error) {
       logger.error("Update company error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -156,24 +138,20 @@ export class AdminCompanyController {
       const { companyId } = req.params;
 
       if (!companyId) {
-        res.status(400).json(errorResponse("Company ID is required", 400));
+        errorResponse(res, "Company ID is required", 400);
         return;
       }
 
       const company = await this.adminCompanyService.deleteCompany(companyId);
 
-      res
-        .status(200)
-        .json(successResponse(company, "Company deleted successfully"));
+      successResponse(res, company, "Company deleted successfully");
     } catch (error) {
       logger.error("Delete company error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -186,24 +164,20 @@ export class AdminCompanyController {
       const { companyId } = req.params;
 
       if (!companyId) {
-        res.status(400).json(errorResponse("Company ID is required", 400));
+        errorResponse(res, "Company ID is required", 400);
         return;
       }
 
       const company = await this.adminCompanyService.restoreCompany(companyId);
 
-      res
-        .status(200)
-        .json(successResponse(company, "Company restored successfully"));
+      successResponse(res, company, "Company restored successfully");
     } catch (error) {
       logger.error("Restore company error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -216,20 +190,18 @@ export class AdminCompanyController {
       const stats: AdminDashboardStats =
         await this.adminCompanyService.getDashboardStats();
 
-      res
-        .status(200)
-        .json(
-          successResponse(stats, "Dashboard statistics retrieved successfully")
-        );
+      successResponse(
+        res,
+        stats,
+        "Dashboard statistics retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get dashboard stats error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };

@@ -31,11 +31,9 @@ export class AdminDashboardController {
       logger.error("Get dashboard error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -49,7 +47,7 @@ export class AdminDashboardController {
       const { companyId } = req.params;
 
       if (!companyId) {
-        res.status(400).json(errorResponse("Company ID is required", 400));
+        errorResponse(res, "Company ID is required", 400);
         return;
       }
 
@@ -69,11 +67,9 @@ export class AdminDashboardController {
       logger.error("Get company details error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -103,11 +99,9 @@ export class AdminDashboardController {
       logger.error("Get all RFQs error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -137,11 +131,9 @@ export class AdminDashboardController {
       logger.error("Get all quotes error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -172,11 +164,9 @@ export class AdminDashboardController {
       logger.error("Get all contacts error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -211,11 +201,9 @@ export class AdminDashboardController {
       logger.error("Get all shipping lines error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -249,11 +237,9 @@ export class AdminDashboardController {
       logger.error("Get all email logs error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -281,11 +267,9 @@ export class AdminDashboardController {
       logger.error("Get subscription analytics error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -310,11 +294,9 @@ export class AdminDashboardController {
       logger.error("Get email analytics error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -339,11 +321,9 @@ export class AdminDashboardController {
       logger.error("Get RFQ analytics error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -368,11 +348,9 @@ export class AdminDashboardController {
       logger.error("Get quote analytics error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };

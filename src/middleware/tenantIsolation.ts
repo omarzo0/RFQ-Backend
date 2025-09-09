@@ -1,3 +1,7 @@
+import { Request, Response, NextFunction } from "express";
+import { AuthenticatedRequest } from "../admin/middleware/auth";
+import { AuthorizationError } from "../utils/errors";
+
 export const enforceTenantIsolation = (
   req: Request,
   res: Response,
@@ -6,7 +10,7 @@ export const enforceTenantIsolation = (
   const authReq = req as AuthenticatedRequest;
 
   // Skip tenant isolation for platform admins
-  if (authReq.user?.userType === "admin") {
+  if (authReq.user?.userType === "ADMIN") {
     return next();
   }
 

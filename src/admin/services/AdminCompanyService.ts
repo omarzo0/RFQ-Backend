@@ -106,7 +106,7 @@ export class AdminCompanyService {
     // Get last activity for each company
     const companiesWithStats = await Promise.all(
       companies.map(async (company) => {
-        const lastActivity = await prisma.rfq.findFirst({
+        const lastActivity = await prisma.rFQ.findFirst({
           where: { companyId: company.id },
           orderBy: { updatedAt: "desc" },
           select: { updatedAt: true },
@@ -116,6 +116,8 @@ export class AdminCompanyService {
           ...company,
           userCount: company.users.length,
           lastActivityAt: lastActivity?.updatedAt || company.updatedAt,
+          domain: company.domain || undefined,
+          phone: company.phone || undefined,
         };
       })
     );
@@ -153,7 +155,6 @@ export class AdminCompanyService {
         _count: {
           select: {
             rfqs: true,
-            quotes: true,
             contacts: true,
             shippingLines: true,
           },
@@ -273,12 +274,12 @@ export class AdminCompanyService {
       prisma.company.count(),
       prisma.company.count({ where: { isActive: true } }),
       prisma.companyUser.count({ where: { isActive: true } }),
-      prisma.rfq.count(),
+      prisma.rFQ.count(),
       prisma.quote.count(),
     ]);
 
     // Get recent activity
-    const recentActivity = await prisma.rfq.findMany({
+    const recentActivity = await prisma.rFQ.findMany({
       take: 10,
       orderBy: { createdAt: "desc" },
       select: {
@@ -300,7 +301,7 @@ export class AdminCompanyService {
       totalUsers,
       totalRFQs,
       totalQuotes,
-      recentActivity: recentActivity.map((activity) => ({
+      recentActivity: recentActivity.map((activity: any) => ({
         id: activity.id,
         type: "RFQ",
         description: `RFQ "${activity.title}" ${activity.status.toLowerCase()}`,

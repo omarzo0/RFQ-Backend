@@ -30,23 +30,19 @@ export class AdminSubscriptionController {
       const subscriptionsData =
         await this.adminSubscriptionService.getSubscriptions(filters);
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            subscriptionsData,
-            "Subscriptions retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        subscriptionsData,
+        "Subscriptions retrieved successfully",
+        200
+      );
     } catch (error) {
       logger.error("Get subscriptions error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -60,7 +56,7 @@ export class AdminSubscriptionController {
       const { companyId } = req.params;
 
       if (!companyId) {
-        res.status(400).json(errorResponse("Company ID is required", 400));
+        errorResponse(res, "Company ID is required", 400);
         return;
       }
 
@@ -69,20 +65,19 @@ export class AdminSubscriptionController {
           companyId
         );
 
-      res
-        .status(200)
-        .json(
-          successResponse(subscription, "Subscription retrieved successfully")
-        );
+      successResponse(
+        res,
+        subscription,
+        "Subscription retrieved successfully",
+        200
+      );
     } catch (error) {
       logger.error("Get subscription error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -97,7 +92,7 @@ export class AdminSubscriptionController {
       const updateData = req.body;
 
       if (!companyId) {
-        res.status(400).json(errorResponse("Company ID is required", 400));
+        errorResponse(res, "Company ID is required", 400);
         return;
       }
 
@@ -107,23 +102,19 @@ export class AdminSubscriptionController {
           updateData
         );
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            updatedSubscription,
-            "Subscription updated successfully"
-          )
-        );
+      successResponse(
+        res,
+        updatedSubscription,
+        "Subscription updated successfully",
+        200
+      );
     } catch (error) {
       logger.error("Update subscription error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -138,7 +129,7 @@ export class AdminSubscriptionController {
       const { reason } = req.body;
 
       if (!companyId) {
-        res.status(400).json(errorResponse("Company ID is required", 400));
+        errorResponse(res, "Company ID is required", 400);
         return;
       }
 
@@ -148,23 +139,19 @@ export class AdminSubscriptionController {
           reason
         );
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            suspendedSubscription,
-            "Subscription suspended successfully"
-          )
-        );
+      successResponse(
+        res,
+        suspendedSubscription,
+        "Subscription suspended successfully",
+        200
+      );
     } catch (error) {
       logger.error("Suspend subscription error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -181,30 +168,26 @@ export class AdminSubscriptionController {
       const { companyId } = req.params;
 
       if (!companyId) {
-        res.status(400).json(errorResponse("Company ID is required", 400));
+        errorResponse(res, "Company ID is required", 400);
         return;
       }
 
       const reactivatedSubscription =
         await this.adminSubscriptionService.reactivateSubscription(companyId);
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            reactivatedSubscription,
-            "Subscription reactivated successfully"
-          )
-        );
+      successResponse(
+        res,
+        reactivatedSubscription,
+        "Subscription reactivated successfully",
+        200
+      );
     } catch (error) {
       logger.error("Reactivate subscription error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -219,7 +202,7 @@ export class AdminSubscriptionController {
       const { reason } = req.body;
 
       if (!companyId) {
-        res.status(400).json(errorResponse("Company ID is required", 400));
+        errorResponse(res, "Company ID is required", 400);
         return;
       }
 
@@ -229,23 +212,19 @@ export class AdminSubscriptionController {
           reason
         );
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            canceledSubscription,
-            "Subscription canceled successfully"
-          )
-        );
+      successResponse(
+        res,
+        canceledSubscription,
+        "Subscription canceled successfully",
+        200
+      );
     } catch (error) {
       logger.error("Cancel subscription error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -260,34 +239,31 @@ export class AdminSubscriptionController {
       const { days } = req.body;
 
       if (!companyId) {
-        res.status(400).json(errorResponse("Company ID is required", 400));
+        errorResponse(res, "Company ID is required", 400);
         return;
       }
 
       if (!days || days <= 0) {
-        res
-          .status(400)
-          .json(errorResponse("Valid number of days is required", 400));
+        errorResponse(res, "Valid number of days is required", 400);
         return;
       }
 
       const extendedSubscription =
         await this.adminSubscriptionService.extendTrial(companyId, days);
 
-      res
-        .status(200)
-        .json(
-          successResponse(extendedSubscription, "Trial extended successfully")
-        );
+      successResponse(
+        res,
+        extendedSubscription,
+        "Trial extended successfully",
+        200
+      );
     } catch (error) {
       logger.error("Extend trial error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -304,23 +280,19 @@ export class AdminSubscriptionController {
       const analytics =
         await this.adminSubscriptionService.getSubscriptionAnalytics();
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            analytics,
-            "Subscription analytics retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        analytics,
+        "Subscription analytics retrieved successfully",
+        200
+      );
     } catch (error) {
       logger.error("Get subscription analytics error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -337,23 +309,19 @@ export class AdminSubscriptionController {
       const expiringTrials =
         await this.adminSubscriptionService.getExpiringTrials(daysNumber);
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            expiringTrials,
-            "Expiring trials retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        expiringTrials,
+        "Expiring trials retrieved successfully",
+        200
+      );
     } catch (error) {
       logger.error("Get expiring trials error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -367,7 +335,7 @@ export class AdminSubscriptionController {
       const { companyId } = req.params;
 
       if (!companyId) {
-        res.status(400).json(errorResponse("Company ID is required", 400));
+        errorResponse(res, "Company ID is required", 400);
         return;
       }
 
@@ -375,20 +343,19 @@ export class AdminSubscriptionController {
         companyId
       );
 
-      res
-        .status(200)
-        .json(
-          successResponse(usage, "Subscription usage retrieved successfully")
-        );
+      successResponse(
+        res,
+        usage,
+        "Subscription usage retrieved successfully",
+        200
+      );
     } catch (error) {
       logger.error("Get subscription usage error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };

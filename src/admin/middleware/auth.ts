@@ -2,9 +2,9 @@ import jwt from "jsonwebtoken";
 import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { Request } from "express";
-import { prisma } from "../app";
-import { AppError } from "../utils/errors";
-import logger from "../utils/logger";
+import { prisma } from "../../app";
+import { AppError } from "../../utils/errors";
+import logger from "../../utils/logger";
 
 // JWT Payload interface
 export interface JWTPayload {
@@ -42,7 +42,7 @@ export class JWTUtils {
     process.env.JWT_REFRESH_SECRET ||
     "your-super-secret-refresh-key-change-this-in-production";
   private static readonly ACCESS_TOKEN_EXPIRES_IN =
-    process.env.JWT_EXPIRES_IN || "15m";
+    process.env.JWT_EXPIRES_IN || "720m";
   private static readonly REFRESH_TOKEN_EXPIRES_IN =
     process.env.REFRESH_TOKEN_EXPIRES_IN || "7d";
 
@@ -54,9 +54,13 @@ export class JWTUtils {
     if (!secret) {
       throw new Error("JWT_SECRET is not configured");
     }
-    return jwt.sign(payload, secret, {
-      expiresIn: this.ACCESS_TOKEN_EXPIRES_IN,
-    });
+    return jwt.sign(
+      payload,
+      secret as string,
+      {
+        expiresIn: this.ACCESS_TOKEN_EXPIRES_IN,
+      } as jwt.SignOptions
+    );
   }
 
   /**
@@ -115,7 +119,7 @@ export class JWTUtils {
       if (!secret) {
         throw new Error("JWT_SECRET is not configured");
       }
-      return jwt.verify(token, secret) as JWTPayload;
+      return jwt.verify(token, secret as string) as JWTPayload;
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
         throw new AppError("Access token expired", 401);

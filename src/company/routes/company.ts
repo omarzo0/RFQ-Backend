@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import { CompanyController } from "../controllers/CompanyController";
-import { authenticate } from "../middleware/auth";
+import { authenticate } from "../middleware/companyAuth";
 
 const router = express.Router();
 const companyController = new CompanyController();
@@ -137,4 +137,3 @@ router.delete(
 );
 
 export default router;
-

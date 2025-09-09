@@ -3,6 +3,7 @@ import { AdminAuthService } from "../services/AdminAuthService";
 import { successResponse, errorResponse } from "../../utils/response";
 import { AppError } from "../../utils/errors";
 import logger from "../../utils/logger";
+import { AdminRequest } from "../middleware/adminAuth";
 import {
   AdminLoginCredentials,
   AdminLoginResponse,
@@ -25,9 +26,7 @@ export class AdminAuthController {
 
       // Validate required fields
       if (!credentials.email || !credentials.password) {
-        res
-          .status(400)
-          .json(errorResponse("Email and password are required", 400));
+        errorResponse(res, "Email and password are required", 400);
         return;
       }
 
@@ -35,16 +34,14 @@ export class AdminAuthController {
         credentials
       );
 
-      res.status(200).json(successResponse(result, "Admin login successful"));
+      successResponse(res, result, "Admin login successful");
     } catch (error) {
       logger.error("Admin login error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -52,12 +49,12 @@ export class AdminAuthController {
   /**
    * Get current admin profile
    */
-  getProfile = async (req: Request, res: Response): Promise<void> => {
+  getProfile = async (req: AdminRequest, res: Response): Promise<void> => {
     try {
       const adminId = req.user?.id;
 
       if (!adminId) {
-        res.status(401).json(errorResponse("Unauthorized", 401));
+        errorResponse(res, "Unauthorized", 401);
         return;
       }
 
@@ -65,18 +62,14 @@ export class AdminAuthController {
         adminId
       );
 
-      res
-        .status(200)
-        .json(successResponse(profile, "Admin profile retrieved successfully"));
+      successResponse(res, profile, "Admin profile retrieved successfully");
     } catch (error) {
       logger.error("Get admin profile error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -84,22 +77,22 @@ export class AdminAuthController {
   /**
    * Change admin password
    */
-  changePassword = async (req: Request, res: Response): Promise<void> => {
+  changePassword = async (req: AdminRequest, res: Response): Promise<void> => {
     try {
       const adminId = req.user?.id;
       const { currentPassword, newPassword } = req.body;
 
       if (!adminId) {
-        res.status(401).json(errorResponse("Unauthorized", 401));
+        errorResponse(res, "Unauthorized", 401);
         return;
       }
 
       if (!currentPassword || !newPassword) {
-        res
-          .status(400)
-          .json(
-            errorResponse("Current password and new password are required", 400)
-          );
+        errorResponse(
+          res,
+          "Current password and new password are required",
+          400
+        );
         return;
       }
 
@@ -109,18 +102,18 @@ export class AdminAuthController {
         newPassword
       );
 
-      res
-        .status(200)
-        .json(successResponse(null, "Password changed successfully"));
+      successResponse(
+        res,
+        null,
+        "Password changed successfully. You will need to log in again with your new password."
+      );
     } catch (error) {
       logger.error("Change admin password error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -133,24 +126,20 @@ export class AdminAuthController {
       const { refreshToken } = req.body;
 
       if (!refreshToken) {
-        res.status(400).json(errorResponse("Refresh token is required", 400));
+        errorResponse(res, "Refresh token is required", 400);
         return;
       }
 
       const tokens = await this.adminAuthService.refreshToken(refreshToken);
 
-      res
-        .status(200)
-        .json(successResponse(tokens, "Token refreshed successfully"));
+      successResponse(res, tokens, "Token refreshed successfully");
     } catch (error) {
       logger.error("Refresh token error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -158,29 +147,25 @@ export class AdminAuthController {
   /**
    * Logout admin
    */
-  logout = async (req: Request, res: Response): Promise<void> => {
+  logout = async (req: AdminRequest, res: Response): Promise<void> => {
     try {
       const adminId = req.user?.id;
 
       if (!adminId) {
-        res.status(401).json(errorResponse("Unauthorized", 401));
+        errorResponse(res, "Unauthorized", 401);
         return;
       }
 
       await this.adminAuthService.logout(adminId);
 
-      res
-        .status(200)
-        .json(successResponse(null, "Admin logged out successfully"));
+      successResponse(res, null, "Admin logged out successfully");
     } catch (error) {
       logger.error("Admin logout error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };

@@ -24,23 +24,19 @@ export class AdminAnalyticsController {
         monthsNumber
       );
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            growthData,
-            "Company growth data retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        growthData,
+        "Company growth data retrieved successfully",
+        200
+      );
     } catch (error) {
       logger.error("Get company growth error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -58,20 +54,19 @@ export class AdminAnalyticsController {
         monthsNumber
       );
 
-      res
-        .status(200)
-        .json(
-          successResponse(revenueData, "Revenue data retrieved successfully")
-        );
+      successResponse(
+        res,
+        revenueData,
+        "Revenue data retrieved successfully",
+        200
+      );
     } catch (error) {
       logger.error("Get revenue error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -89,23 +84,19 @@ export class AdminAnalyticsController {
         daysNumber
       );
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            activityData,
-            "User activity data retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        activityData,
+        "User activity data retrieved successfully",
+        200
+      );
     } catch (error) {
       logger.error("Get user activity error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -122,23 +113,19 @@ export class AdminAnalyticsController {
       const performanceData =
         await this.adminAnalyticsService.getEmailPerformanceData(daysNumber);
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            performanceData,
-            "Email performance data retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        performanceData,
+        "Email performance data retrieved successfully",
+        200
+      );
     } catch (error) {
       logger.error("Get email performance error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -155,23 +142,19 @@ export class AdminAnalyticsController {
       const performanceData =
         await this.adminAnalyticsService.getRFQPerformanceData(daysNumber);
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            performanceData,
-            "RFQ performance data retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        performanceData,
+        "RFQ performance data retrieved successfully",
+        200
+      );
     } catch (error) {
       logger.error("Get RFQ performance error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -188,23 +171,19 @@ export class AdminAnalyticsController {
       const performanceData =
         await this.adminAnalyticsService.getQuotePerformanceData(daysNumber);
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            performanceData,
-            "Quote performance data retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        performanceData,
+        "Quote performance data retrieved successfully",
+        200
+      );
     } catch (error) {
       logger.error("Get quote performance error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -221,23 +200,19 @@ export class AdminAnalyticsController {
       const topCompanies =
         await this.adminAnalyticsService.getTopPerformingCompanies(limitNumber);
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            topCompanies,
-            "Top performing companies retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        topCompanies,
+        "Top performing companies retrieved successfully",
+        200
+      );
     } catch (error) {
       logger.error("Get top companies error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -251,23 +226,19 @@ export class AdminAnalyticsController {
       const healthMetrics =
         await this.adminAnalyticsService.getSystemHealthMetrics();
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            healthMetrics,
-            "System health metrics retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        healthMetrics,
+        "System health metrics retrieved successfully",
+        200
+      );
     } catch (error) {
       logger.error("Get system health error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };

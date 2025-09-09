@@ -16,24 +16,24 @@ router.get("/dashboard/stats", adminCompanyController.getDashboardStats);
 
 // Company CRUD operations
 router.post(
-  "/companies",
+  "/",
   requireAdminOrSuperAdmin,
   adminCompanyController.createCompany
 );
-router.get("/companies", adminCompanyController.getCompanies);
-router.get("/companies/:companyId", adminCompanyController.getCompanyById);
+router.get("/", adminCompanyController.getCompanies);
+router.get("/:companyId", adminCompanyController.getCompanyById);
 router.put(
-  "/companies/:companyId",
+  "/:companyId",
   requireAdminOrSuperAdmin,
   adminCompanyController.updateCompany
 );
 router.delete(
-  "/companies/:companyId",
+  "/:companyId",
   requireAdminOrSuperAdmin,
   adminCompanyController.deleteCompany
 );
 router.post(
-  "/companies/:companyId/restore",
+  "/:companyId/restore",
   requireAdminOrSuperAdmin,
   adminCompanyController.restoreCompany
 );

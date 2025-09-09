@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-import { JWTUtils } from "../../middleware/auth";
+import { JWTUtils } from "./auth";
 import { AppError } from "../../utils/errors";
 import logger from "../../utils/logger";
+import { prisma } from "../../app";
 
 export interface AdminRequest extends Request {
   user?: {
@@ -47,10 +48,25 @@ export const authenticateAdmin = async (
         return;
       }
 
+      // Get admin details from database
+      const admin = await prisma.admin.findUnique({
+        where: { id: decoded.userId },
+        select: { id: true, email: true, role: true, isActive: true },
+      });
+
+      if (!admin || !admin.isActive) {
+        res.status(401).json({
+          success: false,
+          error: "Admin not found or inactive",
+          code: "UNAUTHORIZED",
+        });
+        return;
+      }
+
       req.user = {
-        id: decoded.userId,
-        email: decoded.email,
-        role: decoded.role,
+        id: admin.id,
+        email: admin.email,
+        role: admin.role,
         userType: "ADMIN",
       };
 

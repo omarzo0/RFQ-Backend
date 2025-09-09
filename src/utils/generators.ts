@@ -1,3 +1,5 @@
+import { prisma } from "../app";
+
 export const generateRFQNumber = async (companyId: string): Promise<string> => {
   const today = new Date();
   const year = today.getFullYear();
@@ -7,7 +9,7 @@ export const generateRFQNumber = async (companyId: string): Promise<string> => {
   const startOfMonth = new Date(year, today.getMonth(), 1);
   const endOfMonth = new Date(year, today.getMonth() + 1, 0);
 
-  const count = await prisma.rfq.count({
+  const count = await prisma.rFQ.count({
     where: {
       companyId,
       createdAt: {

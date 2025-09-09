@@ -82,11 +82,11 @@ export class AdminTicketService {
         data: {
           title: data.title,
           description: data.description,
-          priority: data.priority,
+          priority: data.priority as any,
           category: data.category,
           companyId: data.companyId,
           assignedTo: data.assignedTo,
-          createdBy: createdById,
+          userId: createdById,
           status: "OPEN",
         },
         include: {
@@ -98,14 +98,6 @@ export class AdminTicketService {
             },
           },
           assignedAdmin: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-          creator: {
             select: {
               id: true,
               firstName: true,
@@ -178,14 +170,6 @@ export class AdminTicketService {
                 email: true,
               },
             },
-            creator: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-              },
-            },
           },
         }),
         prisma.supportTicket.count({ where }),
@@ -220,14 +204,6 @@ export class AdminTicketService {
             },
           },
           assignedAdmin: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-          creator: {
             select: {
               id: true,
               firstName: true,
@@ -284,14 +260,6 @@ export class AdminTicketService {
             },
           },
           assignedAdmin: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-          creator: {
             select: {
               id: true,
               firstName: true,
@@ -357,14 +325,6 @@ export class AdminTicketService {
               email: true,
             },
           },
-          creator: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
         },
       });
 
@@ -398,7 +358,7 @@ export class AdminTicketService {
         data: {
           status: "CLOSED",
           resolvedAt: new Date(),
-          resolution: resolution || "Ticket closed",
+          // resolution field doesn't exist in schema
         },
         include: {
           company: {
@@ -409,14 +369,6 @@ export class AdminTicketService {
             },
           },
           assignedAdmin: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-          creator: {
             select: {
               id: true,
               firstName: true,

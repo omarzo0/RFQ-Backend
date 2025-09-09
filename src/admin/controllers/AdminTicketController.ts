@@ -22,20 +22,17 @@ export class AdminTicketController {
       const createdById = (req as any).user?.id;
 
       if (!createdById) {
-        res.status(401).json(errorResponse("Authentication required", 401));
+        errorResponse(res, "Authentication required", 401);
         return;
       }
 
       // Validate required fields
       if (!title || !description || !priority || !category) {
-        res
-          .status(400)
-          .json(
-            errorResponse(
-              "Title, description, priority, and category are required",
-              400
-            )
-          );
+        errorResponse(
+          res,
+          "Title, description, priority, and category are required",
+          400
+        );
         return;
       }
 
@@ -64,9 +61,9 @@ export class AdminTicketController {
       if (error instanceof AppError) {
         res
           .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+          .json(errorResponse(res, error.message, error.statusCode));
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -112,9 +109,9 @@ export class AdminTicketController {
       if (error instanceof AppError) {
         res
           .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+          .json(errorResponse(res, error.message, error.statusCode));
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -128,7 +125,7 @@ export class AdminTicketController {
       const { id } = req.params;
 
       if (!id) {
-        res.status(400).json(errorResponse("Ticket ID is required", 400));
+        errorResponse(res, "Ticket ID is required", 400);
         return;
       }
 
@@ -143,9 +140,9 @@ export class AdminTicketController {
       if (error instanceof AppError) {
         res
           .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+          .json(errorResponse(res, error.message, error.statusCode));
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -160,7 +157,7 @@ export class AdminTicketController {
       const updateData = req.body;
 
       if (!id) {
-        res.status(400).json(errorResponse("Ticket ID is required", 400));
+        errorResponse(res, "Ticket ID is required", 400);
         return;
       }
 
@@ -180,9 +177,9 @@ export class AdminTicketController {
       if (error instanceof AppError) {
         res
           .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+          .json(errorResponse(res, error.message, error.statusCode));
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -197,12 +194,12 @@ export class AdminTicketController {
       const { adminId } = req.body;
 
       if (!id) {
-        res.status(400).json(errorResponse("Ticket ID is required", 400));
+        errorResponse(res, "Ticket ID is required", 400);
         return;
       }
 
       if (!adminId) {
-        res.status(400).json(errorResponse("Admin ID is required", 400));
+        errorResponse(res, "Admin ID is required", 400);
         return;
       }
 
@@ -220,9 +217,9 @@ export class AdminTicketController {
       if (error instanceof AppError) {
         res
           .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+          .json(errorResponse(res, error.message, error.statusCode));
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -237,7 +234,7 @@ export class AdminTicketController {
       const { resolution } = req.body;
 
       if (!id) {
-        res.status(400).json(errorResponse("Ticket ID is required", 400));
+        errorResponse(res, "Ticket ID is required", 400);
         return;
       }
 
@@ -255,9 +252,9 @@ export class AdminTicketController {
       if (error instanceof AppError) {
         res
           .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+          .json(errorResponse(res, error.message, error.statusCode));
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -284,9 +281,9 @@ export class AdminTicketController {
       if (error instanceof AppError) {
         res
           .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+          .json(errorResponse(res, error.message, error.statusCode));
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -308,7 +305,7 @@ export class AdminTicketController {
       } = req.query;
 
       if (!adminId) {
-        res.status(401).json(errorResponse("Authentication required", 401));
+        errorResponse(res, "Authentication required", 401);
         return;
       }
 
@@ -337,9 +334,9 @@ export class AdminTicketController {
       if (error instanceof AppError) {
         res
           .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+          .json(errorResponse(res, error.message, error.statusCode));
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -367,9 +364,9 @@ export class AdminTicketController {
       if (error instanceof AppError) {
         res
           .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+          .json(errorResponse(res, error.message, error.statusCode));
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };

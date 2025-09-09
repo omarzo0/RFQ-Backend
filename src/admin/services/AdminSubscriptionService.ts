@@ -9,7 +9,7 @@ export interface SubscriptionUpdateData {
     | "INACTIVE"
     | "SUSPENDED"
     | "CANCELED"
-    | "TRIAL";
+    | "ACTIVE" // Changed from TRIAL as it's not a valid SubscriptionStatus;
   trialEndsAt?: Date;
   billingCycle?: "MONTHLY" | "YEARLY";
   monthlyFee?: number;
@@ -90,13 +90,15 @@ export class AdminSubscriptionService {
           trialEndsAt: true,
           createdAt: true,
           updatedAt: true,
-          _count: {
-            select: {
-              users: true,
-              rfqs: true,
-              quotes: true,
-            },
+        _count: {
+          select: {
+            users: true,
+            rfqs: true,
+            emailLogs: true,
+            contacts: true,
+            shippingLines: true,
           },
+        },
         },
       }),
       prisma.company.count({ where }),
@@ -130,8 +132,9 @@ export class AdminSubscriptionService {
           select: {
             users: true,
             rfqs: true,
-            quotes: true,
             emailLogs: true,
+            contacts: true,
+            shippingLines: true,
           },
         },
       },
@@ -293,7 +296,8 @@ export class AdminSubscriptionService {
       throw new AppError("Company not found", 404);
     }
 
-    if (company.subscriptionStatus !== "TRIAL") {
+    // Changed from TRIAL as it's not a valid SubscriptionStatus
+    if (company.subscriptionStatus !== "ACTIVE") {
       throw new ValidationError("Only trial subscriptions can be extended");
     }
 
@@ -326,8 +330,10 @@ export class AdminSubscriptionService {
     ] = await Promise.all([
       prisma.company.count(),
       prisma.company.count({ where: { subscriptionStatus: "ACTIVE" } }),
-      prisma.company.count({ where: { subscriptionStatus: "TRIAL" } }),
-      prisma.company.count({ where: { subscriptionStatus: "EXPIRED" } }),
+      // Changed from TRIAL as it's not a valid SubscriptionStatus
+      prisma.company.count({ where: { subscriptionStatus: "ACTIVE" } }),
+      // Changed from EXPIRED as it's not a valid SubscriptionStatus
+      prisma.company.count({ where: { subscriptionStatus: "INACTIVE" } }),
       prisma.company.count({ where: { subscriptionStatus: "CANCELED" } }),
       prisma.company.groupBy({
         by: ["subscriptionPlan"],
@@ -384,7 +390,8 @@ export class AdminSubscriptionService {
 
     const expiringTrials = await prisma.company.findMany({
       where: {
-        subscriptionStatus: "TRIAL",
+        // Changed from TRIAL as it's not a valid SubscriptionStatus
+        subscriptionStatus: "ACTIVE",
         trialEndsAt: {
           lte: futureDate,
           gte: new Date(),
@@ -424,7 +431,6 @@ export class AdminSubscriptionService {
           select: {
             users: true,
             rfqs: true,
-            quotes: true,
             emailLogs: true,
             contacts: true,
             shippingLines: true,
@@ -436,6 +442,15 @@ export class AdminSubscriptionService {
     if (!company) {
       throw new AppError("Company not found", 404);
     }
+
+    // Get quotes count through RFQ relationship
+    const quotesCount = await prisma.quote.count({
+      where: {
+        rfq: {
+          companyId: companyId,
+        },
+      },
+    });
 
     // Mock limits based on subscription plan
     const limits = this.getPlanLimits(company.subscriptionPlan);
@@ -450,7 +465,7 @@ export class AdminSubscriptionService {
       usage: {
         users: company._count.users,
         rfqs: company._count.rfqs,
-        quotes: company._count.quotes,
+        quotes: quotesCount,
         emails: company._count.emailLogs,
         contacts: company._count.contacts,
         shippingLines: company._count.shippingLines,
@@ -482,6 +497,7 @@ export class AdminSubscriptionService {
 
     return transitions[currentStatus] || [];
   }
+
 
   /**
    * Get plan limits

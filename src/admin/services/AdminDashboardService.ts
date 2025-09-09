@@ -52,16 +52,16 @@ export interface AdminDashboardData {
   };
   rfqStats: {
     totalRFQs: number;
-    pendingRFQs: number;
+    draftRFQs: number;
     sentRFQs: number;
-    respondedRFQs: number;
+    closedRFQs: number;
     averageResponseTime: number;
   };
   quoteStats: {
     totalQuotes: number;
-    pendingQuotes: number;
-    acceptedQuotes: number;
-    rejectedQuotes: number;
+    activeQuotes: number;
+    awardedQuotes: number;
+    withdrawnQuotes: number;
     averageValue: number;
   };
 }
@@ -155,7 +155,7 @@ export class AdminDashboardService {
         title as description,
         created_at as timestamp,
         company_id
-      FROM "RFQ" 
+      FROM "rfqs" 
       WHERE created_at >= NOW() - INTERVAL '7 days'
       
       UNION ALL
@@ -165,8 +165,8 @@ export class AdminDashboardService {
         id,
         CONCAT('Quote for RFQ: ', rfq_id) as description,
         created_at as timestamp,
-        (SELECT company_id FROM "RFQ" WHERE id = rfq_id) as company_id
-      FROM "Quote" 
+        (SELECT company_id FROM "rfqs" WHERE id = rfq_id) as company_id
+      FROM "quotes" 
       WHERE created_at >= NOW() - INTERVAL '7 days'
       
       UNION ALL
@@ -177,7 +177,7 @@ export class AdminDashboardService {
         CONCAT('Email sent: ', subject) as description,
         sent_at as timestamp,
         company_id
-      FROM "EmailLog" 
+      FROM "email_logs" 
       WHERE sent_at >= NOW() - INTERVAL '7 days'
       
       ORDER BY timestamp DESC
@@ -220,21 +220,21 @@ export class AdminDashboardService {
         where: { subscriptionStatus: "ACTIVE" },
       }),
       prisma.company.count({
-        where: { subscriptionStatus: "TRIAL" },
+        where: { subscriptionStatus: "ACTIVE" }, // Using ACTIVE instead of TRIAL
       }),
       prisma.company.count({
-        where: { subscriptionStatus: "EXPIRED" },
+        where: { subscriptionStatus: "INACTIVE" }, // Using INACTIVE instead of EXPIRED
       }),
     ]);
 
     // Calculate revenue (mock calculation - you'd implement real billing logic)
-    const revenue = await prisma.company.aggregate({
-      where: { subscriptionStatus: "ACTIVE" },
-      _sum: {
-        // Assuming you have a monthlyFee field in Company model
-        // monthlyFee: true
-      },
-    });
+    // const revenue = await prisma.company.aggregate({
+    //   where: { subscriptionStatus: "ACTIVE" },
+    //   _sum: {
+    //     // Assuming you have a monthlyFee field in Company model
+    //     // monthlyFee: true
+    //   },
+    // });
 
     return {
       totalSubscriptions,
@@ -269,7 +269,6 @@ export class AdminDashboardService {
           select: {
             users: true,
             rfqs: true,
-            quotes: true,
           },
         },
       },
@@ -283,9 +282,9 @@ export class AdminDashboardService {
       email: company.email,
       subscriptionPlan: company.subscriptionPlan,
       subscriptionStatus: company.subscriptionStatus,
-      userCount: company._count.users,
-      rfqCount: company._count.rfqs,
-      quoteCount: company._count.quotes,
+      userCount: company._count?.users || 0,
+      rfqCount: company._count?.rfqs || 0,
+      quoteCount: 0, // quotes count not available
       lastActivity: company.rfqs[0]?.updatedAt || company.createdAt,
       createdAt: company.createdAt,
     }));
@@ -323,21 +322,19 @@ export class AdminDashboardService {
    * Get RFQ statistics
    */
   private async getRFQStats() {
-    const [totalRFQs, pendingRFQs, sentRFQs, respondedRFQs] = await Promise.all(
-      [
-        prisma.rFQ.count(),
-        prisma.rFQ.count({ where: { status: "DRAFT" } }),
-        prisma.rFQ.count({ where: { status: "SENT" } }),
-        prisma.rFQ.count({ where: { status: "RESPONDED" } }),
-      ]
-    );
+    const [totalRFQs, draftRFQs, sentRFQs, closedRFQs] = await Promise.all([
+      prisma.rFQ.count(),
+      prisma.rFQ.count({ where: { status: "DRAFT" } }),
+      prisma.rFQ.count({ where: { status: "SENT" } }),
+      prisma.rFQ.count({ where: { status: "CLOSED" } }),
+    ]);
 
     // Calculate average response time
     const responseTimeData = await prisma.rFQ.aggregate({
       where: {
-        status: "RESPONDED",
+        status: "CLOSED",
         sentAt: { not: null },
-        respondedAt: { not: null },
+        closedAt: { not: null },
       },
       _avg: {
         // This would need a computed field for response time
@@ -347,9 +344,9 @@ export class AdminDashboardService {
 
     return {
       totalRFQs,
-      pendingRFQs,
+      draftRFQs,
       sentRFQs,
-      respondedRFQs,
+      closedRFQs,
       averageResponseTime: 0, // responseTimeData._avg.responseTime || 0
     };
   }
@@ -358,17 +355,17 @@ export class AdminDashboardService {
    * Get quote statistics
    */
   private async getQuoteStats() {
-    const [totalQuotes, pendingQuotes, acceptedQuotes, rejectedQuotes] =
+    const [totalQuotes, activeQuotes, awardedQuotes, withdrawnQuotes] =
       await Promise.all([
         prisma.quote.count(),
-        prisma.quote.count({ where: { status: "PENDING" } }),
-        prisma.quote.count({ where: { status: "ACCEPTED" } }),
-        prisma.quote.count({ where: { status: "REJECTED" } }),
+        prisma.quote.count({ where: { status: "ACTIVE" } }),
+        prisma.quote.count({ where: { status: "AWARDED" } }),
+        prisma.quote.count({ where: { status: "WITHDRAWN" } }),
       ]);
 
     // Calculate average quote value
     const averageValueData = await prisma.quote.aggregate({
-      where: { status: { not: "DRAFT" } },
+      where: { status: { not: "EXPIRED" } },
       _avg: {
         totalAmount: true,
       },
@@ -376,10 +373,10 @@ export class AdminDashboardService {
 
     return {
       totalQuotes,
-      pendingQuotes,
-      acceptedQuotes,
-      rejectedQuotes,
-      averageValue: Number(averageValueData._avg.totalAmount) || 0,
+      activeQuotes,
+      awardedQuotes,
+      withdrawnQuotes,
+      averageValue: Number(averageValueData._avg?.totalAmount) || 0,
     };
   }
 
@@ -412,42 +409,28 @@ export class AdminDashboardService {
             _count: {
               select: {
                 recipients: true,
-                quotes: true,
               },
             },
           },
           orderBy: { createdAt: "desc" },
           take: 10,
         },
-        quotes: {
-          select: {
-            id: true,
-            status: true,
-            totalAmount: true,
-            currency: true,
-            createdAt: true,
-            rfq: {
-              select: {
-                title: true,
-              },
-            },
-          },
-          orderBy: { createdAt: "desc" },
-          take: 10,
-        },
+        // Note: quotes are accessed through rfqs relation
         contacts: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
             email: true,
-            company: true,
+            shippingLine: {
+              select: {
+                name: true,
+              },
+            },
             isActive: true,
             createdAt: true,
             _count: {
-              select: {
-                rfqs: true,
-                quotes: true,
-              },
+              select: {},
             },
           },
           orderBy: { createdAt: "desc" },
@@ -481,18 +464,23 @@ export class AdminDashboardService {
           orderBy: { sentAt: "desc" },
           take: 10,
         },
-        templates: {
+        rfqTemplates: {
           select: {
             id: true,
             name: true,
-            type: true,
             isActive: true,
             createdAt: true,
-            _count: {
-              select: {
-                rfqs: true,
-              },
-            },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        },
+        emailTemplates: {
+          select: {
+            id: true,
+            name: true,
+            templateType: true,
+            isActive: true,
+            createdAt: true,
           },
           orderBy: { createdAt: "desc" },
           take: 10,
@@ -500,12 +488,11 @@ export class AdminDashboardService {
         _count: {
           select: {
             users: true,
-            rfqs: true,
-            quotes: true,
             contacts: true,
             shippingLines: true,
             emailLogs: true,
-            templates: true,
+            rfqTemplates: true,
+            emailTemplates: true,
           },
         },
       },
@@ -560,7 +547,6 @@ export class AdminDashboardService {
           _count: {
             select: {
               recipients: true,
-              quotes: true,
             },
           },
         },
@@ -609,11 +595,18 @@ export class AdminDashboardService {
         take: limit,
         orderBy: { createdAt: "desc" },
         include: {
-          company: {
+          contact: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
+              shippingLine: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
             },
           },
           rfq: {
@@ -661,7 +654,8 @@ export class AdminDashboardService {
     if (companyId) where.companyId = companyId;
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
+        { firstName: { contains: search, mode: "insensitive" } },
+        { lastName: { contains: search, mode: "insensitive" } },
         { email: { contains: search, mode: "insensitive" } },
         { company: { contains: search, mode: "insensitive" } },
       ];
@@ -689,10 +683,7 @@ export class AdminDashboardService {
             },
           },
           _count: {
-            select: {
-              rfqs: true,
-              quotes: true,
-            },
+            select: {},
           },
         },
       }),

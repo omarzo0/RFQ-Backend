@@ -71,7 +71,7 @@ export class AdminAuthService {
         lastName: admin.lastName,
         role: admin.role as AdminRole,
         isActive: admin.isActive,
-        lastLoginAt: admin.lastLoginAt,
+        lastLoginAt: admin.lastLoginAt || undefined,
       },
       tokens,
     };
@@ -103,6 +103,7 @@ export class AdminAuthService {
     return {
       ...admin,
       role: admin.role as AdminRole,
+      lastLoginAt: admin.lastLoginAt || undefined,
     };
   }
 
@@ -136,7 +137,9 @@ export class AdminAuthService {
       admin.passwordHash
     );
     if (!isValidCurrentPassword) {
-      throw new AuthenticationError("Current password is incorrect");
+      throw new AuthenticationError(
+        "Current password is incorrect. If you recently changed your password, please use the new password as your current password."
+      );
     }
 
     // Hash new password
@@ -151,7 +154,9 @@ export class AdminAuthService {
     // Revoke all existing tokens to force re-login
     await JWTUtils.revokeAllTokens(adminId, "ADMIN");
 
-    logger.info(`Password changed for admin: ${adminId}`);
+    logger.info(
+      `Password changed for admin: ${adminId}. All sessions have been revoked for security.`
+    );
   }
 
   /**

@@ -1,8 +1,8 @@
-import express from 'express';
-import { body, param, query } from 'express-validator';
-import { ReplyIngestionController } from '../controllers/ReplyIngestionController';
-import { authenticateToken } from '../middleware/auth';
-import { validateRequest } from '../utils/validators';
+import express from "express";
+import { body, param, query } from "express-validator";
+import { ReplyIngestionController } from "../controllers/ReplyIngestionController";
+import { authenticateCompanyUser as authenticateToken } from "../middleware/companyAuth";
+import { validateRequest } from "../../utils/validators";
 
 const router = express.Router();
 const controller = new ReplyIngestionController();
@@ -14,15 +14,34 @@ const controller = new ReplyIngestionController();
  * @desc Get email replies for a company
  * @access Private
  */
-router.get('/replies', 
+router.get(
+  "/replies",
   authenticateToken,
   [
-    query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
-    query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
-    query('status').optional().isIn(['RECEIVED', 'PROCESSING', 'PROCESSED', 'FAILED', 'REVIEWED']).withMessage('Invalid status'),
-    query('requiresReview').optional().isBoolean().withMessage('Requires review must be a boolean'),
-    query('rfqId').optional().isUUID().withMessage('RFQ ID must be a valid UUID'),
-    query('contactId').optional().isUUID().withMessage('Contact ID must be a valid UUID')
+    query("page")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Page must be a positive integer"),
+    query("limit")
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage("Limit must be between 1 and 100"),
+    query("status")
+      .optional()
+      .isIn(["RECEIVED", "PROCESSING", "PROCESSED", "FAILED", "REVIEWED"])
+      .withMessage("Invalid status"),
+    query("requiresReview")
+      .optional()
+      .isBoolean()
+      .withMessage("Requires review must be a boolean"),
+    query("rfqId")
+      .optional()
+      .isUUID()
+      .withMessage("RFQ ID must be a valid UUID"),
+    query("contactId")
+      .optional()
+      .isUUID()
+      .withMessage("Contact ID must be a valid UUID"),
   ],
   validateRequest,
   controller.getEmailReplies
@@ -33,11 +52,10 @@ router.get('/replies',
  * @desc Get email reply by ID
  * @access Private
  */
-router.get('/replies/:replyId',
+router.get(
+  "/replies/:replyId",
   authenticateToken,
-  [
-    param('replyId').isUUID().withMessage('Reply ID must be a valid UUID')
-  ],
+  [param("replyId").isUUID().withMessage("Reply ID must be a valid UUID")],
   validateRequest,
   controller.getEmailReply
 );
@@ -47,12 +65,19 @@ router.get('/replies/:replyId',
  * @desc Update email reply review status
  * @access Private
  */
-router.put('/replies/:replyId/review',
+router.put(
+  "/replies/:replyId/review",
   authenticateToken,
   [
-    param('replyId').isUUID().withMessage('Reply ID must be a valid UUID'),
-    body('requiresReview').optional().isBoolean().withMessage('Requires review must be a boolean'),
-    body('reviewNotes').optional().isString().withMessage('Review notes must be a string')
+    param("replyId").isUUID().withMessage("Reply ID must be a valid UUID"),
+    body("requiresReview")
+      .optional()
+      .isBoolean()
+      .withMessage("Requires review must be a boolean"),
+    body("reviewNotes")
+      .optional()
+      .isString()
+      .withMessage("Review notes must be a string"),
   ],
   validateRequest,
   controller.updateReviewStatus
@@ -63,18 +88,31 @@ router.put('/replies/:replyId/review',
  * @desc Create quote from email reply
  * @access Private
  */
-router.post('/replies/:replyId/quote',
+router.post(
+  "/replies/:replyId/quote",
   authenticateToken,
   [
-    param('replyId').isUUID().withMessage('Reply ID must be a valid UUID'),
-    body('rfqId').isUUID().withMessage('RFQ ID must be a valid UUID'),
-    body('contactId').isUUID().withMessage('Contact ID must be a valid UUID'),
-    body('shippingLineId').isUUID().withMessage('Shipping line ID must be a valid UUID'),
-    body('quoteData').isObject().withMessage('Quote data must be an object'),
-    body('quoteData.oceanFreight').optional().isNumeric().withMessage('Ocean freight must be a number'),
-    body('quoteData.currency').optional().isString().withMessage('Currency must be a string'),
-    body('quoteData.totalAmount').isNumeric().withMessage('Total amount must be a number'),
-    body('quoteData.validityDate').isISO8601().withMessage('Validity date must be a valid date')
+    param("replyId").isUUID().withMessage("Reply ID must be a valid UUID"),
+    body("rfqId").isUUID().withMessage("RFQ ID must be a valid UUID"),
+    body("contactId").isUUID().withMessage("Contact ID must be a valid UUID"),
+    body("shippingLineId")
+      .isUUID()
+      .withMessage("Shipping line ID must be a valid UUID"),
+    body("quoteData").isObject().withMessage("Quote data must be an object"),
+    body("quoteData.oceanFreight")
+      .optional()
+      .isNumeric()
+      .withMessage("Ocean freight must be a number"),
+    body("quoteData.currency")
+      .optional()
+      .isString()
+      .withMessage("Currency must be a string"),
+    body("quoteData.totalAmount")
+      .isNumeric()
+      .withMessage("Total amount must be a number"),
+    body("quoteData.validityDate")
+      .isISO8601()
+      .withMessage("Validity date must be a valid date"),
   ],
   validateRequest,
   controller.createQuoteFromReply
@@ -85,11 +123,18 @@ router.post('/replies/:replyId/quote',
  * @desc Get replies requiring review
  * @access Private
  */
-router.get('/replies-requiring-review',
+router.get(
+  "/replies-requiring-review",
   authenticateToken,
   [
-    query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
-    query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
+    query("page")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Page must be a positive integer"),
+    query("limit")
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage("Limit must be between 1 and 100"),
   ],
   validateRequest,
   controller.getRepliesRequiringReview
@@ -100,21 +145,17 @@ router.get('/replies-requiring-review',
  * @desc Get email reply statistics
  * @access Private
  */
-router.get('/stats',
-  authenticateToken,
-  controller.getEmailReplyStats
-);
+router.get("/stats", authenticateToken, controller.getEmailReplyStats);
 
 /**
  * @route POST /api/v1/reply-ingestion/replies/:replyId/reprocess
  * @desc Reprocess email reply
  * @access Private
  */
-router.post('/replies/:replyId/reprocess',
+router.post(
+  "/replies/:replyId/reprocess",
   authenticateToken,
-  [
-    param('replyId').isUUID().withMessage('Reply ID must be a valid UUID')
-  ],
+  [param("replyId").isUUID().withMessage("Reply ID must be a valid UUID")],
   validateRequest,
   controller.reprocessEmailReply
 );
@@ -124,11 +165,10 @@ router.post('/replies/:replyId/reprocess',
  * @desc Delete email reply
  * @access Private
  */
-router.delete('/replies/:replyId',
+router.delete(
+  "/replies/:replyId",
   authenticateToken,
-  [
-    param('replyId').isUUID().withMessage('Reply ID must be a valid UUID')
-  ],
+  [param("replyId").isUUID().withMessage("Reply ID must be a valid UUID")],
   validateRequest,
   controller.deleteEmailReply
 );
@@ -140,21 +180,17 @@ router.delete('/replies/:replyId',
  * @desc Get IMAP configurations
  * @access Private
  */
-router.get('/imap-configs',
-  authenticateToken,
-  controller.getIMAPConfigs
-);
+router.get("/imap-configs", authenticateToken, controller.getIMAPConfigs);
 
 /**
  * @route GET /api/v1/reply-ingestion/imap-configs/:configId
  * @desc Get IMAP configuration by ID
  * @access Private
  */
-router.get('/imap-configs/:configId',
+router.get(
+  "/imap-configs/:configId",
   authenticateToken,
-  [
-    param('configId').isUUID().withMessage('Config ID must be a valid UUID')
-  ],
+  [param("configId").isUUID().withMessage("Config ID must be a valid UUID")],
   validateRequest,
   controller.getIMAPConfig
 );
@@ -164,18 +200,27 @@ router.get('/imap-configs/:configId',
  * @desc Create IMAP configuration
  * @access Private
  */
-router.post('/imap-configs',
+router.post(
+  "/imap-configs",
   authenticateToken,
   [
-    body('name').isString().notEmpty().withMessage('Name is required'),
-    body('host').isString().notEmpty().withMessage('Host is required'),
-    body('port').isInt({ min: 1, max: 65535 }).withMessage('Port must be between 1 and 65535'),
-    body('secure').isBoolean().withMessage('Secure must be a boolean'),
-    body('username').isString().notEmpty().withMessage('Username is required'),
-    body('password').isString().notEmpty().withMessage('Password is required'),
-    body('folder').optional().isString().withMessage('Folder must be a string'),
-    body('checkInterval').optional().isInt({ min: 60 }).withMessage('Check interval must be at least 60 seconds'),
-    body('maxEmailsPerCheck').optional().isInt({ min: 1, max: 1000 }).withMessage('Max emails per check must be between 1 and 1000')
+    body("name").isString().notEmpty().withMessage("Name is required"),
+    body("host").isString().notEmpty().withMessage("Host is required"),
+    body("port")
+      .isInt({ min: 1, max: 65535 })
+      .withMessage("Port must be between 1 and 65535"),
+    body("secure").isBoolean().withMessage("Secure must be a boolean"),
+    body("username").isString().notEmpty().withMessage("Username is required"),
+    body("password").isString().notEmpty().withMessage("Password is required"),
+    body("folder").optional().isString().withMessage("Folder must be a string"),
+    body("checkInterval")
+      .optional()
+      .isInt({ min: 60 })
+      .withMessage("Check interval must be at least 60 seconds"),
+    body("maxEmailsPerCheck")
+      .optional()
+      .isInt({ min: 1, max: 1000 })
+      .withMessage("Max emails per check must be between 1 and 1000"),
   ],
   validateRequest,
   controller.createIMAPConfig
@@ -186,19 +231,48 @@ router.post('/imap-configs',
  * @desc Update IMAP configuration
  * @access Private
  */
-router.put('/imap-configs/:configId',
+router.put(
+  "/imap-configs/:configId",
   authenticateToken,
   [
-    param('configId').isUUID().withMessage('Config ID must be a valid UUID'),
-    body('name').optional().isString().notEmpty().withMessage('Name cannot be empty'),
-    body('host').optional().isString().notEmpty().withMessage('Host cannot be empty'),
-    body('port').optional().isInt({ min: 1, max: 65535 }).withMessage('Port must be between 1 and 65535'),
-    body('secure').optional().isBoolean().withMessage('Secure must be a boolean'),
-    body('username').optional().isString().notEmpty().withMessage('Username cannot be empty'),
-    body('password').optional().isString().notEmpty().withMessage('Password cannot be empty'),
-    body('folder').optional().isString().withMessage('Folder must be a string'),
-    body('checkInterval').optional().isInt({ min: 60 }).withMessage('Check interval must be at least 60 seconds'),
-    body('maxEmailsPerCheck').optional().isInt({ min: 1, max: 1000 }).withMessage('Max emails per check must be between 1 and 1000')
+    param("configId").isUUID().withMessage("Config ID must be a valid UUID"),
+    body("name")
+      .optional()
+      .isString()
+      .notEmpty()
+      .withMessage("Name cannot be empty"),
+    body("host")
+      .optional()
+      .isString()
+      .notEmpty()
+      .withMessage("Host cannot be empty"),
+    body("port")
+      .optional()
+      .isInt({ min: 1, max: 65535 })
+      .withMessage("Port must be between 1 and 65535"),
+    body("secure")
+      .optional()
+      .isBoolean()
+      .withMessage("Secure must be a boolean"),
+    body("username")
+      .optional()
+      .isString()
+      .notEmpty()
+      .withMessage("Username cannot be empty"),
+    body("password")
+      .optional()
+      .isString()
+      .notEmpty()
+      .withMessage("Password cannot be empty"),
+    body("folder").optional().isString().withMessage("Folder must be a string"),
+    body("checkInterval")
+      .optional()
+      .isInt({ min: 60 })
+      .withMessage("Check interval must be at least 60 seconds"),
+    body("maxEmailsPerCheck")
+      .optional()
+      .isInt({ min: 1, max: 1000 })
+      .withMessage("Max emails per check must be between 1 and 1000"),
   ],
   validateRequest,
   controller.updateIMAPConfig
@@ -209,11 +283,10 @@ router.put('/imap-configs/:configId',
  * @desc Delete IMAP configuration
  * @access Private
  */
-router.delete('/imap-configs/:configId',
+router.delete(
+  "/imap-configs/:configId",
   authenticateToken,
-  [
-    param('configId').isUUID().withMessage('Config ID must be a valid UUID')
-  ],
+  [param("configId").isUUID().withMessage("Config ID must be a valid UUID")],
   validateRequest,
   controller.deleteIMAPConfig
 );
@@ -223,15 +296,18 @@ router.delete('/imap-configs/:configId',
  * @desc Test IMAP connection
  * @access Private
  */
-router.post('/imap-configs/test-connection',
+router.post(
+  "/imap-configs/test-connection",
   authenticateToken,
   [
-    body('host').isString().notEmpty().withMessage('Host is required'),
-    body('port').isInt({ min: 1, max: 65535 }).withMessage('Port must be between 1 and 65535'),
-    body('secure').isBoolean().withMessage('Secure must be a boolean'),
-    body('username').isString().notEmpty().withMessage('Username is required'),
-    body('password').isString().notEmpty().withMessage('Password is required'),
-    body('folder').optional().isString().withMessage('Folder must be a string')
+    body("host").isString().notEmpty().withMessage("Host is required"),
+    body("port")
+      .isInt({ min: 1, max: 65535 })
+      .withMessage("Port must be between 1 and 65535"),
+    body("secure").isBoolean().withMessage("Secure must be a boolean"),
+    body("username").isString().notEmpty().withMessage("Username is required"),
+    body("password").isString().notEmpty().withMessage("Password is required"),
+    body("folder").optional().isString().withMessage("Folder must be a string"),
   ],
   validateRequest,
   controller.testIMAPConnection
@@ -242,11 +318,10 @@ router.post('/imap-configs/test-connection',
  * @desc Process emails for IMAP configuration
  * @access Private
  */
-router.post('/imap-configs/:configId/process',
+router.post(
+  "/imap-configs/:configId/process",
   authenticateToken,
-  [
-    param('configId').isUUID().withMessage('Config ID must be a valid UUID')
-  ],
+  [param("configId").isUUID().withMessage("Config ID must be a valid UUID")],
   validateRequest,
   controller.processIMAPEmails
 );
@@ -258,23 +333,21 @@ router.post('/imap-configs/:configId/process',
  * @desc Get webhook configurations
  * @access Private
  */
-router.get('/webhook-configs',
-  authenticateToken,
-  controller.getWebhookConfigs
-);
+router.get("/webhook-configs", authenticateToken, controller.getWebhookConfigs);
 
 /**
  * @route POST /api/v1/reply-ingestion/webhook-configs
  * @desc Create webhook configuration
  * @access Private
  */
-router.post('/webhook-configs',
+router.post(
+  "/webhook-configs",
   authenticateToken,
   [
-    body('name').isString().notEmpty().withMessage('Name is required'),
-    body('provider').isString().notEmpty().withMessage('Provider is required'),
-    body('webhookUrl').isURL().withMessage('Webhook URL must be a valid URL'),
-    body('secret').optional().isString().withMessage('Secret must be a string')
+    body("name").isString().notEmpty().withMessage("Name is required"),
+    body("provider").isString().notEmpty().withMessage("Provider is required"),
+    body("webhookUrl").isURL().withMessage("Webhook URL must be a valid URL"),
+    body("secret").optional().isString().withMessage("Secret must be a string"),
   ],
   validateRequest,
   controller.createWebhookConfig
@@ -285,15 +358,30 @@ router.post('/webhook-configs',
  * @desc Update webhook configuration
  * @access Private
  */
-router.put('/webhook-configs/:webhookId',
+router.put(
+  "/webhook-configs/:webhookId",
   authenticateToken,
   [
-    param('webhookId').isUUID().withMessage('Webhook ID must be a valid UUID'),
-    body('name').optional().isString().notEmpty().withMessage('Name cannot be empty'),
-    body('provider').optional().isString().notEmpty().withMessage('Provider cannot be empty'),
-    body('webhookUrl').optional().isURL().withMessage('Webhook URL must be a valid URL'),
-    body('secret').optional().isString().withMessage('Secret must be a string'),
-    body('isActive').optional().isBoolean().withMessage('Is active must be a boolean')
+    param("webhookId").isUUID().withMessage("Webhook ID must be a valid UUID"),
+    body("name")
+      .optional()
+      .isString()
+      .notEmpty()
+      .withMessage("Name cannot be empty"),
+    body("provider")
+      .optional()
+      .isString()
+      .notEmpty()
+      .withMessage("Provider cannot be empty"),
+    body("webhookUrl")
+      .optional()
+      .isURL()
+      .withMessage("Webhook URL must be a valid URL"),
+    body("secret").optional().isString().withMessage("Secret must be a string"),
+    body("isActive")
+      .optional()
+      .isBoolean()
+      .withMessage("Is active must be a boolean"),
   ],
   validateRequest,
   controller.updateWebhookConfig
@@ -304,11 +392,10 @@ router.put('/webhook-configs/:webhookId',
  * @desc Delete webhook configuration
  * @access Private
  */
-router.delete('/webhook-configs/:webhookId',
+router.delete(
+  "/webhook-configs/:webhookId",
   authenticateToken,
-  [
-    param('webhookId').isUUID().withMessage('Webhook ID must be a valid UUID')
-  ],
+  [param("webhookId").isUUID().withMessage("Webhook ID must be a valid UUID")],
   validateRequest,
   controller.deleteWebhookConfig
 );
@@ -318,21 +405,17 @@ router.delete('/webhook-configs/:webhookId',
  * @desc Get webhook statistics
  * @access Private
  */
-router.get('/webhook-stats',
-  authenticateToken,
-  controller.getWebhookStats
-);
+router.get("/webhook-stats", authenticateToken, controller.getWebhookStats);
 
 /**
  * @route POST /api/v1/reply-ingestion/webhook-configs/:webhookId/test
  * @desc Test webhook endpoint
  * @access Private
  */
-router.post('/webhook-configs/:webhookId/test',
+router.post(
+  "/webhook-configs/:webhookId/test",
   authenticateToken,
-  [
-    param('webhookId').isUUID().withMessage('Webhook ID must be a valid UUID')
-  ],
+  [param("webhookId").isUUID().withMessage("Webhook ID must be a valid UUID")],
   validateRequest,
   controller.testWebhookEndpoint
 );
@@ -344,11 +427,10 @@ router.post('/webhook-configs/:webhookId/test',
  * @desc Get parsing results for email reply
  * @access Private
  */
-router.get('/replies/:replyId/parsing-results',
+router.get(
+  "/replies/:replyId/parsing-results",
   authenticateToken,
-  [
-    param('replyId').isUUID().withMessage('Reply ID must be a valid UUID')
-  ],
+  [param("replyId").isUUID().withMessage("Reply ID must be a valid UUID")],
   validateRequest,
   controller.getParsingResults
 );
@@ -358,12 +440,18 @@ router.get('/replies/:replyId/parsing-results',
  * @desc Validate parsing result
  * @access Private
  */
-router.put('/parsing-results/:resultId/validate',
+router.put(
+  "/parsing-results/:resultId/validate",
   authenticateToken,
   [
-    param('resultId').isUUID().withMessage('Result ID must be a valid UUID'),
-    body('validationStatus').isIn(['VALIDATED', 'REJECTED', 'FLAGGED']).withMessage('Invalid validation status'),
-    body('validationNotes').optional().isString().withMessage('Validation notes must be a string')
+    param("resultId").isUUID().withMessage("Result ID must be a valid UUID"),
+    body("validationStatus")
+      .isIn(["VALIDATED", "REJECTED", "FLAGGED"])
+      .withMessage("Invalid validation status"),
+    body("validationNotes")
+      .optional()
+      .isString()
+      .withMessage("Validation notes must be a string"),
   ],
   validateRequest,
   controller.validateParsingResult
@@ -374,10 +462,7 @@ router.put('/parsing-results/:resultId/validate',
  * @desc Get parsing statistics
  * @access Private
  */
-router.get('/parsing-stats',
-  authenticateToken,
-  controller.getParsingStats
-);
+router.get("/parsing-stats", authenticateToken, controller.getParsingStats);
 
 // Thread Matching Routes
 
@@ -386,11 +471,10 @@ router.get('/parsing-stats',
  * @desc Get thread history for RFQ
  * @access Private
  */
-router.get('/rfqs/:rfqId/thread-history',
+router.get(
+  "/rfqs/:rfqId/thread-history",
   authenticateToken,
-  [
-    param('rfqId').isUUID().withMessage('RFQ ID must be a valid UUID')
-  ],
+  [param("rfqId").isUUID().withMessage("RFQ ID must be a valid UUID")],
   validateRequest,
   controller.getThreadHistory
 );
@@ -400,11 +484,18 @@ router.get('/rfqs/:rfqId/thread-history',
  * @desc Get unmatched emails
  * @access Private
  */
-router.get('/unmatched-emails',
+router.get(
+  "/unmatched-emails",
   authenticateToken,
   [
-    query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
-    query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
+    query("page")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Page must be a positive integer"),
+    query("limit")
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage("Limit must be between 1 and 100"),
   ],
   validateRequest,
   controller.getUnmatchedEmails
@@ -415,11 +506,12 @@ router.get('/unmatched-emails',
  * @desc Manually link email to RFQ
  * @access Private
  */
-router.post('/replies/:replyId/link-rfq',
+router.post(
+  "/replies/:replyId/link-rfq",
   authenticateToken,
   [
-    param('replyId').isUUID().withMessage('Reply ID must be a valid UUID'),
-    body('rfqId').isUUID().withMessage('RFQ ID must be a valid UUID')
+    param("replyId").isUUID().withMessage("Reply ID must be a valid UUID"),
+    body("rfqId").isUUID().withMessage("RFQ ID must be a valid UUID"),
   ],
   validateRequest,
   controller.linkEmailToRFQ
@@ -432,13 +524,11 @@ router.post('/replies/:replyId/link-rfq',
  * @desc Handle incoming webhook (Public endpoint)
  * @access Public
  */
-router.post('/webhooks/:webhookId',
-  [
-    param('webhookId').isUUID().withMessage('Webhook ID must be a valid UUID')
-  ],
+router.post(
+  "/webhooks/:webhookId",
+  [param("webhookId").isUUID().withMessage("Webhook ID must be a valid UUID")],
   validateRequest,
   controller.handleWebhook
 );
 
 export default router;
-

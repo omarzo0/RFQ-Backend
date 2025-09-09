@@ -6,7 +6,6 @@ import adminAnalyticsRoutes from "./adminAnalytics";
 import adminSubscriptionRoutes from "./adminSubscription";
 import adminManagementRoutes from "./adminManagement";
 import adminTicketsRoutes from "./adminTickets";
-import adminSystemFeaturesRoutes from "./adminSystemFeatures";
 import adminComprehensiveDashboardRoutes from "./adminComprehensiveDashboard";
 
 const router = Router();
@@ -33,7 +32,6 @@ router.use("/management", adminManagementRoutes);
 router.use("/tickets", adminTicketsRoutes);
 
 // Admin system features management routes
-router.use("/system-features", adminSystemFeaturesRoutes);
 
 // Admin company management routes
 router.use("/companies", adminCompanyRoutes);

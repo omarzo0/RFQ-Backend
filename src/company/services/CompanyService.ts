@@ -1,4 +1,4 @@
-import { prisma } from "../app";
+import { prisma } from "../../app";
 
 export class CompanyService {
   /**
@@ -639,4 +639,3 @@ export class CompanyService {
     return result;
   }
 }
-

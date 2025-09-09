@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { Prisma } from "@prisma/client";
 import logger from "../utils/logger";
+import { AppError, ValidationError } from "../types";
 
 export const errorHandler = (
   error: Error,
@@ -77,5 +78,13 @@ export const errorHandler = (
     details = undefined;
   }
 
-  errorResponse(res, message, statusCode, details);
+  // Send error response
+  res.status(statusCode).json({
+    error: "Error",
+    message,
+    statusCode,
+    details,
+    timestamp: new Date().toISOString(),
+    path: req.originalUrl,
+  });
 };

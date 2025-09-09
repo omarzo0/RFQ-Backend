@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { validationResult } from "express-validator";
 import { AuthService } from "../services/AuthService";
-import { successResponse, errorResponse } from "../utils/response";
-import { ValidationError } from "../utils/errors";
+import { successResponse, errorResponse } from "../../utils/response";
+import { ValidationError } from "../../utils/errors";
 import { AuthenticatedRequest } from "../middleware/auth";
 
 const authService = new AuthService();

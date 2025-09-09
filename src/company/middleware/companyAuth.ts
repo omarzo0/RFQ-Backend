@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { JWTUtils } from "../../middleware/auth";
+import { JWTUtils } from "../../admin/middleware/auth";
 import { AppError } from "../../utils/errors";
 import logger from "../../utils/logger";
 

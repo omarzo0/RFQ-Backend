@@ -1,5 +1,5 @@
 import { prisma } from "../../app";
-import { JWTUtils } from "../../middleware/auth";
+import { JWTUtils } from "../../admin/middleware/auth";
 import { PasswordUtils } from "../../utils/password";
 import {
   AppError,

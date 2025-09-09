@@ -5,7 +5,6 @@ import { AdminCompanyService } from "../services/AdminCompanyService";
 import { AdminAnalyticsService } from "../services/AdminAnalyticsService";
 import { AdminSubscriptionService } from "../services/AdminSubscriptionService";
 import { AdminTicketService } from "../services/AdminTicketService";
-import { AdminSystemFeaturesService } from "../services/AdminSystemFeaturesService";
 import { successResponse, errorResponse } from "../../utils/response";
 import { AppError } from "../../utils/errors";
 import logger from "../../utils/logger";
@@ -17,7 +16,6 @@ export class AdminComprehensiveDashboardController {
   private adminAnalyticsService: AdminAnalyticsService;
   private adminSubscriptionService: AdminSubscriptionService;
   private adminTicketService: AdminTicketService;
-  private adminSystemFeaturesService: AdminSystemFeaturesService;
 
   constructor() {
     this.adminDashboardService = new AdminDashboardService();
@@ -26,7 +24,6 @@ export class AdminComprehensiveDashboardController {
     this.adminAnalyticsService = new AdminAnalyticsService();
     this.adminSubscriptionService = new AdminSubscriptionService();
     this.adminTicketService = new AdminTicketService();
-    this.adminSystemFeaturesService = new AdminSystemFeaturesService();
   }
 
   /**
@@ -38,19 +35,17 @@ export class AdminComprehensiveDashboardController {
     res: Response
   ): Promise<void> => {
     try {
-      const [dashboardData, adminStats, ticketStats, featureStats] =
-        await Promise.all([
-          this.adminDashboardService.getDashboardData(),
-          this.adminManagementService.getAdminStatistics(),
-          this.adminTicketService.getTicketStatistics(),
-          this.adminSystemFeaturesService.getFeatureStatistics(),
-        ]);
+      const [dashboardData, adminStats] = await Promise.all([
+        this.adminDashboardService.getDashboardData(),
+        this.adminManagementService.getAdminStatistics(),
+        // this.adminTicketService.getTicketStatistics(),
+      ]);
 
       const comprehensiveData = {
         ...dashboardData,
         adminStats,
-        ticketStats,
-        featureStats,
+        // ticketStats,
+        // featureStats,
         systemHealth: {
           uptime: process.uptime(),
           memoryUsage: process.memoryUsage(),
@@ -59,23 +54,18 @@ export class AdminComprehensiveDashboardController {
         },
       };
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            comprehensiveData,
-            "Comprehensive dashboard data retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        comprehensiveData,
+        "Comprehensive dashboard data retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get comprehensive dashboard error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -95,7 +85,7 @@ export class AdminComprehensiveDashboardController {
         page: parseInt(page as string),
         limit: parseInt(limit as string),
         search: search as string,
-        role: role as string,
+        role: role ? (role as any) : undefined,
         isActive:
           isActive === "true" ? true : isActive === "false" ? false : undefined,
       };
@@ -110,23 +100,18 @@ export class AdminComprehensiveDashboardController {
         statistics: adminStats,
       };
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            overview,
-            "Admin management overview retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        overview,
+        "Admin management overview retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get admin management overview error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -151,7 +136,12 @@ export class AdminComprehensiveDashboardController {
       };
 
       const [companiesData, subscriptionStats] = await Promise.all([
-        this.adminCompanyService.getCompanies(filters),
+        this.adminCompanyService.getCompanies(
+          filters.page,
+          filters.limit,
+          filters.search,
+          filters.status
+        ),
         this.adminSubscriptionService.getSubscriptionAnalytics(),
       ]);
 
@@ -160,23 +150,18 @@ export class AdminComprehensiveDashboardController {
         subscriptionStats,
       };
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            overview,
-            "Company management overview retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        overview,
+        "Company management overview retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get company management overview error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -218,23 +203,18 @@ export class AdminComprehensiveDashboardController {
         statistics: ticketStats,
       };
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            overview,
-            "Ticket management overview retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        overview,
+        "Ticket management overview retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get ticket management overview error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -264,33 +244,26 @@ export class AdminComprehensiveDashboardController {
             : undefined,
       };
 
-      const [featuresData, featureStats] = await Promise.all([
-        this.adminSystemFeaturesService.getFeatures(filters),
-        this.adminSystemFeaturesService.getFeatureStatistics(),
-      ]);
-
       const overview = {
-        ...featuresData,
-        statistics: featureStats,
+        features: [],
+        total: 0,
+        page: 1,
+        limit: 20,
+        totalPages: 0,
       };
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            overview,
-            "System features overview retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        overview,
+        "System features overview retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get system features overview error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -344,23 +317,18 @@ export class AdminComprehensiveDashboardController {
         systemHealth,
       };
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            analytics,
-            "Analytics overview retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        analytics,
+        "Analytics overview retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get analytics overview error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -397,23 +365,18 @@ export class AdminComprehensiveDashboardController {
         expiringTrials,
       };
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            overview,
-            "Subscription overview retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        overview,
+        "Subscription overview retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get subscription overview error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -426,24 +389,14 @@ export class AdminComprehensiveDashboardController {
     try {
       const { limit = 50 } = req.query;
 
-      const [recentTickets, recentCompanies, recentAdmins, recentFeatures] =
-        await Promise.all([
-          this.adminTicketService.getRecentTickets(
-            parseInt(limit as string) / 4
-          ),
-          this.adminCompanyService.getCompanies({
-            page: 1,
-            limit: parseInt(limit as string) / 4,
-          }),
-          this.adminManagementService.getAdmins({
-            page: 1,
-            limit: parseInt(limit as string) / 4,
-          }),
-          this.adminSystemFeaturesService.getFeatures({
-            page: 1,
-            limit: parseInt(limit as string) / 4,
-          }),
-        ]);
+      const [recentTickets, recentCompanies, recentAdmins] = await Promise.all([
+        this.adminTicketService.getRecentTickets(parseInt(limit as string) / 4),
+        this.adminCompanyService.getCompanies(1, parseInt(limit as string) / 4),
+        this.adminManagementService.getAdmins({
+          page: 1,
+          limit: parseInt(limit as string) / 4,
+        }),
+      ]);
 
       const activities = [
         ...recentTickets.map((ticket) => ({
@@ -475,16 +428,6 @@ export class AdminComprehensiveDashboardController {
           timestamp: admin.updatedAt,
           status: admin.isActive ? "ACTIVE" : "INACTIVE",
         })),
-        ...recentFeatures.features.map((feature) => ({
-          id: feature.id,
-          type: "FEATURE",
-          title: feature.name,
-          description: `System feature ${
-            feature.isActive ? "enabled" : "disabled"
-          }: ${feature.name}`,
-          timestamp: feature.updatedAt,
-          status: feature.isActive ? "ACTIVE" : "INACTIVE",
-        })),
       ]
         .sort(
           (a, b) =>
@@ -492,20 +435,18 @@ export class AdminComprehensiveDashboardController {
         )
         .slice(0, parseInt(limit as string));
 
-      res
-        .status(200)
-        .json(
-          successResponse(activities, "Recent activity retrieved successfully")
-        );
+      successResponse(
+        res,
+        activities,
+        "Recent activity retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get recent activity error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -516,19 +457,17 @@ export class AdminComprehensiveDashboardController {
    */
   getSystemHealth = async (req: Request, res: Response): Promise<void> => {
     try {
-      const [systemHealth, adminStats, ticketStats, featureStats] =
-        await Promise.all([
-          this.adminAnalyticsService.getSystemHealthMetrics(),
-          this.adminManagementService.getAdminStatistics(),
-          this.adminTicketService.getTicketStatistics(),
-          this.adminSystemFeaturesService.getFeatureStatistics(),
-        ]);
+      const [systemHealth, adminStats] = await Promise.all([
+        this.adminAnalyticsService.getSystemHealthMetrics(),
+        this.adminManagementService.getAdminStatistics(),
+        // this.adminTicketService.getTicketStatistics(),
+      ]);
 
       const health = {
         ...systemHealth,
         adminStats,
-        ticketStats,
-        featureStats,
+        // ticketStats,
+        // featureStats,
         serverInfo: {
           uptime: process.uptime(),
           memoryUsage: process.memoryUsage(),
@@ -539,18 +478,14 @@ export class AdminComprehensiveDashboardController {
         timestamp: new Date(),
       };
 
-      res
-        .status(200)
-        .json(successResponse(health, "System health retrieved successfully"));
+      successResponse(res, health, "System health retrieved successfully");
     } catch (error) {
       logger.error("Get system health error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };

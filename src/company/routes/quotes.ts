@@ -1,7 +1,7 @@
 import express from "express";
 import { QuoteController } from "../controllers/QuoteController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
-import { authorize } from "../../middleware/authorize";
+// import { authorize } from "../../middleware/authorize"; // TODO: Implement authorize middleware
 import { enforceTenantIsolation } from "../../middleware/tenantIsolation";
 
 const router = express.Router();
@@ -127,4 +127,3 @@ router.post(
 );
 
 export default router;
-

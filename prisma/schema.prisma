@@ -67,6 +67,7 @@ model Company {
   emailWebhooks       EmailWebhook[]
   aiProcessingLogs    AIProcessingLog[]
   parsingLearningData ParsingLearningData[]
+  companyFeatures     CompanyFeature[]
 
   @@map("companies")
 }
@@ -832,15 +833,37 @@ model RoutePerformanceMetric {
 }
 
 model SystemFeature {
-  id          String      @id @default(uuid())
-  name        String      @unique
-  description String?
-  featureKey  String      @unique @map("feature_key")
-  featureType FeatureType @map("feature_type")
-  isActive    Boolean     @default(true) @map("is_active")
-  createdAt   DateTime    @default(now()) @map("created_at")
+  id           String      @id @default(uuid())
+  name         String      @unique
+  description  String?
+  featureKey   String      @unique @map("feature_key")
+  featureType  FeatureType @map("feature_type")
+  category     String?
+  isActive     Boolean     @default(true) @map("is_active")
+  isPremium    Boolean     @default(false) @map("is_premium")
+  requiredRole String?     @map("required_role")
+  icon         String?
+  route        String?
+  permissions  String[]
+  createdAt    DateTime    @default(now()) @map("created_at")
+  companyFeatures CompanyFeature[]
 
   @@map("system_features")
+}
+
+model CompanyFeature {
+  id              String        @id @default(uuid())
+  companyId       String        @map("company_id")
+  systemFeatureId String        @map("system_feature_id")
+  isEnabled       Boolean       @default(false) @map("is_enabled")
+  customSettings  Json?         @map("custom_settings")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  systemFeature   SystemFeature @relation(fields: [systemFeatureId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, systemFeatureId])
+  @@map("company_features")
 }
 
 model SubscriptionPlan {
