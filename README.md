@@ -246,7 +246,7 @@ SELECT * FROM company_users;
 The implementation includes:
 
 - Password hashing with BCrypt (12 rounds)
-- JWT tokens with short expiration (15 minutes)
+- JWT tokens with 12-hour expiration
 - Refresh token rotation
 - Rate limiting (1000 requests per 15 minutes)
 - Input validation and sanitization

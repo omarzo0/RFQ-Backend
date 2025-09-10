@@ -8,12 +8,33 @@ const rfqController = new RFQController();
 // Apply authentication middleware to all routes
 router.use(authenticateCompanyUser);
 
-// RFQ Management
+// RFQ Management - List and Create
 router.get("/", (req, res, next) => rfqController.getRFQs(req, res, next));
+router.post("/", (req, res, next) => rfqController.createRFQ(req, res, next));
+
+// RFQ Analytics (must come before /:id routes)
+router.get("/analytics", (req, res, next) =>
+  rfqController.getRFQAnalytics(req, res, next)
+);
+
+// RFQ Data (must come before /:id routes)
+router.get("/trade-lanes", (req, res, next) =>
+  rfqController.getTradeLanes(req, res, next)
+);
+router.get("/tags", (req, res, next) => rfqController.getTags(req, res, next));
+
+// RFQ Templates (must come before /:id routes)
+router.get("/templates", (req, res, next) =>
+  rfqController.getRFQTemplates(req, res, next)
+);
+router.post("/templates", (req, res, next) =>
+  rfqController.createRFQTemplate(req, res, next)
+);
+
+// RFQ Management - Individual RFQ operations
 router.get("/:id", (req, res, next) =>
   rfqController.getRFQById(req, res, next)
 );
-router.post("/", (req, res, next) => rfqController.createRFQ(req, res, next));
 router.put("/:id", (req, res, next) => rfqController.updateRFQ(req, res, next));
 router.delete("/:id", (req, res, next) =>
   rfqController.deleteRFQ(req, res, next)
@@ -39,25 +60,6 @@ router.get("/:id/recipients", (req, res, next) =>
 );
 router.get("/:id/quotes", (req, res, next) =>
   rfqController.getRFQQuotes(req, res, next)
-);
-
-// RFQ Analytics
-router.get("/analytics", (req, res, next) =>
-  rfqController.getRFQAnalytics(req, res, next)
-);
-
-// RFQ Data
-router.get("/trade-lanes", (req, res, next) =>
-  rfqController.getTradeLanes(req, res, next)
-);
-router.get("/tags", (req, res, next) => rfqController.getTags(req, res, next));
-
-// RFQ Templates
-router.get("/templates", (req, res, next) =>
-  rfqController.getRFQTemplates(req, res, next)
-);
-router.post("/templates", (req, res, next) =>
-  rfqController.createRFQTemplate(req, res, next)
 );
 
 // RFQ Utilities

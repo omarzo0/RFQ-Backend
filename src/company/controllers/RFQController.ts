@@ -261,7 +261,7 @@ export class RFQController {
       const { id } = (req as any).params;
       const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
-      const recipients = await this.rfqService.getRFQRecipients(id, companyId);
+      const recipients = await this.rfqService.getrFQRecipients(id, companyId);
 
       successResponse(res, recipients, "RFQ recipients retrieved successfully");
     } catch (error) {
@@ -384,7 +384,7 @@ export class RFQController {
     try {
       const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
-      const templates = await this.rfqService.getRFQTemplates(companyId);
+      const templates = await this.rfqService.getrFQTemplates(companyId);
 
       successResponse(res, templates, "RFQ templates retrieved successfully");
     } catch (error) {
@@ -406,7 +406,7 @@ export class RFQController {
       );
       const templateData = req.body;
 
-      const template = await this.rfqService.createRFQTemplate(
+      const template = await this.rfqService.createrFQTemplate(
         companyId,
         createdBy,
         templateData

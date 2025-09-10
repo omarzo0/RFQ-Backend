@@ -605,7 +605,7 @@ export class RFQService {
         id: c.id,
         name: `${c.firstName} ${c.lastName}`,
         email: c.email,
-        shippingLine: c.shippingLine.name,
+        shippingLine: c.shippingLine?.name || "N/A",
       })),
       followUpsScheduled: followUpResult?.scheduled || 0,
     };
@@ -684,7 +684,7 @@ export class RFQService {
   /**
    * Get RFQ recipients
    */
-  async getRFQRecipients(id: string, companyId: string) {
+  async getrFQRecipients(id: string, companyId: string) {
     const recipients = await prisma.rFQRecipient.findMany({
       where: {
         rfqId: id,
@@ -762,81 +762,86 @@ export class RFQService {
   /**
    * Get RFQ analytics
    */
-  async getRFQAnalytics(companyId: string, options: any) {
-    const { period, dateFrom, dateTo } = options;
+  async getRFQAnalytics(companyId: string, options: any = {}) {
+    try {
+      const { period, dateFrom, dateTo } = options;
 
-    let dateFilter: any = {};
-    if (dateFrom || dateTo) {
-      dateFilter.createdAt = {};
-      if (dateFrom) dateFilter.createdAt.gte = new Date(dateFrom);
-      if (dateTo) dateFilter.createdAt.lte = new Date(dateTo);
-    } else if (period) {
-      const now = new Date();
-      const startDate = new Date();
-      switch (period) {
-        case "7d":
-          startDate.setDate(now.getDate() - 7);
-          break;
-        case "30d":
-          startDate.setDate(now.getDate() - 30);
-          break;
-        case "90d":
-          startDate.setDate(now.getDate() - 90);
-          break;
-        case "1y":
-          startDate.setFullYear(now.getFullYear() - 1);
-          break;
+      let dateFilter: any = {};
+      if (dateFrom || dateTo) {
+        dateFilter.createdAt = {};
+        if (dateFrom) dateFilter.createdAt.gte = new Date(dateFrom);
+        if (dateTo) dateFilter.createdAt.lte = new Date(dateTo);
+      } else if (period) {
+        const now = new Date();
+        const startDate = new Date();
+        switch (period) {
+          case "7d":
+            startDate.setDate(now.getDate() - 7);
+            break;
+          case "30d":
+            startDate.setDate(now.getDate() - 30);
+            break;
+          case "90d":
+            startDate.setDate(now.getDate() - 90);
+            break;
+          case "1y":
+            startDate.setFullYear(now.getFullYear() - 1);
+            break;
+        }
+        dateFilter.createdAt = { gte: startDate };
       }
-      dateFilter.createdAt = { gte: startDate };
+
+      const where = { companyId, ...dateFilter };
+
+      const [
+        totalRFQs,
+        draftRFQs,
+        sentRFQs,
+        closedRFQs,
+        awardedRFQs,
+        avgResponseRate,
+        avgQuotesPerRFQ,
+        topTradeLanes,
+      ] = await Promise.all([
+        prisma.rFQ.count({ where }),
+        prisma.rFQ.count({ where: { ...where, status: "DRAFT" } }),
+        prisma.rFQ.count({ where: { ...where, status: "SENT" } }),
+        prisma.rFQ.count({ where: { ...where, status: "CLOSED" } }),
+        prisma.rFQ.count({ where: { ...where, status: "AWARDED" } }),
+        prisma.rFQ.aggregate({
+          where: { ...where, responseRate: { not: null } },
+          _avg: { responseRate: true },
+        }),
+        prisma.rFQ.aggregate({
+          where: { ...where, totalQuotesReceived: { gt: 0 } },
+          _avg: { totalQuotesReceived: true },
+        }),
+        prisma.rFQ.groupBy({
+          by: ["tradeLane"],
+          where: { ...where, tradeLane: { not: null } },
+          _count: { tradeLane: true },
+          orderBy: { _count: { tradeLane: "desc" } },
+          take: 10,
+        }),
+      ]);
+
+      return {
+        totalRFQs,
+        draftRFQs,
+        sentRFQs,
+        closedRFQs,
+        awardedRFQs,
+        avgResponseRate: avgResponseRate._avg?.responseRate || 0,
+        avgQuotesPerRFQ: avgQuotesPerRFQ._avg?.totalQuotesReceived || 0,
+        topTradeLanes: topTradeLanes.map((lane: any) => ({
+          tradeLane: lane.tradeLane,
+          count: lane._count.tradeLane,
+        })),
+      };
+    } catch (error) {
+      console.error("Error in getRFQAnalytics:", error);
+      throw error;
     }
-
-    const where = { companyId, ...dateFilter };
-
-    const [
-      totalRFQs,
-      draftRFQs,
-      sentRFQs,
-      closedRFQs,
-      awardedRFQs,
-      avgResponseRate,
-      avgQuotesPerRFQ,
-      topTradeLanes,
-    ] = await Promise.all([
-      prisma.rFQ.count({ where }),
-      prisma.rFQ.count({ where: { ...where, status: "DRAFT" } }),
-      prisma.rFQ.count({ where: { ...where, status: "SENT" } }),
-      prisma.rFQ.count({ where: { ...where, status: "CLOSED" } }),
-      prisma.rFQ.count({ where: { ...where, status: "AWARDED" } }),
-      prisma.rFQ.aggregate({
-        where: { ...where, responseRate: { not: null } },
-        _avg: { responseRate: true },
-      }),
-      prisma.rFQ.aggregate({
-        where: { ...where, totalQuotesReceived: { gt: 0 } },
-        _avg: { totalQuotesReceived: true },
-      }),
-      prisma.rFQ.groupBy({
-        by: ["tradeLane"],
-        where: { ...where, tradeLane: { not: null } },
-        _count: { tradeLane: true },
-        orderBy: { _count: { tradeLane: "desc" } },
-        take: 10,
-      }),
-    ]);
-
-    return {
-      totalRFQs,
-      draftRFQs,
-      sentRFQs,
-      closedRFQs,
-      awardedRFQs,
-      avgResponseRate: avgResponseRate._avg.responseRate || 0,
-      avgQuotesPerRFQ: avgQuotesPerRFQ._avg.totalQuotesReceived || 0,
-      topTradeLanes: topTradeLanes.map((lane) => ({
-        tradeLane: lane.tradeLane,
-        count: lane._count.tradeLane,
-      })),
-    };
   }
 
   /**
@@ -850,8 +855,8 @@ export class RFQService {
     });
 
     return rfqs
-      .map((rfq) => rfq.tradeLane)
-      .filter((lane) => lane)
+      .map((rfq: any) => rfq.tradeLane)
+      .filter((lane: any) => lane)
       .sort();
   }
 
@@ -865,8 +870,8 @@ export class RFQService {
     });
 
     const tags = new Set<string>();
-    rfqs.forEach((rfq) => {
-      rfq.tags.forEach((tag) => tags.add(tag));
+    rfqs.forEach((rfq: any) => {
+      rfq.tags.forEach((tag: any) => tags.add(tag));
     });
 
     return Array.from(tags).sort();
@@ -923,7 +928,7 @@ export class RFQService {
   /**
    * Get RFQ templates
    */
-  async getRFQTemplates(companyId: string) {
+  async getrFQTemplates(companyId: string) {
     const templates = await prisma.rFQTemplate.findMany({
       where: { companyId },
       select: {
@@ -956,7 +961,7 @@ export class RFQService {
   /**
    * Create RFQ template
    */
-  async createRFQTemplate(
+  async createrFQTemplate(
     companyId: string,
     createdBy: string,
     templateData: any
@@ -966,8 +971,16 @@ export class RFQService {
         companyId,
         name: templateData.name,
         description: templateData.description,
-        subjectTemplate: templateData.subjectTemplate,
-        bodyTemplate: templateData.bodyTemplate,
+        subjectTemplate:
+          templateData.subjectTemplate ||
+          `RFQ Request - ${templateData.commodity || "Container Shipping"}`,
+        bodyTemplate:
+          templateData.bodyTemplate ||
+          `Please find our RFQ details for ${
+            templateData.commodity || "container shipping"
+          } from ${templateData.originPort || "Origin"} to ${
+            templateData.destinationPort || "Destination"
+          }.`,
         originPort: templateData.originPort,
         destinationPort: templateData.destinationPort,
         commodity: templateData.commodity,

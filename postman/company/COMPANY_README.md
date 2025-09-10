@@ -46,6 +46,12 @@ This directory contains Postman collection and environment files for testing all
 - **Refresh Token** - Refresh access token
 - **Company Logout** - Logout and revoke tokens
 
+**Token Expiration:**
+
+- Access tokens expire in **12 hours**
+- Refresh tokens expire in **7 days**
+- Use refresh token to get new access token before expiration
+
 ### **👥 User Management**
 
 - **List Users** - Get all company users

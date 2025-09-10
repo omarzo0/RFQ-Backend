@@ -59,7 +59,9 @@ export interface CompanyDashboardStats {
   }[];
 }
 
-export interface CompanyRequest {
+import { Request } from "express";
+
+export interface CompanyRequest extends Request {
   user?: {
     id: string;
     email: string;

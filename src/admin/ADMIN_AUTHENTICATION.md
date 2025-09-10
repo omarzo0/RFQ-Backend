@@ -224,7 +224,7 @@ Authorization: Bearer <access_token>
 
 ### **JWT Security**
 
-- **Access tokens** expire in 15 minutes (configurable)
+- **Access tokens** expire in 12 hours (configurable)
 - **Refresh tokens** expire in 7 days (configurable)
 - **Token revocation** on logout and password change
 - **Secure token storage** with bcrypt hashing for refresh tokens
@@ -338,7 +338,7 @@ curl -X POST http://localhost:3000/api/v1/admin/auth/logout \
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-this-in-production
-JWT_EXPIRES_IN=15m
+JWT_EXPIRES_IN=12h
 REFRESH_TOKEN_EXPIRES_IN=7d
 
 # Database
@@ -348,8 +348,8 @@ DATABASE_URL=postgresql://username:password@localhost:5432/rfq_platform
 ### **Token Configuration**
 
 ```typescript
-// Access token expires in 15 minutes
-ACCESS_TOKEN_EXPIRES_IN = "15m";
+// Access token expires in 12 hours
+ACCESS_TOKEN_EXPIRES_IN = "12h";
 
 // Refresh token expires in 7 days
 REFRESH_TOKEN_EXPIRES_IN = "7d";

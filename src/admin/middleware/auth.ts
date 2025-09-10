@@ -42,7 +42,7 @@ export class JWTUtils {
     process.env.JWT_REFRESH_SECRET ||
     "your-super-secret-refresh-key-change-this-in-production";
   private static readonly ACCESS_TOKEN_EXPIRES_IN =
-    process.env.JWT_EXPIRES_IN || "720m";
+    process.env.JWT_EXPIRES_IN || "12h";
   private static readonly REFRESH_TOKEN_EXPIRES_IN =
     process.env.REFRESH_TOKEN_EXPIRES_IN || "7d";
 
