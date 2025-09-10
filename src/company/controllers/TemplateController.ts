@@ -7,6 +7,22 @@ export class TemplateController {
   private templateService = new TemplateService();
 
   /**
+   * Helper method to safely get user and company ID
+   */
+  private getUserAndCompanyId(req: CompanyRequest) {
+    if (!req.user) {
+      throw new Error("User not authenticated");
+    }
+    if (!req.user.companyId) {
+      throw new Error("Company ID not found");
+    }
+    return {
+      userId: req.user.id,
+      companyId: req.user.companyId,
+    };
+  }
+
+  /**
    * GET /api/v1/templates
    */
   async getTemplates(
@@ -29,7 +45,7 @@ export class TemplateController {
         sortBy = "createdAt",
         sortOrder = "desc",
       } = (req as any).query;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
 
       const templates = await this.templateService.getTemplates(companyId, {
         page: Number(page),
@@ -62,7 +78,7 @@ export class TemplateController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
 
       const template = await this.templateService.getTemplateById(
         id,
@@ -84,8 +100,7 @@ export class TemplateController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const { companyId, userId: createdBy } = this.getUserAndCompanyId(req);
       const templateData = req.body;
 
       const template = await this.templateService.createTemplate(
@@ -110,7 +125,7 @@ export class TemplateController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const templateData = req.body;
 
       const template = await this.templateService.updateTemplate(
@@ -135,7 +150,7 @@ export class TemplateController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
 
       await this.templateService.deleteTemplate(id, companyId);
 
@@ -155,8 +170,7 @@ export class TemplateController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const { companyId, userId: createdBy } = this.getUserAndCompanyId(req);
       const { name, description } = req.body;
 
       const template = await this.templateService.duplicateTemplate(
@@ -182,7 +196,7 @@ export class TemplateController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const { variables } = req.body;
 
       const rfqData = await this.templateService.useTemplate(
@@ -207,8 +221,7 @@ export class TemplateController {
   ): Promise<void> {
     try {
       const { rfqId } = (req as any).params;
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const { companyId, userId: createdBy } = this.getUserAndCompanyId(req);
       const { name, description, category, tags } = req.body;
 
       const template = await this.templateService.createTemplateFromRFQ(
@@ -239,7 +252,7 @@ export class TemplateController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const { isActive } = req.body;
 
       const template = await this.templateService.updateTemplateStatus(
@@ -264,7 +277,7 @@ export class TemplateController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
 
       const template = await this.templateService.setDefaultTemplate(
         id,
@@ -286,7 +299,7 @@ export class TemplateController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
 
       const categories = await this.templateService.getTemplateCategories(
         companyId
@@ -332,7 +345,7 @@ export class TemplateController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
 
       const tags = await this.templateService.getTemplateTags(companyId);
 
@@ -351,7 +364,7 @@ export class TemplateController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
 
       const tradeLanes = await this.templateService.getTemplateTradeLanes(
         companyId
@@ -377,7 +390,7 @@ export class TemplateController {
   ): Promise<void> {
     try {
       const { period, dateFrom, dateTo } = (req as any).query;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
 
       const analytics = await this.templateService.getTemplateAnalytics(
         companyId,
@@ -447,8 +460,7 @@ export class TemplateController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const { companyId, userId: createdBy } = this.getUserAndCompanyId(req);
 
       const template = await this.templateService.importPublicTemplate(
         id,
@@ -477,7 +489,7 @@ export class TemplateController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
 
       const variables = await this.templateService.getTemplateVariables(
         id,
@@ -503,8 +515,7 @@ export class TemplateController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const { companyId, userId: createdBy } = this.getUserAndCompanyId(req);
       const { templates } = req.body;
 
       const result = await this.templateService.bulkImportTemplates(
@@ -519,4 +530,3 @@ export class TemplateController {
     }
   }
 }
-

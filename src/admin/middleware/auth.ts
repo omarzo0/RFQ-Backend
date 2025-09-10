@@ -42,9 +42,9 @@ export class JWTUtils {
     process.env.JWT_REFRESH_SECRET ||
     "your-super-secret-refresh-key-change-this-in-production";
   private static readonly ACCESS_TOKEN_EXPIRES_IN =
-    process.env.JWT_EXPIRES_IN || "12h";
+    process.env.JWT_EXPIRES_IN || "7d";
   private static readonly REFRESH_TOKEN_EXPIRES_IN =
-    process.env.REFRESH_TOKEN_EXPIRES_IN || "7d";
+    process.env.REFRESH_TOKEN_EXPIRES_IN || "30d";
 
   /**
    * Generate access token
@@ -91,7 +91,7 @@ export class JWTUtils {
 
     // Calculate expiration date
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days from now
 
     // Store refresh token in database
     await prisma.refreshToken.create({

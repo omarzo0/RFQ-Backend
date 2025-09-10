@@ -130,26 +130,64 @@ export class ContactService {
           createdAt: true,
           updatedAt: true,
           createdBy: true,
-          creator: {
-            select: { firstName: true, lastName: true },
-          },
-          shippingLine: {
-            select: { id: true, name: true },
-          },
-          _count: {
-            select: {
-              rfqRecipients: true,
-              quotes: true,
-              emailLogs: true,
-            },
-          },
+          shippingLineId: true,
         },
       }),
       prisma.contact.count({ where }),
     ]);
 
+    // Get related data separately to avoid foreign key constraint issues
+    const contactIds = contacts.map((c) => c.id);
+    const creatorIds = [...new Set(contacts.map((c) => c.createdBy))];
+    const shippingLineIds = [...new Set(contacts.map((c) => c.shippingLineId))];
+
+    const [creators, shippingLines] = await Promise.all([
+      prisma.companyUser.findMany({
+        where: { id: { in: creatorIds } },
+        select: { id: true, firstName: true, lastName: true },
+      }),
+      prisma.shippingLine.findMany({
+        where: { id: { in: shippingLineIds } },
+        select: { id: true, name: true },
+      }),
+    ]);
+
+    const creatorMap = new Map(creators.map((c) => [c.id, c]));
+    const shippingLineMap = new Map(shippingLines.map((sl) => [sl.id, sl]));
+
+    // Get counts for each contact
+    const contactCounts = await Promise.all(
+      contactIds.map(async (contactId) => {
+        const [rfqRecipients, quotes, emailLogs] = await Promise.all([
+          prisma.rFQRecipient.count({ where: { contactId } }),
+          prisma.quote.count({ where: { contactId } }),
+          prisma.emailLog.count({ where: { contactId } }),
+        ]);
+        return {
+          contactId,
+          rfqRecipients,
+          quotes,
+          emailLogs,
+        };
+      })
+    );
+
+    const countMap = new Map(contactCounts.map((c) => [c.contactId, c]));
+
+    // Combine the data
+    const contactsWithRelations = contacts.map((contact) => ({
+      ...contact,
+      creator: creatorMap.get(contact.createdBy) || null,
+      shippingLine: shippingLineMap.get(contact.shippingLineId) || null,
+      _count: countMap.get(contact.id) || {
+        rfqRecipients: 0,
+        quotes: 0,
+        emailLogs: 0,
+      },
+    }));
+
     return {
-      contacts,
+      contacts: contactsWithRelations,
       pagination: {
         page,
         limit,
@@ -221,6 +259,26 @@ export class ContactService {
    * Create new contact
    */
   async createContact(companyId: string, createdBy: string, contactData: any) {
+    // Debug: Log the shipping line ID being used
+    console.log(`🔍 Creating contact with shippingLineId: ${contactData.shippingLineId}`);
+    
+    // First, verify the shipping line exists
+    const shippingLine = await prisma.shippingLine.findFirst({
+      where: {
+        id: contactData.shippingLineId,
+        companyId: companyId,
+      },
+    });
+
+    if (!shippingLine) {
+      console.log(`❌ Shipping line not found: ${contactData.shippingLineId} for company: ${companyId}`);
+      throw new ValidationError(
+        `Shipping line with ID ${contactData.shippingLineId} not found or doesn't belong to this company`
+      );
+    }
+
+    console.log(`✅ Found shipping line: ${shippingLine.name} (${shippingLine.id})`);
+
     // Check if contact with same email already exists in the same shipping line
     const existingContact = await prisma.contact.findFirst({
       where: {

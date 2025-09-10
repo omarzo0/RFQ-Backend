@@ -8,15 +8,48 @@ const templateController = new TemplateController();
 // Apply authentication middleware to all routes
 router.use(authenticateCompanyUser);
 
-// Template Management
+// Template Management - List templates
 router.get("/", (req, res, next) =>
   templateController.getTemplates(req, res, next)
 );
-router.get("/:id", (req, res, next) =>
-  templateController.getTemplateById(req, res, next)
+
+// Template Data - These must come before parameterized routes
+router.get("/categories", (req, res, next) =>
+  templateController.getTemplateCategories(req, res, next)
 );
+router.get("/languages", (req, res, next) =>
+  templateController.getTemplateLanguages(req, res, next)
+);
+router.get("/tags", (req, res, next) =>
+  templateController.getTemplateTags(req, res, next)
+);
+router.get("/trade-lanes", (req, res, next) =>
+  templateController.getTemplateTradeLanes(req, res, next)
+);
+
+// Template Analytics
+router.get("/analytics", (req, res, next) =>
+  templateController.getTemplateAnalytics(req, res, next)
+);
+
+// Public Templates
+router.get("/public", (req, res, next) =>
+  templateController.getPublicTemplates(req, res, next)
+);
+
+// Bulk Operations
+router.post("/bulk-import", (req, res, next) =>
+  templateController.bulkImportTemplates(req, res, next)
+);
+
+// Template Management - CRUD operations
 router.post("/", (req, res, next) =>
   templateController.createTemplate(req, res, next)
+);
+
+// Parameterized routes - These must come after specific routes
+router.get("/:id", (req, res, next) =>
+  templateController.getTemplateById(req, res, next)
 );
 router.put("/:id", (req, res, next) =>
   templateController.updateTemplate(req, res, next)
@@ -44,42 +77,14 @@ router.put("/:id/default", (req, res, next) =>
   templateController.setDefaultTemplate(req, res, next)
 );
 
-// Template Data
-router.get("/categories", (req, res, next) =>
-  templateController.getTemplateCategories(req, res, next)
-);
-router.get("/languages", (req, res, next) =>
-  templateController.getTemplateLanguages(req, res, next)
-);
-router.get("/tags", (req, res, next) =>
-  templateController.getTemplateTags(req, res, next)
-);
-router.get("/trade-lanes", (req, res, next) =>
-  templateController.getTemplateTradeLanes(req, res, next)
-);
-
-// Template Analytics
-router.get("/analytics", (req, res, next) =>
-  templateController.getTemplateAnalytics(req, res, next)
-);
-
-// Public Templates
-router.get("/public", (req, res, next) =>
-  templateController.getPublicTemplates(req, res, next)
-);
-router.post("/:id/import", (req, res, next) =>
-  templateController.importPublicTemplate(req, res, next)
-);
-
 // Template Variables
 router.get("/:id/variables", (req, res, next) =>
   templateController.getTemplateVariables(req, res, next)
 );
 
-// Bulk Operations
-router.post("/bulk-import", (req, res, next) =>
-  templateController.bulkImportTemplates(req, res, next)
+// Import public template
+router.post("/:id/import", (req, res, next) =>
+  templateController.importPublicTemplate(req, res, next)
 );
 
 export default router;
-

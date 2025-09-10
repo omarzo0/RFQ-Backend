@@ -28,7 +28,10 @@ export class ContactController {
         isPrimary,
         doNotContact,
       } = (req as any).query;
-      const companyId = req.user.companyId!;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
 
       const contacts = await this.contactService.getContacts(companyId, {
         page: Number(page),
@@ -60,7 +63,10 @@ export class ContactController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
 
       const contact = await this.contactService.getContactById(id, companyId);
 
@@ -79,8 +85,14 @@ export class ContactController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
+      const createdBy = req.user?.id;
+      if (!createdBy) {
+        return next(new Error("Unauthorized"));
+      }
       const contactData = req.body;
 
       const contact = await this.contactService.createContact(
@@ -105,7 +117,10 @@ export class ContactController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
       const contactData = req.body;
 
       const contact = await this.contactService.updateContact(
@@ -130,7 +145,10 @@ export class ContactController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
 
       await this.contactService.deleteContact(id, companyId);
 
@@ -150,7 +168,10 @@ export class ContactController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
       const { isActive } = req.body;
 
       const contact = await this.contactService.updateContactStatus(
@@ -175,7 +196,10 @@ export class ContactController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
 
       const contact = await this.contactService.archiveContact(id, companyId);
 
@@ -195,7 +219,10 @@ export class ContactController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
 
       const contact = await this.contactService.restoreContact(id, companyId);
 
@@ -215,7 +242,10 @@ export class ContactController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
 
       const contact = await this.contactService.setPrimaryContact(
         id,
@@ -238,7 +268,10 @@ export class ContactController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
       const { doNotContact } = req.body;
 
       const contact = await this.contactService.updateDoNotContact(
@@ -266,7 +299,10 @@ export class ContactController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
 
       const departments = await this.contactService.getDepartments(companyId);
 
@@ -285,7 +321,10 @@ export class ContactController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
 
       const tags = await this.contactService.getTags(companyId);
 
@@ -304,7 +343,10 @@ export class ContactController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
 
       const seniorityLevels = await this.contactService.getSeniorityLevels(
         companyId
@@ -329,7 +371,10 @@ export class ContactController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
 
       const specializations = await this.contactService.getSpecializations(
         companyId
@@ -354,8 +399,14 @@ export class ContactController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
+      const createdBy = req.user?.id;
+      if (!createdBy) {
+        return next(new Error("Unauthorized"));
+      }
       const { contacts } = req.body;
 
       const result = await this.contactService.bulkImportContacts(
@@ -379,7 +430,10 @@ export class ContactController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return next(new Error("Unauthorized"));
+      }
 
       const stats = await this.contactService.getPerformanceStats(companyId);
 

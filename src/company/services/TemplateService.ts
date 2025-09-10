@@ -251,7 +251,7 @@ export class TemplateService {
         category: templateData.category,
         tradeLane: templateData.tradeLane,
         language: templateData.language || "en",
-        dynamicFields: templateData.dynamicFields,
+        dynamicFields: templateData.dynamicFields as any,
         templateVariables: templateData.templateVariables || [],
         isPublic: templateData.isPublic || false,
         tags: templateData.tags || [],
@@ -326,7 +326,7 @@ export class TemplateService {
         category: templateData.category,
         tradeLane: templateData.tradeLane,
         language: templateData.language,
-        dynamicFields: templateData.dynamicFields,
+        dynamicFields: templateData.dynamicFields as any,
         templateVariables: templateData.templateVariables,
         isPublic: templateData.isPublic,
         tags: templateData.tags,
@@ -443,7 +443,7 @@ export class TemplateService {
         category: originalTemplate.category,
         tradeLane: originalTemplate.tradeLane,
         language: originalTemplate.language,
-        dynamicFields: originalTemplate.dynamicFields,
+        dynamicFields: originalTemplate.dynamicFields as any,
         templateVariables: originalTemplate.templateVariables,
         isPublic: false, // Duplicated templates are private
         tags: originalTemplate.tags,
@@ -831,7 +831,7 @@ export class TemplateService {
         category: publicTemplate.category,
         tradeLane: publicTemplate.tradeLane,
         language: publicTemplate.language,
-        dynamicFields: publicTemplate.dynamicFields,
+        dynamicFields: publicTemplate.dynamicFields as any,
         templateVariables: publicTemplate.templateVariables,
         isPublic: false, // Imported templates are private
         tags: publicTemplate.tags,
@@ -901,7 +901,7 @@ export class TemplateService {
             category: templateData.category,
             tradeLane: templateData.tradeLane,
             language: templateData.language || "en",
-            dynamicFields: templateData.dynamicFields,
+            dynamicFields: templateData.dynamicFields as any,
             templateVariables: templateData.templateVariables || [],
             isPublic: false,
             tags: templateData.tags || [],
@@ -1028,4 +1028,3 @@ export class TemplateService {
     return variables;
   }
 }
-
