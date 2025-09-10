@@ -33,9 +33,7 @@ export class CompanyAuthController {
       const result: CompanyLoginResponse =
         await this.companyAuthService.loginCompanyUser(credentials);
 
-      res
-        .status(200)
-        .json(successResponse(result, "Company user login successful"));
+      successResponse(res, result, "Company user login successful");
     } catch (error) {
       logger.error("Company user login error:", error);
 
@@ -65,14 +63,11 @@ export class CompanyAuthController {
       const profile: CompanyProfile =
         await this.companyAuthService.getCurrentUser(userId);
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            profile,
-            "Company user profile retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        profile,
+        "Company user profile retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get company user profile error:", error);
 
@@ -121,9 +116,7 @@ export class CompanyAuthController {
         newPassword
       );
 
-      res
-        .status(200)
-        .json(successResponse(null, "Password changed successfully"));
+      successResponse(res, null, "Password changed successfully");
     } catch (error) {
       logger.error("Change company user password error:", error);
 
@@ -151,16 +144,12 @@ export class CompanyAuthController {
 
       const tokens = await this.companyAuthService.refreshToken(refreshToken);
 
-      res
-        .status(200)
-        .json(successResponse(tokens, "Token refreshed successfully"));
+      successResponse(res, tokens, "Token refreshed successfully");
     } catch (error) {
       logger.error("Refresh token error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(res, error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
         errorResponse(res, "Internal server error", 500);
       }
@@ -181,9 +170,7 @@ export class CompanyAuthController {
 
       await this.companyAuthService.logout(userId);
 
-      res
-        .status(200)
-        .json(successResponse(null, "Company user logged out successfully"));
+      successResponse(res, null, "Company user logged out successfully");
     } catch (error) {
       logger.error("Company user logout error:", error);
 

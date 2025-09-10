@@ -8,6 +8,13 @@ const userController = new UserController();
 // Apply authentication middleware to all routes
 router.use(authenticateCompanyUser);
 
+// User Roles and Permissions (must come before /:id routes)
+router.get("/roles", userController.getUserRoles.bind(userController));
+router.get(
+  "/permissions",
+  userController.getUserPermissions.bind(userController)
+);
+
 // User Management
 router.get("/", userController.getUsers.bind(userController));
 router.get("/:id", userController.getUserById.bind(userController));
@@ -23,12 +30,4 @@ router.post(
   userController.resetUserPassword.bind(userController)
 );
 
-// User Roles and Permissions
-router.get("/roles", userController.getUserRoles.bind(userController));
-router.get(
-  "/permissions",
-  userController.getUserPermissions.bind(userController)
-);
-
 export default router;
-

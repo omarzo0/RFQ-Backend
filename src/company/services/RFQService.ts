@@ -255,7 +255,7 @@ export class RFQService {
             id: true,
             totalAmount: true,
             currency: true,
-            validUntil: true,
+            validityDate: true,
             status: true,
             createdAt: true,
             contact: {
@@ -733,7 +733,7 @@ export class RFQService {
         id: true,
         totalAmount: true,
         currency: true,
-        validUntil: true,
+        validityDate: true,
         status: true,
         notes: true,
         createdAt: true,

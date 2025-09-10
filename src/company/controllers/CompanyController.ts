@@ -1,10 +1,26 @@
 import { Response, NextFunction } from "express";
 import { CompanyService } from "../services/CompanyService";
-import { successResponse } from "../utils/response";
-import { AuthenticatedRequest } from "../types/auth";
+import { successResponse, errorResponse } from "../../utils/response";
+import { AuthenticatedRequest } from "../../admin/middleware/auth";
 
 export class CompanyController {
   private companyService = new CompanyService();
+
+  /**
+   * Helper method to safely get user and company ID
+   */
+  private getUserAndCompanyId(req: AuthenticatedRequest) {
+    if (!req.user) {
+      throw new Error("User not authenticated");
+    }
+    if (!req.user.companyId) {
+      throw new Error("Company ID not found");
+    }
+    return {
+      userId: req.user.id,
+      companyId: req.user.companyId,
+    };
+  }
 
   /**
    * GET /api/v1/company/profile
@@ -15,7 +31,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const profile = await this.companyService.getCompanyProfile(companyId);
 
       successResponse(res, profile, "Company profile retrieved successfully");
@@ -33,7 +49,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const profileData = req.body;
 
       const profile = await this.companyService.updateCompanyProfile(
@@ -56,11 +72,12 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const logoFile = req.file;
 
       if (!logoFile) {
-        return res.status(400).json({ error: "No logo file provided" });
+        errorResponse(res, "No logo file provided", 400);
+        return;
       }
 
       const logoUrl = await this.companyService.uploadCompanyLogo(
@@ -83,7 +100,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const preferences = await this.companyService.getUserPreferences(
         companyId
       );
@@ -107,7 +124,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const preferences = req.body;
 
       const updatedPreferences =
@@ -132,7 +149,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const subscription = await this.companyService.getSubscription(companyId);
 
       successResponse(
@@ -154,7 +171,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const subscriptionData = req.body;
 
       const subscription = await this.companyService.updateSubscription(
@@ -177,7 +194,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const usage = await this.companyService.getUsageMetrics(companyId);
 
       successResponse(res, usage, "Usage metrics retrieved successfully");
@@ -195,7 +212,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const history = await this.companyService.getBillingHistory(companyId);
 
       successResponse(res, history, "Billing history retrieved successfully");
@@ -213,7 +230,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const paymentMethods = await this.companyService.getPaymentMethods(
         companyId
       );
@@ -237,7 +254,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const paymentMethodData = req.body;
 
       const paymentMethod = await this.companyService.addPaymentMethod(
@@ -266,7 +283,7 @@ export class CompanyController {
   ): Promise<void> {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
 
       await this.companyService.deletePaymentMethod(companyId, id);
 
@@ -286,7 +303,7 @@ export class CompanyController {
   ): Promise<void> {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
 
       await this.companyService.setDefaultPaymentMethod(companyId, id);
 
@@ -305,7 +322,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const settings = await this.companyService.getBillingSettings(companyId);
 
       successResponse(res, settings, "Billing settings retrieved successfully");
@@ -323,7 +340,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const settings = req.body;
 
       const updatedSettings = await this.companyService.updateBillingSettings(
@@ -350,7 +367,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const apiKeys = await this.companyService.getAPIKeys(companyId);
 
       successResponse(res, apiKeys, "API keys retrieved successfully");
@@ -368,8 +385,8 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
-      const userId = req.user.id;
+      const { companyId } = this.getUserAndCompanyId(req);
+      const { userId } = this.getUserAndCompanyId(req);
       const keyData = req.body;
 
       const apiKey = await this.companyService.createAPIKey(
@@ -394,7 +411,7 @@ export class CompanyController {
   ): Promise<void> {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
 
       await this.companyService.revokeAPIKey(companyId, id);
 
@@ -413,7 +430,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const webhooks = await this.companyService.getWebhooks(companyId);
 
       successResponse(res, webhooks, "Webhooks retrieved successfully");
@@ -431,8 +448,8 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
-      const userId = req.user.id;
+      const { companyId } = this.getUserAndCompanyId(req);
+      const { userId } = this.getUserAndCompanyId(req);
       const webhookData = req.body;
 
       const webhook = await this.companyService.createWebhook(
@@ -457,7 +474,7 @@ export class CompanyController {
   ): Promise<void> {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const webhookData = req.body;
 
       const webhook = await this.companyService.updateWebhook(
@@ -482,7 +499,7 @@ export class CompanyController {
   ): Promise<void> {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
 
       await this.companyService.deleteWebhook(companyId, id);
 
@@ -501,7 +518,7 @@ export class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const integrations = await this.companyService.getIntegrations(companyId);
 
       successResponse(res, integrations, "Integrations retrieved successfully");
@@ -520,7 +537,7 @@ export class CompanyController {
   ): Promise<void> {
     try {
       const { type } = req.params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
       const connectionData = req.body;
 
       const integration = await this.companyService.connectIntegration(
@@ -545,7 +562,7 @@ export class CompanyController {
   ): Promise<void> {
     try {
       const { type } = req.params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req);
 
       await this.companyService.disconnectIntegration(companyId, type);
 

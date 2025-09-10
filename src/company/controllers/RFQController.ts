@@ -1,4 +1,4 @@
-import { Response, NextFunction } from "express";
+import { Response, NextFunction, Request } from "express";
 import { RFQService } from "../services/RFQService";
 import { successResponse } from "../../utils/response";
 import { CompanyRequest } from "../types/auth";
@@ -7,10 +7,26 @@ export class RFQController {
   private rfqService = new RFQService();
 
   /**
+   * Helper method to safely get user and company ID
+   */
+  private getUserAndCompanyId(req: CompanyRequest) {
+    if (!req.user) {
+      throw new Error("User not authenticated");
+    }
+    if (!req.user.companyId) {
+      throw new Error("Company ID not found");
+    }
+    return {
+      userId: req.user.id,
+      companyId: req.user.companyId,
+    };
+  }
+
+  /**
    * GET /api/v1/rfqs
    */
   async getRFQs(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
@@ -29,7 +45,7 @@ export class RFQController {
         dateFrom,
         dateTo,
       } = (req as any).query;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
       const rfqs = await this.rfqService.getRFQs(companyId, {
         page: Number(page),
@@ -56,13 +72,13 @@ export class RFQController {
    * GET /api/v1/rfqs/:id
    */
   async getRFQById(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
       const rfq = await this.rfqService.getRFQById(id, companyId);
 
@@ -76,16 +92,21 @@ export class RFQController {
    * POST /api/v1/rfqs
    */
   async createRFQ(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const { companyId, userId: createdBy } = this.getUserAndCompanyId(
+        req as CompanyRequest
+      );
       const rfqData = req.body;
 
-      const rfq = await this.rfqService.createRFQ(companyId, createdBy, rfqData);
+      const rfq = await this.rfqService.createRFQ(
+        companyId,
+        createdBy,
+        rfqData
+      );
 
       successResponse(res, rfq, "RFQ created successfully", 201);
     } catch (error) {
@@ -97,13 +118,13 @@ export class RFQController {
    * PUT /api/v1/rfqs/:id
    */
   async updateRFQ(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
       const rfqData = req.body;
 
       const rfq = await this.rfqService.updateRFQ(id, companyId, rfqData);
@@ -118,13 +139,13 @@ export class RFQController {
    * DELETE /api/v1/rfqs/:id
    */
   async deleteRFQ(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
       await this.rfqService.deleteRFQ(id, companyId);
 
@@ -138,13 +159,13 @@ export class RFQController {
    * PUT /api/v1/rfqs/:id/status
    */
   async updateRFQStatus(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
       const { status } = req.body;
 
       const rfq = await this.rfqService.updateRFQStatus(id, companyId, status);
@@ -159,13 +180,13 @@ export class RFQController {
    * POST /api/v1/rfqs/:id/send
    */
   async sendRFQ(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
       const { contactIds, emailSubject, emailBody } = req.body;
 
       const result = await this.rfqService.sendRFQ(
@@ -186,13 +207,13 @@ export class RFQController {
    * PUT /api/v1/rfqs/:id/close
    */
   async closeRFQ(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
       const rfq = await this.rfqService.closeRFQ(id, companyId);
 
@@ -206,13 +227,13 @@ export class RFQController {
    * PUT /api/v1/rfqs/:id/award
    */
   async awardRFQ(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
       const { winningQuoteId, notes } = req.body;
 
       const rfq = await this.rfqService.awardRFQ(
@@ -232,13 +253,13 @@ export class RFQController {
    * GET /api/v1/rfqs/:id/recipients
    */
   async getRFQRecipients(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
       const recipients = await this.rfqService.getRFQRecipients(id, companyId);
 
@@ -252,13 +273,13 @@ export class RFQController {
    * GET /api/v1/rfqs/:id/quotes
    */
   async getRFQQuotes(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
       const quotes = await this.rfqService.getRFQQuotes(id, companyId);
 
@@ -272,13 +293,13 @@ export class RFQController {
    * GET /api/v1/rfqs/analytics
    */
   async getRFQAnalytics(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { period, dateFrom, dateTo } = (req as any).query;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
       const analytics = await this.rfqService.getRFQAnalytics(companyId, {
         period,
@@ -296,12 +317,12 @@ export class RFQController {
    * GET /api/v1/rfqs/trade-lanes
    */
   async getTradeLanes(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
       const tradeLanes = await this.rfqService.getTradeLanes(companyId);
 
@@ -315,12 +336,12 @@ export class RFQController {
    * GET /api/v1/rfqs/tags
    */
   async getTags(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
       const tags = await this.rfqService.getTags(companyId);
 
@@ -334,14 +355,15 @@ export class RFQController {
    * POST /api/v1/rfqs/duplicate/:id
    */
   async duplicateRFQ(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const { companyId, userId: createdBy } = this.getUserAndCompanyId(
+        req as CompanyRequest
+      );
 
       const rfq = await this.rfqService.duplicateRFQ(id, companyId, createdBy);
 
@@ -355,12 +377,12 @@ export class RFQController {
    * GET /api/v1/rfqs/templates
    */
   async getRFQTemplates(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
       const templates = await this.rfqService.getRFQTemplates(companyId);
 
@@ -374,13 +396,14 @@ export class RFQController {
    * POST /api/v1/rfqs/templates
    */
   async createRFQTemplate(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const { companyId, userId: createdBy } = this.getUserAndCompanyId(
+        req as CompanyRequest
+      );
       const templateData = req.body;
 
       const template = await this.rfqService.createRFQTemplate(

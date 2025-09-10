@@ -96,10 +96,25 @@ export class AdminSubscriptionController {
         return;
       }
 
+      // Transform the data to handle different field names and case sensitivity
+      const transformedData = {
+        ...updateData,
+        // Map 'status' to 'subscriptionStatus' and convert to uppercase
+        subscriptionStatus:
+          updateData.subscriptionStatus ||
+          (updateData.status ? updateData.status.toUpperCase() : undefined),
+        // Map 'plan' to 'subscriptionPlan' if needed
+        subscriptionPlan: updateData.subscriptionPlan || updateData.plan,
+      };
+
+      // Remove the old field names to avoid confusion
+      delete transformedData.status;
+      delete transformedData.plan;
+
       const updatedSubscription =
         await this.adminSubscriptionService.updateSubscription(
           companyId,
-          updateData
+          transformedData
         );
 
       successResponse(

@@ -24,8 +24,10 @@ export const authenticateCompanyUser = async (
 ): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
+    logger.info(`Auth header received: ${authHeader ? "Present" : "Missing"}`);
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      logger.warn("Missing or invalid authorization header format");
       res.status(401).json({
         success: false,
         error: "Access token required",
@@ -35,6 +37,7 @@ export const authenticateCompanyUser = async (
     }
 
     const token = authHeader.substring(7);
+    logger.info(`Token extracted: ${token.substring(0, 20)}...`);
 
     try {
       const decoded = JWTUtils.verifyAccessToken(token);
@@ -80,10 +83,17 @@ export const authenticateCompanyUser = async (
       next();
     } catch (tokenError) {
       logger.warn(`Invalid company user token: ${tokenError}`);
+      logger.warn(`Token that failed: ${token.substring(0, 20)}...`);
       res.status(401).json({
         success: false,
         error: "Invalid or expired token",
         code: "UNAUTHORIZED",
+        details:
+          process.env.NODE_ENV === "development"
+            ? tokenError instanceof Error
+              ? tokenError.message
+              : String(tokenError)
+            : undefined,
       });
       return;
     }

@@ -52,10 +52,6 @@ export class UserService {
           isActive: true,
           lastLoginAt: true,
           createdAt: true,
-          createdBy: true,
-          creator: {
-            select: { firstName: true, lastName: true },
-          },
         },
       }),
       prisma.companyUser.count({ where }),
@@ -88,10 +84,6 @@ export class UserService {
         lastLoginAt: true,
         createdAt: true,
         updatedAt: true,
-        createdBy: true,
-        creator: {
-          select: { firstName: true, lastName: true },
-        },
         company: {
           select: { name: true, subscriptionPlan: true },
         },
@@ -108,7 +100,7 @@ export class UserService {
   /**
    * Create new user
    */
-  async createUser(companyId: string, createdBy: string, userData: any) {
+  async createUser(companyId: string, userData: any) {
     // Validate password strength
     const passwordValidation = PasswordUtils.validate(userData.password);
     if (!passwordValidation.isValid) {
@@ -142,7 +134,6 @@ export class UserService {
         lastName: userData.lastName,
         role: userData.role,
         isActive: userData.isActive !== false, // Default to true
-        createdBy,
       },
       select: {
         id: true,
@@ -152,9 +143,6 @@ export class UserService {
         role: true,
         isActive: true,
         createdAt: true,
-        creator: {
-          select: { firstName: true, lastName: true },
-        },
       },
     });
 
@@ -302,7 +290,7 @@ export class UserService {
 
     const updatedUser = await prisma.companyUser.update({
       where: { id, companyId },
-      data: { role },
+      data: { role: role as any },
       select: {
         id: true,
         email: true,
@@ -408,4 +396,3 @@ export class UserService {
     );
   }
 }
-

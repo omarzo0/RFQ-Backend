@@ -1,4 +1,4 @@
-import { Response, NextFunction } from "express";
+import { Response, NextFunction, Request } from "express";
 import { UserService } from "../services/UserService";
 import { successResponse } from "../../utils/response";
 import { CompanyRequest } from "../types/auth";
@@ -7,16 +7,32 @@ export class UserController {
   private userService = new UserService();
 
   /**
+   * Helper method to safely get user and company ID
+   */
+  private getUserAndCompanyId(req: CompanyRequest) {
+    if (!req.user) {
+      throw new Error("User not authenticated");
+    }
+    if (!req.user.companyId) {
+      throw new Error("Company ID not found");
+    }
+    return {
+      userId: req.user.id,
+      companyId: req.user.companyId,
+    };
+  }
+
+  /**
    * GET /api/v1/users
    */
   async getUsers(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { page = 1, limit = 10, search, role, status } = (req as any).query;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
       const users = await this.userService.getUsers(companyId, {
         page: Number(page),
@@ -36,13 +52,13 @@ export class UserController {
    * GET /api/v1/users/:id
    */
   async getUserById(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
       const user = await this.userService.getUserById(id, companyId);
 
@@ -56,20 +72,15 @@ export class UserController {
    * POST /api/v1/users
    */
   async createUser(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
       const userData = req.body;
 
-      const user = await this.userService.createUser(
-        companyId,
-        createdBy,
-        userData
-      );
+      const user = await this.userService.createUser(companyId, userData);
 
       successResponse(res, user, "User created successfully", 201);
     } catch (error) {
@@ -81,13 +92,13 @@ export class UserController {
    * PUT /api/v1/users/:id
    */
   async updateUser(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
       const userData = req.body;
 
       const user = await this.userService.updateUser(id, companyId, userData);
@@ -102,13 +113,13 @@ export class UserController {
    * DELETE /api/v1/users/:id
    */
   async deleteUser(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
 
       await this.userService.deleteUser(id, companyId);
 
@@ -122,13 +133,13 @@ export class UserController {
    * PUT /api/v1/users/:id/status
    */
   async updateUserStatus(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
       const { status } = req.body;
 
       const user = await this.userService.updateUserStatus(
@@ -147,13 +158,13 @@ export class UserController {
    * PUT /api/v1/users/:id/role
    */
   async updateUserRole(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
       const { role } = req.body;
 
       const user = await this.userService.updateUserRole(id, companyId, role);
@@ -168,13 +179,13 @@ export class UserController {
    * POST /api/v1/users/:id/reset-password
    */
   async resetUserPassword(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const { companyId } = this.getUserAndCompanyId(req as CompanyRequest);
       const { newPassword } = req.body;
 
       await this.userService.resetUserPassword(id, companyId, newPassword);
@@ -189,7 +200,7 @@ export class UserController {
    * GET /api/v1/users/roles
    */
   async getUserRoles(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
@@ -206,12 +217,12 @@ export class UserController {
    * GET /api/v1/users/permissions
    */
   async getUserPermissions(
-    req: CompanyRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const userId = req.user.id;
+      const { userId } = this.getUserAndCompanyId(req as CompanyRequest);
       const permissions = await this.userService.getUserPermissions(userId);
 
       successResponse(
@@ -224,4 +235,3 @@ export class UserController {
     }
   }
 }
-
