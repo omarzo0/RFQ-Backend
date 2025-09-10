@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { CompanyAuthController } from "../controllers/CompanyAuthController";
-import { authenticateCompanyUser } from "../../middleware/companyAuth";
+import { authenticateCompanyUser } from "../middleware/companyAuth";
 
 const router = Router();
 const companyAuthController = new CompanyAuthController();

@@ -310,4 +310,201 @@ export class AdminCompanyService {
       })),
     };
   }
+
+  /**
+   * Create a company user
+   */
+  async createCompanyUser(data: {
+    email: string;
+    password: string;
+    companyId: string;
+    firstName: string;
+    lastName: string;
+    role?: string;
+  }) {
+    // Check if company exists
+    const company = await prisma.company.findUnique({
+      where: { id: data.companyId },
+    });
+
+    if (!company) {
+      throw new ValidationError("Company not found");
+    }
+
+    // Check if user email already exists within the same company
+    const existingUser = await prisma.companyUser.findUnique({
+      where: {
+        companyId_email: {
+          companyId: data.companyId,
+          email: data.email.toLowerCase(),
+        },
+      },
+    });
+
+    if (existingUser) {
+      throw new ValidationError("User email already exists in this company");
+    }
+
+    // Hash password
+    const bcrypt = require("bcryptjs");
+    const hashedPassword = await bcrypt.hash(data.password, 12);
+
+    // Create company user
+    const companyUser = await prisma.companyUser.create({
+      data: {
+        email: data.email.toLowerCase(),
+        passwordHash: hashedPassword,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: (data.role as "ADMIN" | "MANAGER" | "EMPLOYEE") || "EMPLOYEE",
+        companyId: data.companyId,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    logger.info(
+      `New company user created: ${companyUser.email} for company ${company.name}`
+    );
+
+    return companyUser;
+  }
+
+  /**
+   * Get company users with pagination
+   */
+  async getCompanyUsers(
+    companyId: string,
+    page: number = 1,
+    limit: number = 10
+  ) {
+    const skip = (page - 1) * limit;
+
+    // Check if company exists
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+    });
+
+    if (!company) {
+      throw new ValidationError("Company not found");
+    }
+
+    const [users, total] = await Promise.all([
+      prisma.companyUser.findMany({
+        where: { companyId },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.companyUser.count({
+        where: { companyId },
+      }),
+    ]);
+
+    return {
+      users,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total,
+        limit,
+      },
+    };
+  }
+
+  /**
+   * Update company user
+   */
+  async updateCompanyUser(userId: string, updateData: any) {
+    // Check if user exists
+    const existingUser = await prisma.companyUser.findUnique({
+      where: { id: userId },
+    });
+
+    if (!existingUser) {
+      throw new ValidationError("User not found");
+    }
+
+    // If password is being updated, hash it
+    if (updateData.password) {
+      const bcrypt = require("bcryptjs");
+      updateData.passwordHash = await bcrypt.hash(updateData.password, 12);
+      delete updateData.password; // Remove the plain password field
+    }
+
+    // Update user
+    const updatedUser = await prisma.companyUser.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    logger.info(`Company user updated: ${updatedUser.email}`);
+
+    return updatedUser;
+  }
+
+  /**
+   * Delete company user
+   */
+  async deleteCompanyUser(userId: string) {
+    // Check if user exists
+    const existingUser = await prisma.companyUser.findUnique({
+      where: { id: userId },
+    });
+
+    if (!existingUser) {
+      throw new ValidationError("User not found");
+    }
+
+    // Soft delete user
+    await prisma.companyUser.update({
+      where: { id: userId },
+      data: { isActive: false },
+    });
+
+    logger.info(`Company user deleted: ${existingUser.email}`);
+
+    return { message: "User deleted successfully" };
+  }
 }

@@ -2,6 +2,7 @@ import { Request } from "express";
 
 export interface JWTPayload {
   userId: string;
+  email: string;
   companyId?: string;
   userType: "admin" | "company_user";
   role: string;
@@ -20,5 +21,5 @@ export interface AuthenticatedUser {
 }
 
 export interface AuthenticatedRequest extends Request {
-  user: AuthenticatedUser;
+  user?: AuthenticatedUser;
 }

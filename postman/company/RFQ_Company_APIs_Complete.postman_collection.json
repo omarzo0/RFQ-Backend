@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "RFQ Company APIs - Complete Collection",
-    "description": "Complete collection of all RFQ Platform Company APIs with all implemented endpoints. This collection includes 300+ API endpoints covering Authentication, User Management, Email Management, Quote Management, Analytics & Reporting, Reply Ingestion & AI Parsing, Company Profile & Billing, Shipping Line Management, Contact Management, RFQ Management, and Template Management.",
+    "description": "Complete collection of all RFQ Platform Company APIs with all implemented endpoints. This collection includes 300+ API endpoints covering Authentication, User Management, Email Management, Quote Management, Analytics & Reporting, Reply Ingestion & AI Parsing, Company Profile & Billing, Shipping Line Management, Contact Management, RFQ Management, Template Management, and Support Tickets.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -140,6 +140,10 @@
     {
       "key": "integration_type",
       "value": "stripe"
+    },
+    {
+      "key": "ticket_id",
+      "value": ""
     }
   ],
   "item": [
@@ -3475,6 +3479,146 @@
               "raw": "{{base_url}}/templates/bulk-import",
               "host": ["{{base_url}}"],
               "path": ["templates", "bulk-import"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Support Tickets",
+      "item": [
+        {
+          "name": "Create Support Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Support Ticket\",\n  \"description\": \"This is a test support ticket from company\",\n  \"priority\": \"NORMAL\",\n  \"category\": \"TECHNICAL\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tickets",
+              "host": ["{{base_url}}"],
+              "path": ["tickets"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('ticket_id', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Company Tickets",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/tickets?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["tickets"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "priority",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Ticket by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/tickets/{{ticket_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tickets", "{{ticket_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Ticket",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Support Ticket\",\n  \"description\": \"This is an updated support ticket\",\n  \"priority\": \"HIGH\",\n  \"category\": \"BILLING\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tickets/{{ticket_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tickets", "{{ticket_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Ticket Statistics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/tickets/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["tickets", "statistics"]
+            }
+          }
+        },
+        {
+          "name": "Get Recent Tickets",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/tickets/recent?limit=5",
+              "host": ["{{base_url}}"],
+              "path": ["tickets", "recent"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
             }
           }
         }

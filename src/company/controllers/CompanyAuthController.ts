@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { AuthenticatedRequest } from "../../types/auth";
 import { CompanyAuthService } from "../services/CompanyAuthService";
 import { successResponse, errorResponse } from "../../utils/response";
 import { AppError } from "../../utils/errors";
@@ -25,9 +26,7 @@ export class CompanyAuthController {
 
       // Validate required fields
       if (!credentials.email || !credentials.password) {
-        res
-          .status(400)
-          .json(errorResponse("Email and password are required", 400));
+        errorResponse(res, "Email and password are required", 400);
         return;
       }
 
@@ -41,11 +40,9 @@ export class CompanyAuthController {
       logger.error("Company user login error:", error);
 
       if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+        errorResponse(res, error.message, error.statusCode);
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -53,12 +50,15 @@ export class CompanyAuthController {
   /**
    * Get current company user profile
    */
-  getProfile = async (req: Request, res: Response): Promise<void> => {
+  getProfile = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
     try {
       const userId = req.user?.id;
 
       if (!userId) {
-        res.status(401).json(errorResponse("Unauthorized", 401));
+        errorResponse(res, "Unauthorized", 401);
         return;
       }
 
@@ -79,9 +79,9 @@ export class CompanyAuthController {
       if (error instanceof AppError) {
         res
           .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+          .json(errorResponse(res, error.message, error.statusCode));
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -89,13 +89,16 @@ export class CompanyAuthController {
   /**
    * Change company user password
    */
-  changePassword = async (req: Request, res: Response): Promise<void> => {
+  changePassword = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
     try {
       const userId = req.user?.id;
       const { currentPassword, newPassword } = req.body;
 
       if (!userId) {
-        res.status(401).json(errorResponse("Unauthorized", 401));
+        errorResponse(res, "Unauthorized", 401);
         return;
       }
 
@@ -103,7 +106,11 @@ export class CompanyAuthController {
         res
           .status(400)
           .json(
-            errorResponse("Current password and new password are required", 400)
+            errorResponse(
+              res,
+              "Current password and new password are required",
+              400
+            )
           );
         return;
       }
@@ -123,9 +130,9 @@ export class CompanyAuthController {
       if (error instanceof AppError) {
         res
           .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+          .json(errorResponse(res, error.message, error.statusCode));
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -138,7 +145,7 @@ export class CompanyAuthController {
       const { refreshToken } = req.body;
 
       if (!refreshToken) {
-        res.status(400).json(errorResponse("Refresh token is required", 400));
+        errorResponse(res, "Refresh token is required", 400);
         return;
       }
 
@@ -153,9 +160,9 @@ export class CompanyAuthController {
       if (error instanceof AppError) {
         res
           .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+          .json(errorResponse(res, error.message, error.statusCode));
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };
@@ -163,12 +170,12 @@ export class CompanyAuthController {
   /**
    * Logout company user
    */
-  logout = async (req: Request, res: Response): Promise<void> => {
+  logout = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const userId = req.user?.id;
 
       if (!userId) {
-        res.status(401).json(errorResponse("Unauthorized", 401));
+        errorResponse(res, "Unauthorized", 401);
         return;
       }
 
@@ -183,9 +190,9 @@ export class CompanyAuthController {
       if (error instanceof AppError) {
         res
           .status(error.statusCode)
-          .json(errorResponse(error.message, error.statusCode));
+          .json(errorResponse(res, error.message, error.statusCode));
       } else {
-        res.status(500).json(errorResponse("Internal server error", 500));
+        errorResponse(res, "Internal server error", 500);
       }
     }
   };

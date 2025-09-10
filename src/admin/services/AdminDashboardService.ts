@@ -330,17 +330,17 @@ export class AdminDashboardService {
     ]);
 
     // Calculate average response time
-    const responseTimeData = await prisma.rFQ.aggregate({
-      where: {
-        status: "CLOSED",
-        sentAt: { not: null },
-        closedAt: { not: null },
-      },
-      _avg: {
-        // This would need a computed field for response time
-        // responseTime: true
-      },
-    });
+    // const responseTimeData = await prisma.rFQ.aggregate({
+    //   where: {
+    //     status: "CLOSED",
+    //     sentAt: { not: null },
+    //     closedAt: { not: null },
+    //   },
+    //   _avg: {
+    //     // This would need a computed field for response time
+    //     // responseTime: true
+    //   },
+    // });
 
     return {
       totalRFQs,
@@ -429,9 +429,6 @@ export class AdminDashboardService {
             },
             isActive: true,
             createdAt: true,
-            _count: {
-              select: {},
-            },
           },
           orderBy: { createdAt: "desc" },
           take: 10,
@@ -681,9 +678,6 @@ export class AdminDashboardService {
               name: true,
               code: true,
             },
-          },
-          _count: {
-            select: {},
           },
         },
       }),

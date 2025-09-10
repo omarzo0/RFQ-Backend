@@ -37,3 +37,19 @@ export const changePasswordValidation = [
     .withMessage("Current password is required"),
   validatePassword("newPassword"),
 ];
+
+export const createCompanyUserValidation = [
+  validateEmail("email"),
+  validatePassword(),
+  body("companyId")
+    .notEmpty()
+    .withMessage("Company ID is required")
+    .isUUID()
+    .withMessage("Company ID must be a valid UUID"),
+  validateStringLength("firstName", 2, 100),
+  validateStringLength("lastName", 2, 100),
+  body("role")
+    .optional()
+    .isIn(["ADMIN", "MANAGER", "EMPLOYEE"])
+    .withMessage("Role must be ADMIN, MANAGER, or EMPLOYEE"),
+];

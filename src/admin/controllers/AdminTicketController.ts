@@ -12,63 +12,6 @@ export class AdminTicketController {
   }
 
   /**
-   * Create a new support ticket
-   * POST /api/v1/admin/tickets
-   */
-  createTicket = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { title, description, priority, category, companyId, assignedTo } =
-        req.body;
-      const createdById = (req as any).user?.id;
-
-      if (!createdById) {
-        errorResponse(res, "Authentication required", 401);
-        return;
-      }
-
-      // Validate required fields
-      if (!title || !description || !priority || !category) {
-        errorResponse(
-          res,
-          "Title, description, priority, and category are required",
-          400
-        );
-        return;
-      }
-
-      const ticketData = {
-        title,
-        description,
-        priority,
-        category,
-        companyId,
-        assignedTo,
-      };
-
-      const newTicket = await this.adminTicketService.createTicket(
-        ticketData,
-        createdById
-      );
-
-      res
-        .status(201)
-        .json(
-          successResponse(newTicket, "Support ticket created successfully")
-        );
-    } catch (error) {
-      logger.error("Create ticket error:", error);
-
-      if (error instanceof AppError) {
-        res
-          .status(error.statusCode)
-          .json(errorResponse(res, error.message, error.statusCode));
-      } else {
-        errorResponse(res, "Internal server error", 500);
-      }
-    }
-  };
-
-  /**
    * Get all support tickets
    * GET /api/v1/admin/tickets
    */
@@ -98,11 +41,11 @@ export class AdminTicketController {
 
       const ticketsData = await this.adminTicketService.getTickets(filters);
 
-      res
-        .status(200)
-        .json(
-          successResponse(ticketsData, "Support tickets retrieved successfully")
-        );
+      successResponse(
+        res,
+        ticketsData,
+        "Support tickets retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get tickets error:", error);
 
@@ -131,9 +74,7 @@ export class AdminTicketController {
 
       const ticket = await this.adminTicketService.getTicketById(id);
 
-      res
-        .status(200)
-        .json(successResponse(ticket, "Support ticket retrieved successfully"));
+      successResponse(res, ticket, "Support ticket retrieved successfully");
     } catch (error) {
       logger.error("Get ticket by ID error:", error);
 
@@ -166,11 +107,11 @@ export class AdminTicketController {
         updateData
       );
 
-      res
-        .status(200)
-        .json(
-          successResponse(updatedTicket, "Support ticket updated successfully")
-        );
+      successResponse(
+        res,
+        updatedTicket,
+        "Support ticket updated successfully"
+      );
     } catch (error) {
       logger.error("Update ticket error:", error);
 
@@ -208,9 +149,7 @@ export class AdminTicketController {
         adminId
       );
 
-      res
-        .status(200)
-        .json(successResponse(assignedTicket, "Ticket assigned successfully"));
+      successResponse(res, assignedTicket, "Ticket assigned successfully");
     } catch (error) {
       logger.error("Assign ticket error:", error);
 
@@ -243,9 +182,7 @@ export class AdminTicketController {
         resolution
       );
 
-      res
-        .status(200)
-        .json(successResponse(closedTicket, "Ticket closed successfully"));
+      successResponse(res, closedTicket, "Ticket closed successfully");
     } catch (error) {
       logger.error("Close ticket error:", error);
 
@@ -267,14 +204,11 @@ export class AdminTicketController {
     try {
       const statistics = await this.adminTicketService.getTicketStatistics();
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            statistics,
-            "Ticket statistics retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        statistics,
+        "Ticket statistics retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get ticket statistics error:", error);
 
@@ -323,11 +257,7 @@ export class AdminTicketController {
         filters
       );
 
-      res
-        .status(200)
-        .json(
-          successResponse(ticketsData, "My tickets retrieved successfully")
-        );
+      successResponse(res, ticketsData, "My tickets retrieved successfully");
     } catch (error) {
       logger.error("Get my tickets error:", error);
 
@@ -353,11 +283,7 @@ export class AdminTicketController {
         parseInt(limit as string)
       );
 
-      res
-        .status(200)
-        .json(
-          successResponse(tickets, "Recent tickets retrieved successfully")
-        );
+      successResponse(res, tickets, "Recent tickets retrieved successfully");
     } catch (error) {
       logger.error("Get recent tickets error:", error);
 

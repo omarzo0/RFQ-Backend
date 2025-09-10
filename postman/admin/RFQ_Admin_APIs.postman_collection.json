@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "RFQ Admin APIs",
-    "description": "Complete collection of Admin APIs for RFQ Management System",
+    "description": "Complete collection of Admin APIs for RFQ Management System. Admins can view and manage tickets from all companies, but cannot create new tickets (only companies can create tickets).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": "1.0.0"
   },
@@ -43,11 +43,11 @@
     },
     {
       "key": "ticketId",
-      "value": "",
+      "value": "sample-ticket-id-123",
       "type": "string"
     },
     {
-      "key": "systemFeatureId",
+      "key": "companyUserId",
       "value": "",
       "type": "string"
     }
@@ -106,7 +106,7 @@
         {
           "name": "Change Admin Password",
           "request": {
-            "method": "PUT",
+            "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
@@ -139,9 +139,9 @@
               "raw": "{\n  \"refreshToken\": \"{{adminRefreshToken}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/refresh",
+              "raw": "{{baseUrl}}/auth/refresh-token",
               "host": ["{{baseUrl}}"],
-              "path": ["auth", "refresh"]
+              "path": ["auth", "refresh-token"]
             }
           }
         },
@@ -236,9 +236,51 @@
           }
         },
         {
-          "name": "Change Admin Password",
+          "name": "Deactivate Admin (Update isActive to false)",
           "request": {
             "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/management/admins/{{adminId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["management", "admins", "{{adminId}}"]
+            }
+          }
+        },
+        {
+          "name": "Activate Admin (Update isActive to true)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/management/admins/{{adminId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["management", "admins", "{{adminId}}"]
+            }
+          }
+        },
+        {
+          "name": "Change Admin Password",
+          "request": {
+            "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
@@ -250,31 +292,37 @@
               "raw": "{\n  \"newPassword\": \"UpdatedAdminPassword123!\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/management/admins/{{adminId}}/password",
+              "raw": "{{baseUrl}}/management/admins/{{adminId}}/change-password",
               "host": ["{{baseUrl}}"],
-              "path": ["management", "admins", "{{adminId}}", "password"]
+              "path": ["management", "admins", "{{adminId}}", "change-password"]
             }
           }
         },
         {
-          "name": "Deactivate Admin",
+          "name": "Restore Admin",
           "request": {
-            "method": "PUT",
+            "method": "POST",
             "url": {
-              "raw": "{{baseUrl}}/management/admins/{{adminId}}/deactivate",
+              "raw": "{{baseUrl}}/management/admins/{{adminId}}/restore",
               "host": ["{{baseUrl}}"],
-              "path": ["management", "admins", "{{adminId}}", "deactivate"]
+              "path": ["management", "admins", "{{adminId}}", "restore"]
             }
           }
         },
         {
-          "name": "Activate Admin",
+          "name": "Get Admin Activity Logs",
           "request": {
-            "method": "PUT",
+            "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/management/admins/{{adminId}}/activate",
+              "raw": "{{baseUrl}}/management/admins/{{adminId}}/activity?limit=50",
               "host": ["{{baseUrl}}"],
-              "path": ["management", "admins", "{{adminId}}", "activate"]
+              "path": ["management", "admins", "{{adminId}}", "activity"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
             }
           }
         },
@@ -294,9 +342,91 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/management/admins/statistics",
+              "raw": "{{baseUrl}}/management/statistics",
               "host": ["{{baseUrl}}"],
-              "path": ["management", "admins", "statistics"]
+              "path": ["management", "statistics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comprehensive Dashboard",
+      "item": [
+        {
+          "name": "Get Admin Management Overview",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/admin-management",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "admin-management"]
+            }
+          }
+        },
+        {
+          "name": "Get Company Management Overview",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/company-management",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "company-management"]
+            }
+          }
+        },
+        {
+          "name": "Get Ticket Management Overview",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/ticket-management",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "ticket-management"]
+            }
+          }
+        },
+        {
+          "name": "Get System Features Overview",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/system-features",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "system-features"]
+            }
+          }
+        },
+        {
+          "name": "Get Analytics Overview",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Overview",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/subscriptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "subscriptions"]
+            }
+          }
+        },
+        {
+          "name": "Get System Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/system-health",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "system-health"]
             }
           }
         }
@@ -393,24 +523,55 @@
           }
         },
         {
-          "name": "Activate Company",
+          "name": "Activate Company (Update isActive to true)",
           "request": {
             "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": true\n}"
+            },
             "url": {
-              "raw": "{{baseUrl}}/companies/{{companyId}}/activate",
+              "raw": "{{baseUrl}}/companies/{{companyId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["companies", "{{companyId}}", "activate"]
+              "path": ["companies", "{{companyId}}"]
             }
           }
         },
         {
-          "name": "Deactivate Company",
+          "name": "Deactivate Company (Update isActive to false)",
           "request": {
             "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
             "url": {
-              "raw": "{{baseUrl}}/companies/{{companyId}}/deactivate",
+              "raw": "{{baseUrl}}/companies/{{companyId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["companies", "{{companyId}}", "deactivate"]
+              "path": ["companies", "{{companyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Restore Company",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/companies/{{companyId}}/restore",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "{{companyId}}", "restore"]
             }
           }
         },
@@ -426,13 +587,142 @@
           }
         },
         {
-          "name": "Get Company Statistics",
+          "name": "Get Company Dashboard Stats",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/companies/statistics",
+              "raw": "{{baseUrl}}/companies/dashboard/stats",
               "host": ["{{baseUrl}}"],
-              "path": ["companies", "statistics"]
+              "path": ["companies", "dashboard", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Create Company User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@company.com\",\n  \"password\": \"SecurePassword123!\",\n  \"companyId\": \"{{companyId}}\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"role\": \"EMPLOYEE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/companies/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "users"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('companyUserId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Company Users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/companies/{{companyId}}/users?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "{{companyId}}", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Company User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"role\": \"MANAGER\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/companies/users/{{companyUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "users", "{{companyUserId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Company User Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"NewSecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/companies/users/{{companyUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "users", "{{companyUserId}}"]
+            }
+          }
+        },
+        {
+          "name": "Deactivate Company User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/companies/users/{{companyUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "users", "{{companyUserId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Company User",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/companies/users/{{companyUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "users", "{{companyUserId}}"]
             }
           }
         }
@@ -446,9 +736,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/dashboard/overview",
+              "raw": "{{baseUrl}}/dashboard/",
               "host": ["{{baseUrl}}"],
-              "path": ["dashboard", "overview"]
+              "path": ["dashboard", ""]
             }
           }
         },
@@ -464,24 +754,112 @@
           }
         },
         {
-          "name": "Get Recent Activity",
+          "name": "Get Company Details",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/dashboard/recent-activity",
+              "raw": "{{baseUrl}}/dashboard/companies/{{companyId}}/details",
               "host": ["{{baseUrl}}"],
-              "path": ["dashboard", "recent-activity"]
+              "path": ["dashboard", "companies", "{{companyId}}", "details"]
             }
           }
         },
         {
-          "name": "Get System Health",
+          "name": "Get All RFQs",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/dashboard/system-health",
+              "raw": "{{baseUrl}}/dashboard/rfqs",
               "host": ["{{baseUrl}}"],
-              "path": ["dashboard", "system-health"]
+              "path": ["dashboard", "rfqs"]
+            }
+          }
+        },
+        {
+          "name": "Get All Quotes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/quotes",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "quotes"]
+            }
+          }
+        },
+        {
+          "name": "Get All Contacts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/contacts",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "contacts"]
+            }
+          }
+        },
+        {
+          "name": "Get All Shipping Lines",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/shipping-lines",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "shipping-lines"]
+            }
+          }
+        },
+        {
+          "name": "Get All Email Logs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/emails",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "emails"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/analytics/subscriptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "analytics", "subscriptions"]
+            }
+          }
+        },
+        {
+          "name": "Get Email Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/analytics/emails",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "analytics", "emails"]
+            }
+          }
+        },
+        {
+          "name": "Get RFQ Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/analytics/rfqs",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "analytics", "rfqs"]
+            }
+          }
+        },
+        {
+          "name": "Get Quote Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/analytics/quotes",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "analytics", "quotes"]
             }
           }
         }
@@ -535,13 +913,35 @@
           }
         },
         {
-          "name": "Get RFQ Quote Performance Analytics",
+          "name": "Get RFQ Performance Analytics",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/analytics/rfq-quote-performance",
+              "raw": "{{baseUrl}}/analytics/rfq-performance",
               "host": ["{{baseUrl}}"],
-              "path": ["analytics", "rfq-quote-performance"]
+              "path": ["analytics", "rfq-performance"]
+            }
+          }
+        },
+        {
+          "name": "Get Quote Performance Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/analytics/quote-performance",
+              "host": ["{{baseUrl}}"],
+              "path": ["analytics", "quote-performance"]
+            }
+          }
+        },
+        {
+          "name": "Get Top Companies Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/analytics/top-companies",
+              "host": ["{{baseUrl}}"],
+              "path": ["analytics", "top-companies"]
             }
           }
         },
@@ -617,7 +1017,7 @@
         {
           "name": "Suspend Subscription",
           "request": {
-            "method": "PUT",
+            "method": "POST",
             "url": {
               "raw": "{{baseUrl}}/subscriptions/{{companyId}}/suspend",
               "host": ["{{baseUrl}}"],
@@ -628,7 +1028,7 @@
         {
           "name": "Reactivate Subscription",
           "request": {
-            "method": "PUT",
+            "method": "POST",
             "url": {
               "raw": "{{baseUrl}}/subscriptions/{{companyId}}/reactivate",
               "host": ["{{baseUrl}}"],
@@ -639,7 +1039,7 @@
         {
           "name": "Cancel Subscription",
           "request": {
-            "method": "PUT",
+            "method": "POST",
             "url": {
               "raw": "{{baseUrl}}/subscriptions/{{companyId}}/cancel",
               "host": ["{{baseUrl}}"],
@@ -650,7 +1050,7 @@
         {
           "name": "Extend Trial",
           "request": {
-            "method": "PUT",
+            "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
@@ -676,6 +1076,17 @@
               "raw": "{{baseUrl}}/subscriptions/{{companyId}}/usage",
               "host": ["{{baseUrl}}"],
               "path": ["subscriptions", "{{companyId}}", "usage"]
+            }
+          }
+        },
+        {
+          "name": "Get Expiring Trials",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/expiring-trials",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "expiring-trials"]
             }
           }
         },
@@ -717,40 +1128,6 @@
           }
         },
         {
-          "name": "Create Ticket",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Test Support Ticket\",\n  \"description\": \"This is a test support ticket\",\n  \"priority\": \"MEDIUM\",\n  \"category\": \"TECHNICAL\",\n  \"companyId\": \"{{companyId}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/tickets",
-              "host": ["{{baseUrl}}"],
-              "path": ["tickets"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('ticketId', response.data.id);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
           "name": "Get Ticket by ID",
           "request": {
             "method": "GET",
@@ -785,7 +1162,7 @@
         {
           "name": "Assign Ticket",
           "request": {
-            "method": "PUT",
+            "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
@@ -806,11 +1183,33 @@
         {
           "name": "Close Ticket",
           "request": {
-            "method": "PUT",
+            "method": "POST",
             "url": {
               "raw": "{{baseUrl}}/tickets/{{ticketId}}/close",
               "host": ["{{baseUrl}}"],
               "path": ["tickets", "{{ticketId}}", "close"]
+            }
+          }
+        },
+        {
+          "name": "Get My Assigned Tickets",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/tickets/my-tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets", "my-tickets"]
+            }
+          }
+        },
+        {
+          "name": "Get Recent Tickets",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/tickets/recent",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets", "recent"]
             }
           }
         },
@@ -822,134 +1221,6 @@
               "raw": "{{baseUrl}}/tickets/statistics",
               "host": ["{{baseUrl}}"],
               "path": ["tickets", "statistics"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Admin System Features Management",
-      "item": [
-        {
-          "name": "List All System Features",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/system-features?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["system-features"],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Create System Feature",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Advanced Analytics\",\n  \"description\": \"Advanced analytics and reporting features\",\n  \"category\": \"ANALYTICS\",\n  \"isActive\": true,\n  \"isPremium\": true,\n  \"permissions\": [\"read\", \"write\"]\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/system-features",
-              "host": ["{{baseUrl}}"],
-              "path": ["system-features"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('systemFeatureId', response.data.id);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get System Feature by ID",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/system-features/{{systemFeatureId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["system-features", "{{systemFeatureId}}"]
-            }
-          }
-        },
-        {
-          "name": "Update System Feature",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Advanced Analytics\",\n  \"description\": \"Updated advanced analytics and reporting features\",\n  \"isActive\": true\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/system-features/{{systemFeatureId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["system-features", "{{systemFeatureId}}"]
-            }
-          }
-        },
-        {
-          "name": "Toggle Feature for Company",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"companyId\": \"{{companyId}}\",\n  \"isEnabled\": true\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/system-features/{{systemFeatureId}}/toggle-company",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "system-features",
-                "{{systemFeatureId}}",
-                "toggle-company"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Delete System Feature",
-          "request": {
-            "method": "DELETE",
-            "url": {
-              "raw": "{{baseUrl}}/system-features/{{systemFeatureId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["system-features", "{{systemFeatureId}}"]
             }
           }
         }

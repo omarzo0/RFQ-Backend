@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
+import { validationResult } from "express-validator";
 import { AdminCompanyService } from "../services/AdminCompanyService";
 import { successResponse, errorResponse } from "../../utils/response";
-import { AppError } from "../../utils/errors";
+import { AppError, ValidationError } from "../../utils/errors";
 import logger from "../../utils/logger";
 import {
   CreateCompanyData,
@@ -173,6 +174,134 @@ export class AdminCompanyController {
       successResponse(res, company, "Company restored successfully");
     } catch (error) {
       logger.error("Restore company error:", error);
+
+      if (error instanceof AppError) {
+        errorResponse(res, error.message, error.statusCode);
+      } else {
+        errorResponse(res, "Internal server error", 500);
+      }
+    }
+  };
+
+  /**
+   * Create a company user
+   */
+  createCompanyUser = async (req: Request, res: Response): Promise<void> => {
+    try {
+      // Check validation results
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        throw new ValidationError("Validation failed", errors.array());
+      }
+
+      const { email, password, companyId, firstName, lastName, role } =
+        req.body;
+
+      const companyUser = await this.adminCompanyService.createCompanyUser({
+        email,
+        password,
+        companyId,
+        firstName,
+        lastName,
+        role: role || "EMPLOYEE",
+      });
+
+      successResponse(
+        res,
+        companyUser,
+        "Company user created successfully",
+        201
+      );
+    } catch (error) {
+      logger.error("Create company user error:", error);
+
+      if (error instanceof AppError) {
+        errorResponse(res, error.message, error.statusCode);
+      } else {
+        errorResponse(res, "Internal server error", 500);
+      }
+    }
+  };
+
+  /**
+   * Get company users
+   */
+  getCompanyUsers = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { companyId } = req.params;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      if (!companyId) {
+        errorResponse(res, "Company ID is required", 400);
+        return;
+      }
+
+      const result = await this.adminCompanyService.getCompanyUsers(
+        companyId,
+        page,
+        limit
+      );
+
+      successResponse(res, result, "Company users retrieved successfully");
+    } catch (error) {
+      logger.error("Get company users error:", error);
+
+      if (error instanceof AppError) {
+        errorResponse(res, error.message, error.statusCode);
+      } else {
+        errorResponse(res, "Internal server error", 500);
+      }
+    }
+  };
+
+  /**
+   * Update company user
+   */
+  updateCompanyUser = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const updateData = req.body;
+
+      if (!userId) {
+        errorResponse(res, "User ID is required", 400);
+        return;
+      }
+
+      const companyUser = await this.adminCompanyService.updateCompanyUser(
+        userId,
+        updateData
+      );
+
+      successResponse(res, companyUser, "Company user updated successfully");
+    } catch (error) {
+      logger.error("Update company user error:", error);
+
+      if (error instanceof AppError) {
+        errorResponse(res, error.message, error.statusCode);
+      } else {
+        errorResponse(res, "Internal server error", 500);
+      }
+    }
+  };
+
+  /**
+   * Delete company user
+   */
+  deleteCompanyUser = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+
+      if (!userId) {
+        errorResponse(res, "User ID is required", 400);
+        return;
+      }
+
+      await this.adminCompanyService.deleteCompanyUser(userId);
+
+      successResponse(res, null, "Company user deleted successfully");
+    } catch (error) {
+      logger.error("Delete company user error:", error);
 
       if (error instanceof AppError) {
         errorResponse(res, error.message, error.statusCode);

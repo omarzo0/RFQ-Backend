@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { JWTUtils } from "../../admin/middleware/auth";
 import { AppError } from "../../utils/errors";
 import logger from "../../utils/logger";
+import { prisma } from "../../app";
 
 export interface CompanyRequest extends Request {
   user?: {
@@ -36,7 +37,7 @@ export const authenticateCompanyUser = async (
     const token = authHeader.substring(7);
 
     try {
-      const decoded = await JWTUtils.verifyAccessToken(token);
+      const decoded = JWTUtils.verifyAccessToken(token);
 
       // Check if user is company user
       if (decoded.userType !== "COMPANY_USER") {
@@ -48,12 +49,32 @@ export const authenticateCompanyUser = async (
         return;
       }
 
+      // Fetch user details from database
+      const user = await prisma.companyUser.findUnique({
+        where: { id: decoded.userId },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          companyId: true,
+        },
+      });
+
+      if (!user) {
+        res.status(401).json({
+          success: false,
+          error: "User not found",
+          code: "UNAUTHORIZED",
+        });
+        return;
+      }
+
       req.user = {
-        id: decoded.userId,
-        email: decoded.email,
-        role: decoded.role,
+        id: user.id,
+        email: user.email,
+        role: user.role,
         userType: "COMPANY_USER",
-        companyId: decoded.companyId || "",
+        companyId: user.companyId || "",
       };
 
       next();
@@ -105,6 +126,9 @@ export const requireCompanyAdmin = (
 
   next();
 };
+
+// Alias for backward compatibility
+export const authenticate = authenticateCompanyUser;
 
 /**
  * Middleware to check if user has admin or manager role within company

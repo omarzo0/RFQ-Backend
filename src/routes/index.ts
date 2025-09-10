@@ -10,8 +10,9 @@ router.use("/health", healthRoutes);
 // Admin routes
 router.use("/admin", adminRoutes);
 
-// TODO: Add company routes when TypeScript errors are fixed
-// router.use("/company", companyRoutes);
+// Company routes
+import companyRoutes from "../company/routes";
+router.use("/company", companyRoutes);
 
 // API info endpoint
 router.get("/", (req, res) => {
@@ -27,7 +28,19 @@ router.get("/", (req, res) => {
         management: "/api/v1/admin/management",
         companies: "/api/v1/admin/companies",
       },
-      // TODO: Add company endpoints when routes are fixed
+      company: {
+        auth: "/api/v1/company/auth",
+        contacts: "/api/v1/company/contacts",
+        tickets: "/api/v1/company/tickets",
+        emails: "/api/v1/company/emails",
+        quotes: "/api/v1/company/quotes",
+        rfqs: "/api/v1/company/rfqs",
+        shippingLines: "/api/v1/company/shipping-lines",
+        templates: "/api/v1/company/templates",
+        users: "/api/v1/company/users",
+        analytics: "/api/v1/company/analytics",
+        replyIngestion: "/api/v1/company/reply-ingestion",
+      }
     },
     documentation: "/api/docs",
   });

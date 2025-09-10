@@ -11,8 +11,7 @@ const adminTicketController = new AdminTicketController();
 // All routes require admin authentication
 router.use(authenticateAdmin);
 
-// Ticket management routes
-router.post("/", adminTicketController.createTicket);
+// Ticket management routes (admins can only view and manage tickets, not create them)
 router.get("/", adminTicketController.getTickets);
 router.get("/statistics", adminTicketController.getTicketStatistics);
 router.get("/my-tickets", adminTicketController.getMyTickets);

@@ -20,7 +20,7 @@ async function updateSuperAdminPassword() {
     }
 
     // Hash the new password
-    const newPasswordHash = await PasswordUtils.hash("omar123@");
+    const newPasswordHash = await PasswordUtils.hash(" ");
 
     // Update the password
     await prisma.admin.update({

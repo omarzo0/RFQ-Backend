@@ -19,14 +19,11 @@ export class AdminDashboardController {
     try {
       const dashboardData = await this.adminDashboardService.getDashboardData();
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            dashboardData,
-            "Dashboard data retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        dashboardData,
+        "Dashboard data retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get dashboard error:", error);
 
@@ -55,14 +52,11 @@ export class AdminDashboardController {
         companyId
       );
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            companyDetails,
-            "Company details retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        companyDetails,
+        "Company details retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get company details error:", error);
 
@@ -92,9 +86,7 @@ export class AdminDashboardController {
 
       const rfqsData = await this.adminDashboardService.getAllRFQs(filters);
 
-      res
-        .status(200)
-        .json(successResponse(rfqsData, "RFQs retrieved successfully"));
+      successResponse(res, rfqsData, "RFQs retrieved successfully");
     } catch (error) {
       logger.error("Get all RFQs error:", error);
 
@@ -124,9 +116,7 @@ export class AdminDashboardController {
 
       const quotesData = await this.adminDashboardService.getAllQuotes(filters);
 
-      res
-        .status(200)
-        .json(successResponse(quotesData, "Quotes retrieved successfully"));
+      successResponse(res, quotesData, "Quotes retrieved successfully");
     } catch (error) {
       logger.error("Get all quotes error:", error);
 
@@ -157,9 +147,7 @@ export class AdminDashboardController {
         filters
       );
 
-      res
-        .status(200)
-        .json(successResponse(contactsData, "Contacts retrieved successfully"));
+      successResponse(res, contactsData, "Contacts retrieved successfully");
     } catch (error) {
       logger.error("Get all contacts error:", error);
 
@@ -189,14 +177,11 @@ export class AdminDashboardController {
       const shippingLinesData =
         await this.adminDashboardService.getAllShippingLines(filters);
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            shippingLinesData,
-            "Shipping lines retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        shippingLinesData,
+        "Shipping lines retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get all shipping lines error:", error);
 
@@ -228,11 +213,7 @@ export class AdminDashboardController {
         filters
       );
 
-      res
-        .status(200)
-        .json(
-          successResponse(emailLogsData, "Email logs retrieved successfully")
-        );
+      successResponse(res, emailLogsData, "Email logs retrieved successfully");
     } catch (error) {
       logger.error("Get all email logs error:", error);
 
@@ -255,14 +236,11 @@ export class AdminDashboardController {
     try {
       const dashboardData = await this.adminDashboardService.getDashboardData();
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            dashboardData.subscriptionStats,
-            "Subscription analytics retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        dashboardData.subscriptionStats,
+        "Subscription analytics retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get subscription analytics error:", error);
 
@@ -282,14 +260,11 @@ export class AdminDashboardController {
     try {
       const dashboardData = await this.adminDashboardService.getDashboardData();
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            dashboardData.emailStats,
-            "Email analytics retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        dashboardData.emailStats,
+        "Email analytics retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get email analytics error:", error);
 
@@ -309,14 +284,11 @@ export class AdminDashboardController {
     try {
       const dashboardData = await this.adminDashboardService.getDashboardData();
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            dashboardData.rfqStats,
-            "RFQ analytics retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        dashboardData.rfqStats,
+        "RFQ analytics retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get RFQ analytics error:", error);
 
@@ -336,14 +308,11 @@ export class AdminDashboardController {
     try {
       const dashboardData = await this.adminDashboardService.getDashboardData();
 
-      res
-        .status(200)
-        .json(
-          successResponse(
-            dashboardData.quoteStats,
-            "Quote analytics retrieved successfully"
-          )
-        );
+      successResponse(
+        res,
+        dashboardData.quoteStats,
+        "Quote analytics retrieved successfully"
+      );
     } catch (error) {
       logger.error("Get quote analytics error:", error);
 

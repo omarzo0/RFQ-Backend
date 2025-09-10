@@ -2,20 +2,6 @@ import { prisma } from "../../app";
 import { AppError, ValidationError } from "../../utils/errors";
 import logger from "../../utils/logger";
 
-export interface TicketCreateData {
-  title: string;
-  description: string;
-  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
-  category:
-    | "TECHNICAL"
-    | "BILLING"
-    | "FEATURE_REQUEST"
-    | "BUG_REPORT"
-    | "GENERAL";
-  companyId?: string;
-  assignedTo?: string;
-}
-
 export interface TicketUpdateData {
   title?: string;
   description?: string;
@@ -73,50 +59,6 @@ export interface TicketResponse {
 }
 
 export class AdminTicketService {
-  /**
-   * Create a new support ticket
-   */
-  async createTicket(data: TicketCreateData, createdById: string) {
-    try {
-      const ticket = await prisma.supportTicket.create({
-        data: {
-          title: data.title,
-          description: data.description,
-          priority: data.priority as any,
-          category: data.category,
-          companyId: data.companyId,
-          assignedTo: data.assignedTo,
-          userId: createdById,
-          status: "OPEN",
-        },
-        include: {
-          company: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          assignedAdmin: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-        },
-      });
-
-      logger.info(`Support ticket created: ${ticket.id} by ${createdById}`);
-
-      return ticket;
-    } catch (error) {
-      logger.error("Error creating support ticket:", error);
-      throw new AppError("Failed to create support ticket", 500);
-    }
-  }
-
   /**
    * Get all tickets with filtering and pagination
    */
