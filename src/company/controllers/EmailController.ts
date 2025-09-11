@@ -1126,4 +1126,32 @@ export class EmailController {
       next(error);
     }
   };
+
+  /**
+   * POST /api/v1/emails/campaigns/:id/reset-to-draft
+   * Reset campaign to draft status to allow editing
+   */
+  resetCampaignToDraft = async (
+    req: CompanyRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const companyId = req.user!.companyId;
+
+      const campaign = await this.emailCampaignService.resetCampaignToDraft(
+        id,
+        companyId
+      );
+
+      successResponse(
+        res,
+        campaign,
+        "Campaign reset to draft status successfully"
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
 }

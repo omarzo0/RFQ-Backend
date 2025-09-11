@@ -1059,6 +1059,23 @@
               "path": ["emails", "campaigns", "statuses"]
             }
           }
+        },
+        {
+          "name": "Reset Campaign to Draft",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/emails/campaigns/{{campaign_id}}/reset-to-draft",
+              "host": ["{{base_url}}"],
+              "path": [
+                "emails",
+                "campaigns",
+                "{{campaign_id}}",
+                "reset-to-draft"
+              ]
+            }
+          },
+          "description": "Reset a campaign back to DRAFT status to allow editing. Only works for SCHEDULED, PAUSED, or CANCELLED campaigns."
         }
       ]
     },

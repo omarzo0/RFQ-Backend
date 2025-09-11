@@ -258,6 +258,30 @@ router.get(
   emailController.getEmailCampaigns
 );
 
+// Specific campaign routes (must come before parameterized routes)
+router.get(
+  "/campaigns/analytics",
+  [
+    query("dateFrom").optional().isISO8601(),
+    query("dateTo").optional().isISO8601(),
+    query("campaignType")
+      .optional()
+      .isIn([
+        "RFQ_BLAST",
+        "FOLLOW_UP_CAMPAIGN",
+        "MARKETING",
+        "ANNOUNCEMENT",
+        "NEWSLETTER",
+      ]),
+  ],
+  emailController.getCampaignAnalytics
+);
+
+router.get("/campaigns/types", emailController.getCampaignTypes);
+
+router.get("/campaigns/statuses", emailController.getCampaignStatuses);
+
+// Parameterized campaign routes (must come after specific routes)
 router.get(
   "/campaigns/:id",
   [param("id").isUUID().withMessage("Invalid UUID format")],
@@ -329,26 +353,10 @@ router.get(
   emailController.getCampaignStats
 );
 
-router.get(
-  "/campaigns/analytics",
-  [
-    query("dateFrom").optional().isISO8601(),
-    query("dateTo").optional().isISO8601(),
-    query("campaignType")
-      .optional()
-      .isIn([
-        "RFQ_BLAST",
-        "FOLLOW_UP_CAMPAIGN",
-        "MARKETING",
-        "ANNOUNCEMENT",
-        "NEWSLETTER",
-      ]),
-  ],
-  emailController.getCampaignAnalytics
+router.post(
+  "/campaigns/:id/reset-to-draft",
+  [param("id").isUUID().withMessage("Invalid UUID format")],
+  emailController.resetCampaignToDraft
 );
-
-router.get("/campaigns/types", emailController.getCampaignTypes);
-
-router.get("/campaigns/statuses", emailController.getCampaignStatuses);
 
 export default router;

@@ -604,4 +604,50 @@ export class EmailCampaignService {
       { value: "CANCELLED", label: "Cancelled" },
     ];
   }
+
+  /**
+   * Reset campaign to draft status
+   * This allows you to edit campaigns that are in other statuses
+   */
+  async resetCampaignToDraft(id: string, companyId: string) {
+    const campaign = await prisma.emailCampaign.findFirst({
+      where: { id, companyId },
+    });
+
+    if (!campaign) {
+      throw new ValidationError("Email campaign not found");
+    }
+
+    // Only allow reset from certain statuses
+    const allowedStatuses: CampaignStatus[] = [
+      CampaignStatus.SCHEDULED,
+      CampaignStatus.PAUSED,
+      CampaignStatus.CANCELLED,
+      CampaignStatus.COMPLETED,
+    ];
+
+    if (!allowedStatuses.includes(campaign.status as CampaignStatus)) {
+      throw new ValidationError(
+        `Cannot reset campaign from ${campaign.status} status. Only SCHEDULED, PAUSED, CANCELLED, or COMPLETED campaigns can be reset to draft.`
+      );
+    }
+
+    const updatedCampaign = await prisma.emailCampaign.update({
+      where: { id },
+      data: {
+        status: CampaignStatus.DRAFT,
+        startDate: null,
+        endDate: null,
+        totalEmails: 0,
+        sentEmails: 0,
+        deliveredEmails: 0,
+        openedEmails: 0,
+        clickedEmails: 0,
+        bouncedEmails: 0,
+        updatedAt: new Date(),
+      },
+    });
+
+    return updatedCampaign;
+  }
 }
