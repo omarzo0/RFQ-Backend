@@ -284,7 +284,7 @@ export class EmailCampaignService {
       campaign.createdBy,
       {
         name: `${campaign.name} - Campaign`,
-        description: campaign.description,
+        description: campaign.description || undefined,
         subject: emailContent.subject,
         bodyHtml: emailContent.bodyHtml,
         bodyText: emailContent.bodyText,
@@ -605,4 +605,3 @@ export class EmailCampaignService {
     ];
   }
 }
-

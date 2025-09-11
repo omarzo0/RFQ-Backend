@@ -758,6 +758,18 @@
               "path": ["emails", "templates", "analytics"]
             }
           }
+        },
+        {
+          "name": "Debug Templates List",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/templates/debug",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "templates", "debug"]
+            }
+          },
+          "description": "Debug endpoint to list all email templates with their IDs and basic information. Useful for troubleshooting template-related issues."
         }
       ]
     },

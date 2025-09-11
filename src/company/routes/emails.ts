@@ -1,14 +1,13 @@
 import { Router } from "express";
 import { EmailController } from "../controllers/EmailController";
-import { authenticateToken } from "../middleware/companyAuth";
-import { validateUUID } from "../../utils/validators";
-import { body, query } from "express-validator";
+import { authenticate } from "../middleware/companyAuth";
+import { body, query, param } from "express-validator";
 
 const router = Router();
 const emailController = new EmailController();
 
 // Apply authentication middleware to all routes
-router.use(authenticateToken);
+router.use(authenticate);
 
 // Email sending routes
 router.post(
@@ -36,7 +35,7 @@ router.post(
 
 router.post(
   "/bulk/:id/send",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.sendBulkEmail
 );
 
@@ -106,9 +105,23 @@ router.get(
   emailController.getEmailTemplates
 );
 
+// Specific template routes (must come before parameterized routes)
+router.get("/templates/types", emailController.getTemplateTypes);
+router.get("/templates/tokens", emailController.getSupportedTokens);
+router.get("/templates/debug", emailController.debugTemplates);
+router.get(
+  "/templates/analytics",
+  [
+    query("dateFrom").optional().isISO8601(),
+    query("dateTo").optional().isISO8601(),
+  ],
+  emailController.getTemplateAnalytics
+);
+
+// Parameterized template routes (must come after specific routes)
 router.get(
   "/templates/:id",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.getEmailTemplate
 );
 
@@ -126,52 +139,41 @@ router.post(
 
 router.put(
   "/templates/:id",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.updateEmailTemplate
 );
 
 router.delete(
   "/templates/:id",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.deleteEmailTemplate
 );
 
 router.post(
   "/templates/:id/duplicate",
-  [validateUUID("id"), body("newName").notEmpty().trim()],
+  [
+    param("id").isUUID().withMessage("Invalid UUID format"),
+    body("newName").notEmpty().trim(),
+  ],
   emailController.duplicateEmailTemplate
 );
 
 router.put(
   "/templates/:id/default",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.setDefaultTemplate
 );
 
 router.post(
   "/templates/:id/preview",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.previewTemplate
 );
 
 router.get(
   "/templates/:id/stats",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.getTemplateStats
-);
-
-router.get("/templates/types", emailController.getTemplateTypes);
-
-router.get("/templates/tokens", emailController.getSupportedTokens);
-
-router.get(
-  "/templates/analytics",
-  [
-    query("dateFrom").optional().isISO8601(),
-    query("dateTo").optional().isISO8601(),
-    query("templateType").optional().trim(),
-  ],
-  emailController.getTemplateAnalytics
 );
 
 // Follow-up Rule routes
@@ -199,13 +201,13 @@ router.post(
 
 router.put(
   "/follow-up-rules/:id",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.updateFollowUpRule
 );
 
 router.delete(
   "/follow-up-rules/:id",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.deleteFollowUpRule
 );
 
@@ -258,7 +260,7 @@ router.get(
 
 router.get(
   "/campaigns/:id",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.getEmailCampaign
 );
 
@@ -281,20 +283,20 @@ router.post(
 
 router.put(
   "/campaigns/:id",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.updateEmailCampaign
 );
 
 router.delete(
   "/campaigns/:id",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.deleteEmailCampaign
 );
 
 router.post(
   "/campaigns/:id/start",
   [
-    validateUUID("id"),
+    param("id").isUUID().withMessage("Invalid UUID format"),
     body("target").isObject(),
     body("emailContent").isObject(),
     body("emailContent.subject").notEmpty().trim(),
@@ -305,25 +307,25 @@ router.post(
 
 router.put(
   "/campaigns/:id/pause",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.pauseEmailCampaign
 );
 
 router.put(
   "/campaigns/:id/resume",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.resumeEmailCampaign
 );
 
 router.put(
   "/campaigns/:id/complete",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.completeEmailCampaign
 );
 
 router.get(
   "/campaigns/:id/stats",
-  [validateUUID("id")],
+  [param("id").isUUID().withMessage("Invalid UUID format")],
   emailController.getCampaignStats
 );
 
@@ -350,4 +352,3 @@ router.get("/campaigns/types", emailController.getCampaignTypes);
 router.get("/campaigns/statuses", emailController.getCampaignStatuses);
 
 export default router;
-

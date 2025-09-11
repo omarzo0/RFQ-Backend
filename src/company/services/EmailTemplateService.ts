@@ -308,6 +308,26 @@ export class EmailTemplateService {
     newName: string,
     createdBy: string
   ) {
+    // First check if template exists at all
+    const templateExists = await prisma.emailTemplate.findUnique({
+      where: { id },
+      select: { id: true, companyId: true, name: true, isActive: true },
+    });
+
+    if (!templateExists) {
+      throw new ValidationError(
+        `Email template with ID '${id}' does not exist`
+      );
+    }
+
+    if (templateExists.companyId !== companyId) {
+      throw new ValidationError("Email template not found in your company");
+    }
+
+    if (!templateExists.isActive) {
+      throw new ValidationError("Cannot duplicate inactive email template");
+    }
+
     const originalTemplate = await prisma.emailTemplate.findFirst({
       where: { id, companyId },
     });
@@ -645,5 +665,48 @@ export class EmailTemplateService {
 
     return analytics.sort((a, b) => b.usageCount - a.usageCount);
   }
-}
 
+  /**
+   * Debug method to list all templates with their IDs and basic info
+   */
+  async debugListTemplates(companyId: string) {
+    const templates = await prisma.emailTemplate.findMany({
+      where: { companyId },
+      select: {
+        id: true,
+        name: true,
+        templateType: true,
+        isActive: true,
+        isDefault: true,
+        createdAt: true,
+        updatedAt: true,
+        creator: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+    });
+
+    return {
+      companyId,
+      totalTemplates: templates.length,
+      activeTemplates: templates.filter((t) => t.isActive).length,
+      templates: templates.map((t) => ({
+        id: t.id,
+        name: t.name,
+        type: t.templateType,
+        isActive: t.isActive,
+        isDefault: t.isDefault,
+        createdBy: `${t.creator?.firstName || ""} ${
+          t.creator?.lastName || ""
+        }`.trim(),
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt,
+      })),
+    };
+  }
+}

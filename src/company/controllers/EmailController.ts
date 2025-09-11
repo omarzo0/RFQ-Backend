@@ -15,13 +15,13 @@ export class EmailController {
   /**
    * POST /api/v1/emails/send
    */
-  async sendEmail(
+  sendEmail = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
       const {
         toEmail,
         fromEmail,
@@ -59,19 +59,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * POST /api/v1/emails/bulk
    */
-  async createBulkEmail(
+  createBulkEmail = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const companyId = req.user!.companyId;
+      const createdBy = req.user!.id;
       const {
         name,
         description,
@@ -112,19 +112,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * POST /api/v1/emails/bulk/:id/send
    */
-  async sendBulkEmail(
+  sendBulkEmail = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
 
       const result = await this.emailService.sendBulkEmail(id, companyId);
 
@@ -132,18 +132,18 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * GET /api/v1/emails/analytics
    */
-  async getEmailAnalytics(
+  getEmailAnalytics = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
       const { dateFrom, dateTo, emailType, bulkEmailId, campaignId } =
         req.query;
 
@@ -159,18 +159,18 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * POST /api/v1/emails/retry
    */
-  async retryFailedEmails(
+  retryFailedEmails = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
       const { emailLogIds } = req.body;
 
       const result = await this.emailService.retryFailedEmails(
@@ -182,16 +182,16 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * POST /api/v1/emails/track/:trackingPixelId
    */
-  async trackEmailEngagement(
+  trackEmailEngagement = async (
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { trackingPixelId } = req.params;
       const {
@@ -206,7 +206,7 @@ export class EmailController {
         linkText,
       } = req.body;
 
-      await this.emailService.trackEmailEngagement(
+      const result = await this.emailService.trackEmailEngagement(
         trackingPixelId,
         engagementType,
         {
@@ -221,34 +221,51 @@ export class EmailController {
         }
       );
 
-      // Return 1x1 transparent pixel for tracking
-      const pixel = Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
-        "base64"
-      );
+      // Check if this is an API call (JSON) or tracking pixel request
+      const acceptHeader = req.headers.accept || "";
+      const isApiCall = acceptHeader.includes("application/json");
 
-      res.set({
-        "Content-Type": "image/png",
-        "Content-Length": pixel.length,
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
-      });
+      if (isApiCall) {
+        // Return JSON response for API testing
+        res.json({
+          success: true,
+          message: "Email engagement tracked successfully",
+          data: {
+            trackingPixelId,
+            engagementType,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      } else {
+        // Return 1x1 transparent pixel for email tracking
+        const pixel = Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+          "base64"
+        );
 
-      res.send(pixel);
+        res.set({
+          "Content-Type": "image/png",
+          "Content-Length": pixel.length,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        });
+
+        res.send(pixel);
+      }
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * POST /api/v1/emails/bounce
    */
-  async handleEmailBounce(
+  handleEmailBounce = async (
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { emailLogId, bounceType, bounceReason, bounceCode } = req.body;
 
@@ -263,16 +280,16 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * POST /api/v1/emails/unsubscribe/:unsubscribeToken
    */
-  async handleUnsubscribe(
+  handleUnsubscribe = async (
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { unsubscribeToken } = req.params;
       const { reason } = req.body;
@@ -286,20 +303,20 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   // Email Template Methods
 
   /**
    * GET /api/v1/emails/templates
    */
-  async getEmailTemplates(
+  getEmailTemplates = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
       const {
         page = 1,
         limit = 10,
@@ -327,19 +344,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * GET /api/v1/emails/templates/:id
    */
-  async getEmailTemplate(
+  getEmailTemplate = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
 
       const template = await this.emailTemplateService.getEmailTemplate(
         id,
@@ -350,19 +367,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * POST /api/v1/emails/templates
    */
-  async createEmailTemplate(
+  createEmailTemplate = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const companyId = req.user!.companyId;
+      const createdBy = req.user!.id;
       const templateData = req.body;
 
       const template = await this.emailTemplateService.createEmailTemplate(
@@ -375,19 +392,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * PUT /api/v1/emails/templates/:id
    */
-  async updateEmailTemplate(
+  updateEmailTemplate = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
       const templateData = req.body;
 
       const template = await this.emailTemplateService.updateEmailTemplate(
@@ -400,19 +417,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * DELETE /api/v1/emails/templates/:id
    */
-  async deleteEmailTemplate(
+  deleteEmailTemplate = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
 
       const result = await this.emailTemplateService.deleteEmailTemplate(
         id,
@@ -423,21 +440,26 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * POST /api/v1/emails/templates/:id/duplicate
    */
-  async duplicateEmailTemplate(
+  duplicateEmailTemplate = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const companyId = req.user!.companyId;
+      const createdBy = req.user!.id;
       const { newName } = req.body;
+
+      // Add debug logging
+      console.log(
+        `[EmailController] Attempting to duplicate template: ${id} for company: ${companyId}`
+      );
 
       const template = await this.emailTemplateService.duplicateEmailTemplate(
         id,
@@ -448,21 +470,32 @@ export class EmailController {
 
       successResponse(res, template, "Email template duplicated successfully");
     } catch (error) {
+      // Enhanced error logging
+      const { id } = req.params;
+      const companyId = req.user!.companyId;
+      const { newName } = req.body;
+
+      console.error(`[EmailController] Error duplicating template ${id}:`, {
+        templateId: id,
+        companyId,
+        newName,
+        error: error instanceof Error ? error.message : error,
+      });
       next(error);
     }
-  }
+  };
 
   /**
    * PUT /api/v1/emails/templates/:id/default
    */
-  async setDefaultTemplate(
+  setDefaultTemplate = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
 
       const template = await this.emailTemplateService.setDefaultTemplate(
         id,
@@ -473,19 +506,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * POST /api/v1/emails/templates/:id/preview
    */
-  async previewTemplate(
+  previewTemplate = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
       const personalizationData = req.body;
 
       const preview = await this.emailTemplateService.previewTemplate(
@@ -498,19 +531,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * GET /api/v1/emails/templates/:id/stats
    */
-  async getTemplateStats(
+  getTemplateStats = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
 
       const stats = await this.emailTemplateService.getTemplateUsageStats(
         id,
@@ -521,16 +554,16 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * GET /api/v1/emails/templates/types
    */
-  async getTemplateTypes(
+  getTemplateTypes = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const types = await this.emailTemplateService.getTemplateTypes();
 
@@ -538,16 +571,16 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * GET /api/v1/emails/templates/tokens
    */
-  async getSupportedTokens(
+  getSupportedTokens = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const tokens = this.emailTemplateService.getSupportedTokens();
 
@@ -555,18 +588,43 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
+
+  /**
+   * GET /api/v1/emails/templates/debug
+   * Debug endpoint to list all templates with their IDs
+   */
+  debugTemplates = async (
+    req: CompanyRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const companyId = req.user!.companyId;
+      const templates = await this.emailTemplateService.debugListTemplates(
+        companyId
+      );
+
+      successResponse(
+        res,
+        templates,
+        "Debug template list retrieved successfully"
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
 
   /**
    * GET /api/v1/emails/templates/analytics
    */
-  async getTemplateAnalytics(
+  getTemplateAnalytics = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
       const { dateFrom, dateTo, templateType } = req.query;
 
       const analytics = await this.emailTemplateService.getTemplateAnalytics(
@@ -586,20 +644,20 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   // Follow-up Methods
 
   /**
    * GET /api/v1/emails/follow-up-rules
    */
-  async getFollowUpRules(
+  getFollowUpRules = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
       const { page = 1, limit = 10, isActive, search } = req.query;
 
       const result = await this.followUpService.getFollowUpRules(companyId, {
@@ -613,19 +671,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * POST /api/v1/emails/follow-up-rules
    */
-  async createFollowUpRule(
+  createFollowUpRule = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const companyId = req.user!.companyId;
+      const createdBy = req.user!.id;
       const ruleData = req.body;
 
       const rule = await this.followUpService.createFollowUpRule(
@@ -638,19 +696,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * PUT /api/v1/emails/follow-up-rules/:id
    */
-  async updateFollowUpRule(
+  updateFollowUpRule = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
       const ruleData = req.body;
 
       const rule = await this.followUpService.updateFollowUpRule(
@@ -663,19 +721,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * DELETE /api/v1/emails/follow-up-rules/:id
    */
-  async deleteFollowUpRule(
+  deleteFollowUpRule = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
 
       const result = await this.followUpService.deleteFollowUpRule(
         id,
@@ -686,18 +744,18 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * POST /api/v1/emails/follow-up-rules/process
    */
-  async processScheduledFollowUps(
+  processScheduledFollowUps = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
 
       const result = await this.followUpService.processScheduledFollowUps(
         companyId
@@ -711,18 +769,18 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * GET /api/v1/emails/follow-up-rules/analytics
    */
-  async getFollowUpAnalytics(
+  getFollowUpAnalytics = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
       const { dateFrom, dateTo, rfqId } = req.query;
 
       const analytics = await this.followUpService.getFollowUpAnalytics(
@@ -742,20 +800,20 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   // Campaign Methods
 
   /**
    * GET /api/v1/emails/campaigns
    */
-  async getEmailCampaigns(
+  getEmailCampaigns = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
       const {
         page = 1,
         limit = 10,
@@ -783,19 +841,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * GET /api/v1/emails/campaigns/:id
    */
-  async getEmailCampaign(
+  getEmailCampaign = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
 
       const campaign = await this.emailCampaignService.getEmailCampaign(
         id,
@@ -806,19 +864,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * POST /api/v1/emails/campaigns
    */
-  async createEmailCampaign(
+  createEmailCampaign = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const companyId = req.user!.companyId;
+      const createdBy = req.user!.id;
       const campaignData = req.body;
 
       const campaign = await this.emailCampaignService.createEmailCampaign(
@@ -831,19 +889,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * PUT /api/v1/emails/campaigns/:id
    */
-  async updateEmailCampaign(
+  updateEmailCampaign = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
       const campaignData = req.body;
 
       const campaign = await this.emailCampaignService.updateEmailCampaign(
@@ -856,19 +914,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * DELETE /api/v1/emails/campaigns/:id
    */
-  async deleteEmailCampaign(
+  deleteEmailCampaign = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
 
       const result = await this.emailCampaignService.deleteEmailCampaign(
         id,
@@ -879,19 +937,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * POST /api/v1/emails/campaigns/:id/start
    */
-  async startEmailCampaign(
+  startEmailCampaign = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
       const { target, emailContent, options } = req.body;
 
       const result = await this.emailCampaignService.startEmailCampaign(
@@ -906,19 +964,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * PUT /api/v1/emails/campaigns/:id/pause
    */
-  async pauseEmailCampaign(
+  pauseEmailCampaign = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
 
       const campaign = await this.emailCampaignService.pauseEmailCampaign(
         id,
@@ -929,19 +987,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * PUT /api/v1/emails/campaigns/:id/resume
    */
-  async resumeEmailCampaign(
+  resumeEmailCampaign = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
 
       const campaign = await this.emailCampaignService.resumeEmailCampaign(
         id,
@@ -952,19 +1010,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * PUT /api/v1/emails/campaigns/:id/complete
    */
-  async completeEmailCampaign(
+  completeEmailCampaign = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
 
       const campaign = await this.emailCampaignService.completeEmailCampaign(
         id,
@@ -975,19 +1033,19 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * GET /api/v1/emails/campaigns/:id/stats
    */
-  async getCampaignStats(
+  getCampaignStats = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
 
       const stats = await this.emailCampaignService.getCampaignStats(
         id,
@@ -998,18 +1056,18 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * GET /api/v1/emails/campaigns/analytics
    */
-  async getCampaignAnalytics(
+  getCampaignAnalytics = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId;
       const { dateFrom, dateTo, campaignType } = req.query;
 
       const analytics = await this.emailCampaignService.getCampaignAnalytics(
@@ -1029,16 +1087,16 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * GET /api/v1/emails/campaigns/types
    */
-  async getCampaignTypes(
+  getCampaignTypes = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const types = this.emailCampaignService.getCampaignTypes();
 
@@ -1046,16 +1104,16 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   /**
    * GET /api/v1/emails/campaigns/statuses
    */
-  async getCampaignStatuses(
+  getCampaignStatuses = async (
     req: CompanyRequest,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const statuses = this.emailCampaignService.getCampaignStatuses();
 
@@ -1067,6 +1125,5 @@ export class EmailController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 }
-

@@ -1,6 +1,7 @@
 import { prisma } from "../../app";
 import { ValidationError } from "../../utils/errors";
 import { v4 as uuidv4 } from "uuid";
+import nodemailer from "nodemailer";
 import {
   EmailStatus,
   EmailType,
@@ -66,6 +67,40 @@ export class EmailService {
   private readonly DEFAULT_RATE_LIMIT = 10; // emails per minute
   private readonly MAX_RETRIES = 3;
   private readonly RETRY_DELAYS = [5, 15, 60]; // minutes
+  private transporter: nodemailer.Transporter;
+
+  constructor() {
+    // Initialize nodemailer transporter with Brevo SMTP
+    this.transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || "smtp-relay.brevo.com",
+      port: parseInt(process.env.EMAIL_PORT || "587"),
+      secure: process.env.EMAIL_SECURE === "true", // false for 587, true for 465
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+      // Additional options for better reliability
+      pool: true, // use pooled connection
+      maxConnections: 5, // max simultaneous connections
+      maxMessages: 100, // max messages per connection
+    });
+
+    // Test connection on initialization (optional)
+    this.verifyConnection();
+  }
+
+  /**
+   * Verify SMTP connection
+   */
+  private async verifyConnection(): Promise<void> {
+    try {
+      await this.transporter.verify();
+      console.log("✅ SMTP connection verified successfully with Brevo");
+    } catch (error) {
+      console.error("❌ SMTP connection failed:", error);
+      console.error("Please check your Brevo SMTP configuration in .env file");
+    }
+  }
 
   /**
    * Send single email with tracking
@@ -368,23 +403,60 @@ export class EmailService {
   }
 
   /**
-   * Send email via email provider (placeholder)
+   * Send email via Brevo SMTP
    */
   private async sendEmailViaProvider(emailLog: any) {
-    // This is where you would integrate with your email provider
-    // Examples: SendGrid, AWS SES, Mailgun, etc.
+    try {
+      // Prepare email options
+      const mailOptions = {
+        from: {
+          name: process.env.EMAIL_FROM_NAME || "RFQ Platform",
+          address:
+            process.env.EMAIL_FROM_ADDRESS || "omarkhaled202080@gmail.com", // Must use verified Brevo sender
+        },
+        to: emailLog.toEmail, // This allows sending to ANY email address
+        subject: emailLog.subject,
+        html: emailLog.bodyHtml,
+        text: emailLog.bodyText || this.htmlToText(emailLog.bodyHtml),
+        // Optional: Reply-To can be different from From
+        replyTo: emailLog.fromEmail || process.env.EMAIL_FROM_ADDRESS,
+        // Add tracking headers if needed
+        headers: {
+          "X-Email-Log-Id": emailLog.id,
+          "X-Company-Id": emailLog.companyId,
+        },
+      };
 
-    // For now, we'll simulate sending
-    console.log(`Sending email to ${emailLog.toEmail}: ${emailLog.subject}`);
+      // Send email via Brevo SMTP
+      const result = await this.transporter.sendMail(mailOptions);
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 100));
+      console.log(
+        `✅ Email sent successfully to ${emailLog.toEmail}: ${emailLog.subject}`
+      );
+      console.log(`📧 Message ID: ${result.messageId}`);
 
-    // Simulate occasional failures for testing
-    if (Math.random() < 0.05) {
-      // 5% failure rate
-      throw new Error("Simulated email provider failure");
+      return result;
+    } catch (error) {
+      console.error(`❌ Failed to send email to ${emailLog.toEmail}:`, error);
+      throw error;
     }
+  }
+
+  /**
+   * Convert HTML to plain text (basic implementation)
+   */
+  private htmlToText(html: string): string {
+    if (!html) return "";
+
+    // Simple HTML to text conversion
+    return html
+      .replace(/<[^>]*>/g, "") // Remove HTML tags
+      .replace(/&nbsp;/g, " ") // Replace &nbsp; with space
+      .replace(/&amp;/g, "&") // Replace &amp; with &
+      .replace(/&lt;/g, "<") // Replace &lt; with <
+      .replace(/&gt;/g, ">") // Replace &gt; with >
+      .replace(/&quot;/g, '"') // Replace &quot; with "
+      .trim();
   }
 
   /**
@@ -703,4 +775,3 @@ export class EmailService {
     };
   }
 }
-
