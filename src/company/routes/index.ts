@@ -10,7 +10,7 @@ import templatesRoutes from "./templates";
 import usersRoutes from "./users";
 // import analyticsRoutes from "./analytics";
 // import replyIngestionRoutes from "./reply-ingestion";
-// import ticketsRoutes from "./tickets";
+import ticketsRoutes from "./tickets";
 
 const router = Router();
 
@@ -22,7 +22,7 @@ router.use("/", companyRoutes);
 
 // Company business routes - temporarily disabled due to TypeScript errors
 router.use("/contacts", contactsRoutes);
-// router.use("/tickets", ticketsRoutes);
+router.use("/tickets", ticketsRoutes);
 router.use("/emails", emailsRoutes);
 // router.use("/quotes", quotesRoutes);
 router.use("/rfqs", rfqsRoutes);

@@ -195,6 +195,27 @@ router.post(
     body("daysAfterSend").isInt({ min: 1 }),
     body("maxFollowUps").isInt({ min: 1, max: 10 }),
     body("emailTemplateId").optional().isUUID(),
+    // Enhanced conditional follow-up features
+    body("onlyIfOpened").optional().isBoolean(),
+    body("onlyIfClicked").optional().isBoolean(),
+    body("onlyIfDelivered").optional().isBoolean(),
+    body("minTimeSinceOpen").optional().isInt({ min: 0 }),
+    body("maxTimeSinceOpen").optional().isInt({ min: 0 }),
+    // Advanced scheduling features
+    body("scheduleType")
+      .optional()
+      .isIn(["IMMEDIATE", "SPECIFIC_TIME", "BUSINESS_HOURS", "CUSTOM"]),
+    body("specificTime")
+      .optional()
+      .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+    body("timezone").optional().isString(),
+    body("businessDaysOnly").optional().isBoolean(),
+    body("excludeWeekends").optional().isBoolean(),
+    body("excludeHolidays").optional().isBoolean(),
+    // Follow-up sequence configuration
+    body("followUpIntervals").optional().isArray(),
+    body("followUpIntervals.*").optional().isInt({ min: 1 }),
+    body("customSchedule").optional().isObject(),
   ],
   emailController.createFollowUpRule
 );
@@ -224,6 +245,48 @@ router.get(
     query("rfqId").optional().isUUID(),
   ],
   emailController.getFollowUpAnalytics
+);
+
+// Enhanced Follow-up Routes
+router.post(
+  "/follow-up-rules/schedule-conditional",
+  [
+    body("rfqId").isUUID().withMessage("Invalid RFQ ID format"),
+    body("contactId").isUUID().withMessage("Invalid Contact ID format"),
+    body("eventType").isIn(["opened", "clicked", "delivered"]),
+    body("eventTime").isISO8601().withMessage("Invalid event time format"),
+  ],
+  emailController.scheduleConditionalFollowUps
+);
+
+router.post(
+  "/follow-up-rules/reschedule",
+  [
+    body("rfqId").optional().isUUID().withMessage("Invalid RFQ ID format"),
+    body("contactId")
+      .optional()
+      .isUUID()
+      .withMessage("Invalid Contact ID format"),
+    body("followUpRuleId")
+      .optional()
+      .isUUID()
+      .withMessage("Invalid Follow-up Rule ID format"),
+    body("reason").optional().trim(),
+  ],
+  emailController.rescheduleFollowUps
+);
+
+router.get(
+  "/follow-up-rules/:id/scheduled",
+  [
+    param("id").isUUID().withMessage("Invalid Follow-up Rule ID format"),
+    query("page").optional().isInt({ min: 1 }),
+    query("limit").optional().isInt({ min: 1, max: 100 }),
+    query("status").optional().isIn(["SCHEDULED", "SENT", "SKIPPED", "FAILED"]),
+    query("contactId").optional().isUUID(),
+    query("rfqId").optional().isUUID(),
+  ],
+  emailController.getScheduledFollowUps
 );
 
 // Email Campaign routes

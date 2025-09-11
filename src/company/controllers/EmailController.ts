@@ -4,6 +4,7 @@ import { EmailTemplateService } from "../services/EmailTemplateService";
 import { FollowUpService } from "../services/FollowUpService";
 import { EmailCampaignService } from "../services/EmailCampaignService";
 import { successResponse } from "../../utils/response";
+import { prisma } from "../../app";
 import { CompanyRequest } from "../types/auth";
 
 export class EmailController {
@@ -771,37 +772,6 @@ export class EmailController {
     }
   };
 
-  /**
-   * GET /api/v1/emails/follow-up-rules/analytics
-   */
-  getFollowUpAnalytics = async (
-    req: CompanyRequest,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
-    try {
-      const companyId = req.user!.companyId;
-      const { dateFrom, dateTo, rfqId } = req.query;
-
-      const analytics = await this.followUpService.getFollowUpAnalytics(
-        companyId,
-        {
-          dateFrom: dateFrom ? new Date(dateFrom as string) : undefined,
-          dateTo: dateTo ? new Date(dateTo as string) : undefined,
-          rfqId: rfqId as string,
-        }
-      );
-
-      successResponse(
-        res,
-        analytics,
-        "Follow-up analytics retrieved successfully"
-      );
-    } catch (error) {
-      next(error);
-    }
-  };
-
   // Campaign Methods
 
   /**
@@ -1149,6 +1119,242 @@ export class EmailController {
         res,
         campaign,
         "Campaign reset to draft status successfully"
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Enhanced Follow-up Methods
+
+  /**
+   * POST /api/v1/emails/follow-up-rules/schedule-conditional
+   */
+  scheduleConditionalFollowUps = async (
+    req: CompanyRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { rfqId, contactId, eventType, eventTime } = req.body;
+
+      if (!rfqId || !contactId || !eventType || !eventTime) {
+        res.status(400).json({
+          success: false,
+          message:
+            "Missing required fields: rfqId, contactId, eventType, eventTime",
+        });
+        return;
+      }
+
+      const result = await this.followUpService.scheduleConditionalFollowUps(
+        rfqId,
+        contactId,
+        eventType,
+        new Date(eventTime)
+      );
+
+      successResponse(
+        res,
+        result,
+        "Conditional follow-ups scheduled successfully"
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * POST /api/v1/emails/follow-up-rules/reschedule
+   */
+  rescheduleFollowUps = async (
+    req: CompanyRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const companyId = req.user!.companyId;
+      const { rfqId, contactId, followUpRuleId, reason } = req.body;
+
+      const result = await this.followUpService.rescheduleFollowUps(companyId, {
+        rfqId,
+        contactId,
+        followUpRuleId,
+        reason,
+      });
+
+      successResponse(res, result, "Follow-ups rescheduled successfully");
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /api/v1/emails/follow-up-rules/:id/scheduled
+   */
+  getScheduledFollowUps = async (
+    req: CompanyRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const companyId = req.user!.companyId;
+      const { page = 1, limit = 10, status, contactId, rfqId } = req.query;
+
+      const where: any = {
+        followUpRuleId: id,
+        rfq: { companyId },
+      };
+
+      if (status) where.status = status;
+      if (contactId) where.contactId = contactId;
+      if (rfqId) where.rfqId = rfqId;
+
+      const scheduledFollowUps = await prisma.scheduledFollowUp.findMany({
+        where,
+        include: {
+          contact: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              company: true,
+            },
+          },
+          rfq: {
+            select: {
+              id: true,
+              title: true,
+              commodity: true,
+            },
+          },
+          followUpRule: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: { scheduledAt: "asc" },
+        skip: (Number(page) - 1) * Number(limit),
+        take: Number(limit),
+      });
+
+      const total = await prisma.scheduledFollowUp.count({ where });
+
+      successResponse(
+        res,
+        {
+          data: scheduledFollowUps,
+          pagination: {
+            page: Number(page),
+            limit: Number(limit),
+            total,
+            pages: Math.ceil(total / Number(limit)),
+          },
+        },
+        "Scheduled follow-ups retrieved successfully"
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /api/v1/emails/follow-up-rules/analytics
+   */
+  getFollowUpAnalytics = async (
+    req: CompanyRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const companyId = req.user!.companyId;
+      const { dateFrom, dateTo, followUpRuleId } = req.query;
+
+      const where: any = {
+        rfq: { companyId },
+      };
+
+      if (dateFrom || dateTo) {
+        where.scheduledAt = {};
+        if (dateFrom) where.scheduledAt.gte = new Date(dateFrom as string);
+        if (dateTo) where.scheduledAt.lte = new Date(dateTo as string);
+      }
+
+      if (followUpRuleId) where.followUpRuleId = followUpRuleId;
+
+      // Get analytics data
+      const [
+        totalScheduled,
+        totalSent,
+        totalSkipped,
+        totalFailed,
+        statusBreakdown,
+        timeToSendBreakdown,
+      ] = await Promise.all([
+        prisma.scheduledFollowUp.count({ where }),
+        prisma.scheduledFollowUp.count({ where: { ...where, status: "SENT" } }),
+        prisma.scheduledFollowUp.count({
+          where: { ...where, status: "SKIPPED" },
+        }),
+        prisma.scheduledFollowUp.count({
+          where: { ...where, status: "FAILED" },
+        }),
+        prisma.scheduledFollowUp.groupBy({
+          by: ["status"],
+          where,
+          _count: true,
+        }),
+        // TODO: Re-enable after Prisma migration
+        // prisma.scheduledFollowUp.findMany({
+        //   where: { ...where, conditionType: { not: null } },
+        //   select: {
+        //     conditionType: true,
+        //   },
+        // }),
+        prisma.scheduledFollowUp.findMany({
+          where: { ...where, status: "SENT", sentAt: { not: null } },
+          select: {
+            scheduledAt: true,
+            sentAt: true,
+          },
+        }),
+      ]);
+
+      // Calculate average time to send
+      const avgTimeToSend =
+        timeToSendBreakdown && timeToSendBreakdown.length > 0
+          ? timeToSendBreakdown.reduce((acc: number, item: any) => {
+              const timeDiff =
+                item.sentAt!.getTime() - item.scheduledAt.getTime();
+              return acc + timeDiff;
+            }, 0) / timeToSendBreakdown.length
+          : 0;
+
+      const analytics = {
+        summary: {
+          totalScheduled,
+          totalSent,
+          totalSkipped,
+          totalFailed,
+          successRate:
+            totalScheduled > 0 ? (totalSent / totalScheduled) * 100 : 0,
+          avgTimeToSendHours: avgTimeToSend / (1000 * 60 * 60),
+        },
+        statusBreakdown: statusBreakdown.map((item) => ({
+          status: item.status,
+          count: item._count,
+        })),
+        conditionBreakdown: [], // TODO: Re-enable after Prisma migration
+      };
+
+      successResponse(
+        res,
+        analytics,
+        "Follow-up analytics retrieved successfully"
       );
     } catch (error) {
       next(error);

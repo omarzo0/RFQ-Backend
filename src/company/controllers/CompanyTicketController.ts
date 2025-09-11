@@ -91,10 +91,15 @@ export class CompanyTicketController {
       const filters = {
         page: parseInt(page as string),
         limit: parseInt(limit as string),
-        status: status as string,
-        priority: priority as string,
-        category: category as string,
-        search: search as string,
+        status: status as
+          | "OPEN"
+          | "IN_PROGRESS"
+          | "RESOLVED"
+          | "CLOSED"
+          | undefined,
+        priority: priority as "LOW" | "NORMAL" | "HIGH" | "URGENT" | undefined,
+        category: category as string | undefined,
+        search: search as string | undefined,
       };
 
       const result = await this.companyTicketService.getTickets(

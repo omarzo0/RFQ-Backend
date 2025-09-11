@@ -478,6 +478,26 @@ model FollowUpRule {
   maxFollowUps       Int                 @default(2) @map("max_follow_ups")
   emailTemplateId    String?             @map("email_template_id")
   isActive           Boolean             @default(true) @map("is_active")
+  
+  // Enhanced conditional follow-up features
+  onlyIfOpened       Boolean             @default(false) @map("only_if_opened")
+  onlyIfClicked      Boolean             @default(false) @map("only_if_clicked")
+  onlyIfDelivered    Boolean             @default(false) @map("only_if_delivered")
+  minTimeSinceOpen   Int?                @map("min_time_since_open") // hours
+  maxTimeSinceOpen   Int?                @map("max_time_since_open") // hours
+  
+  // Advanced scheduling features
+  scheduleType       ScheduleType        @default(IMMEDIATE) @map("schedule_type")
+  specificTime       String?             @map("specific_time") // HH:MM format
+  timezone           String?             @default("UTC")
+  businessDaysOnly   Boolean             @default(false) @map("business_days_only")
+  excludeWeekends    Boolean             @default(false) @map("exclude_weekends")
+  excludeHolidays    Boolean             @default(false) @map("exclude_holidays")
+  
+  // Follow-up sequence configuration
+  followUpIntervals  Json?               @map("follow_up_intervals") // Array of days for each follow-up
+  customSchedule     Json?               @map("custom_schedule") // Custom scheduling rules
+  
   createdBy          String              @map("created_by")
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")
@@ -500,6 +520,18 @@ model ScheduledFollowUp {
   status           FollowUpStatus @default(SCHEDULED)
   skipReason       String?        @map("skip_reason")
   followUpSequence Int            @default(1) @map("follow_up_sequence")
+  
+  // Enhanced scheduling and condition tracking
+  originalScheduledAt DateTime?   @map("original_scheduled_at")
+  rescheduledAt       DateTime?   @map("rescheduled_at")
+  rescheduleReason    String?     @map("reschedule_reason")
+  conditionMetAt      DateTime?   @map("condition_met_at")
+  conditionType       String?     @map("condition_type") // 'opened', 'clicked', 'delivered', etc.
+  
+  // Timezone and business hours tracking
+  timezone           String?      @default("UTC")
+  isBusinessHours    Boolean      @default(false) @map("is_business_hours")
+  
   createdAt        DateTime       @default(now()) @map("created_at")
   contact          Contact        @relation(fields: [contactId], references: [id], onDelete: Cascade)
   followUpRule     FollowUpRule   @relation(fields: [followUpRuleId], references: [id])
@@ -1157,4 +1189,11 @@ enum ProcessingStatus {
   COMPLETED
   FAILED
   RETRYING
+}
+
+enum ScheduleType {
+  IMMEDIATE
+  SPECIFIC_TIME
+  BUSINESS_HOURS
+  CUSTOM
 }

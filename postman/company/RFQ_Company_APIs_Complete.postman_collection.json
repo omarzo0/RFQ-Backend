@@ -871,6 +871,146 @@
               "path": ["emails", "follow-up-rules", "analytics"]
             }
           }
+        },
+        {
+          "name": "Schedule Conditional Follow-ups",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfqId\": \"{{rfq_id}}\",\n  \"contactId\": \"{{contact_id}}\",\n  \"eventType\": \"opened\",\n  \"eventTime\": \"2024-01-15T10:30:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/follow-up-rules/schedule-conditional",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "follow-up-rules", "schedule-conditional"]
+            }
+          }
+        },
+        {
+          "name": "Reschedule Follow-ups",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfqId\": \"{{rfq_id}}\",\n  \"contactId\": \"{{contact_id}}\",\n  \"followUpRuleId\": \"{{rule_id}}\",\n  \"reason\": \"Updated scheduling requirements\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/follow-up-rules/reschedule",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "follow-up-rules", "reschedule"]
+            }
+          }
+        },
+        {
+          "name": "Get Scheduled Follow-ups for Rule",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/emails/follow-up-rules/{{rule_id}}/scheduled?page=1&limit=10&status=SCHEDULED",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "follow-up-rules", "{{rule_id}}", "scheduled"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "SCHEDULED"
+                },
+                {
+                  "key": "contactId",
+                  "value": "{{contact_id}}",
+                  "disabled": true
+                },
+                {
+                  "key": "rfqId",
+                  "value": "{{rfq_id}}",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Enhanced Follow-up Rule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Enhanced Follow-up Rule\",\n  \"description\": \"Follow-up rule with conditional logic and advanced scheduling\",\n  \"daysAfterSend\": 3,\n  \"maxFollowUps\": 3,\n  \"emailTemplateId\": null,\n  \"onlyIfOpened\": true,\n  \"onlyIfClicked\": false,\n  \"onlyIfDelivered\": false,\n  \"minTimeSinceOpen\": 2,\n  \"maxTimeSinceOpen\": 48,\n  \"scheduleType\": \"BUSINESS_HOURS\",\n  \"specificTime\": \"09:00\",\n  \"timezone\": \"UTC\",\n  \"businessDaysOnly\": true,\n  \"excludeWeekends\": true,\n  \"excludeHolidays\": false,\n  \"followUpIntervals\": [1, 3, 7],\n  \"customSchedule\": {\n    \"timeOfDay\": \"10:00\",\n    \"dayOfWeek\": 1\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/follow-up-rules",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "follow-up-rules"]
+            }
+          }
+        },
+        {
+          "name": "Create Simple Follow-up Rule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Simple Follow-up Rule\",\n  \"description\": \"Basic follow-up rule without advanced features\",\n  \"daysAfterSend\": 2,\n  \"maxFollowUps\": 2,\n  \"emailTemplateId\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/follow-up-rules",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "follow-up-rules"]
+            }
+          }
+        },
+        {
+          "name": "Create Click-Based Follow-up Rule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Click-Based Follow-up\",\n  \"description\": \"Send follow-up only if email was clicked\",\n  \"daysAfterSend\": 1,\n  \"maxFollowUps\": 1,\n  \"emailTemplateId\": null,\n  \"onlyIfClicked\": true,\n  \"scheduleType\": \"IMMEDIATE\",\n  \"timezone\": \"UTC\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emails/follow-up-rules",
+              "host": ["{{base_url}}"],
+              "path": ["emails", "follow-up-rules"]
+            }
+          }
         }
       ]
     },

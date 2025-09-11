@@ -1,4 +1,4 @@
-import { prisma } from "../../utils/prisma";
+import { PrismaClient } from "@prisma/client";
 import { AppError } from "../../utils/errors";
 import logger from "../../utils/logger";
 
@@ -44,6 +44,12 @@ export interface TicketResponse {
 }
 
 export class CompanyTicketService {
+  private prisma: PrismaClient;
+
+  constructor() {
+    this.prisma = new PrismaClient();
+  }
+
   /**
    * Create a new support ticket for the company
    */
@@ -53,7 +59,7 @@ export class CompanyTicketService {
     userId: string
   ) {
     try {
-      const ticket = await prisma.supportTicket.create({
+      const ticket = await this.prisma.supportTicket.create({
         data: {
           title: data.title,
           description: data.description,
@@ -127,7 +133,7 @@ export class CompanyTicketService {
       }
 
       const [tickets, total] = await Promise.all([
-        prisma.supportTicket.findMany({
+        this.prisma.supportTicket.findMany({
           where,
           skip,
           take: limit,
@@ -143,7 +149,7 @@ export class CompanyTicketService {
             },
           },
         }),
-        prisma.supportTicket.count({ where }),
+        this.prisma.supportTicket.count({ where }),
       ]);
 
       return {
@@ -166,7 +172,7 @@ export class CompanyTicketService {
    */
   async getTicketById(ticketId: string, companyId: string) {
     try {
-      const ticket = await prisma.supportTicket.findFirst({
+      const ticket = await this.prisma.supportTicket.findFirst({
         where: {
           id: ticketId,
           companyId: companyId,
@@ -207,7 +213,7 @@ export class CompanyTicketService {
   ) {
     try {
       // First check if ticket exists and belongs to company
-      const existingTicket = await prisma.supportTicket.findFirst({
+      const existingTicket = await this.prisma.supportTicket.findFirst({
         where: {
           id: ticketId,
           companyId: companyId,
@@ -223,7 +229,7 @@ export class CompanyTicketService {
         throw new AppError("Cannot update closed tickets", 400);
       }
 
-      const updatedTicket = await prisma.supportTicket.update({
+      const updatedTicket = await this.prisma.supportTicket.update({
         where: { id: ticketId },
         data: {
           ...data,
@@ -267,19 +273,19 @@ export class CompanyTicketService {
         resolvedTickets,
         closedTickets,
       ] = await Promise.all([
-        prisma.supportTicket.count({
+        this.prisma.supportTicket.count({
           where: { companyId },
         }),
-        prisma.supportTicket.count({
+        this.prisma.supportTicket.count({
           where: { companyId, status: "OPEN" },
         }),
-        prisma.supportTicket.count({
+        this.prisma.supportTicket.count({
           where: { companyId, status: "IN_PROGRESS" },
         }),
-        prisma.supportTicket.count({
+        this.prisma.supportTicket.count({
           where: { companyId, status: "RESOLVED" },
         }),
-        prisma.supportTicket.count({
+        this.prisma.supportTicket.count({
           where: { companyId, status: "CLOSED" },
         }),
       ]);
@@ -302,7 +308,7 @@ export class CompanyTicketService {
    */
   async getRecentTickets(companyId: string, limit: number = 10) {
     try {
-      const tickets = await prisma.supportTicket.findMany({
+      const tickets = await this.prisma.supportTicket.findMany({
         where: { companyId },
         take: limit,
         orderBy: { createdAt: "desc" },
