@@ -223,7 +223,29 @@ export class QuoteService {
     });
 
     if (!rfq) {
-      throw new Error("RFQ not found");
+      throw new ValidationError("RFQ not found");
+    }
+
+    // Verify shipping line exists
+    if (quoteData.shippingLineId) {
+      const shippingLine = await prisma.shippingLine.findFirst({
+        where: { id: quoteData.shippingLineId, companyId },
+      });
+
+      if (!shippingLine) {
+        throw new ValidationError("Shipping line not found");
+      }
+    }
+
+    // Verify contact exists
+    if (quoteData.contactId) {
+      const contact = await prisma.contact.findFirst({
+        where: { id: quoteData.contactId, companyId },
+      });
+
+      if (!contact) {
+        throw new ValidationError("Contact not found");
+      }
     }
 
     const quote = await prisma.quote.create({
@@ -577,15 +599,27 @@ export class QuoteService {
    * Reject quote
    */
   async rejectQuote(id: string, companyId: string, reason: string) {
+    // First get the current quote to access its notes
+    const currentQuote = await prisma.quote.findFirst({
+      where: {
+        id,
+        rfq: { companyId },
+      },
+    });
+
+    if (!currentQuote) {
+      throw new ValidationError("Quote not found");
+    }
+
     const quote = await prisma.quote.update({
       where: {
         id,
         rfq: { companyId },
       },
       data: {
-        status: "REJECTED",
+        status: "WITHDRAWN", // Using WITHDRAWN as closest equivalent to rejected
         rejectionReason: reason,
-        notes: `${quote.notes || ""}\nRejected: ${reason}`,
+        notes: `${currentQuote.notes || ""}\nRejected: ${reason}`,
       },
       include: {
         rfq: {
@@ -671,7 +705,7 @@ export class QuoteService {
         id,
         rfq: { companyId },
       },
-      data: { status },
+      data: { status: status as any },
       select: {
         id: true,
         status: true,
@@ -743,7 +777,7 @@ export class QuoteService {
         _avg: { responseTime: true },
       }),
       prisma.quote.aggregate({
-        where: { ...where, totalAmount: { not: null } },
+        where,
         _avg: { totalAmount: true },
       }),
       prisma.quote.groupBy({
@@ -865,6 +899,7 @@ export class QuoteService {
         acc[carrierName].bestPrice,
         Number(quote.totalAmount)
       );
+      return acc;
     }, {} as Record<string, any>);
 
     Object.values(carrierPricing).forEach((carrier: any) => {
@@ -884,6 +919,7 @@ export class QuoteService {
       }
       acc[route].quotes++;
       acc[route].totalAmount += Number(quote.totalAmount);
+      return acc;
     }, {} as Record<string, any>);
 
     Object.values(routeAnalysis).forEach((route: any) => {
@@ -1333,7 +1369,7 @@ export class QuoteService {
     id: string,
     companyId: string,
     createdBy: string,
-    options: { rfqId: string; contactId: string }
+    options: { rfqId?: string; contactId?: string }
   ) {
     const originalQuote = await prisma.quote.findFirst({
       where: {
@@ -1346,10 +1382,40 @@ export class QuoteService {
       throw new Error("Quote not found");
     }
 
+    // Use provided rfqId or fall back to original quote's rfqId
+    const rfqId = options.rfqId || originalQuote.rfqId;
+
+    // Use provided contactId or fall back to original quote's contactId
+    const contactId = options.contactId || originalQuote.contactId;
+
+    // Validate that rfqId exists and belongs to the company
+    const rfq = await prisma.rFQ.findFirst({
+      where: {
+        id: rfqId,
+        companyId,
+      },
+    });
+
+    if (!rfq) {
+      throw new Error("RFQ not found or does not belong to company");
+    }
+
+    // Validate that contactId exists and belongs to the company
+    const contact = await prisma.contact.findFirst({
+      where: {
+        id: contactId,
+        companyId,
+      },
+    });
+
+    if (!contact) {
+      throw new Error("Contact not found or does not belong to company");
+    }
+
     const duplicatedQuote = await prisma.quote.create({
       data: {
-        rfqId: options.rfqId,
-        contactId: options.contactId,
+        rfqId: rfqId,
+        contactId: contactId,
         shippingLineId: originalQuote.shippingLineId,
         quoteReference: `${originalQuote.quoteReference} (Copy)`,
         quoteNumber: `${originalQuote.quoteNumber} (Copy)`,
@@ -1360,7 +1426,7 @@ export class QuoteService {
         securityFee: originalQuote.securityFee,
         documentationFee: originalQuote.documentationFee,
         handlingCharges: originalQuote.handlingCharges,
-        otherCharges: originalQuote.otherCharges,
+        otherCharges: originalQuote.otherCharges as any,
         totalAmount: originalQuote.totalAmount,
         validityDate: originalQuote.validityDate,
         paymentTerms: originalQuote.paymentTerms,
@@ -1483,4 +1549,3 @@ export class QuoteService {
     };
   }
 }
-

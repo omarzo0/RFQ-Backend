@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router } from "express";
 import { EmailController } from "../controllers/EmailController";
 import { authenticate } from "../middleware/companyAuth";

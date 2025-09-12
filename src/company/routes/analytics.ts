@@ -1,6 +1,7 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import { AnalyticsController } from "../controllers/AnalyticsController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
+import { CompanyRequest } from "../types/auth";
 
 const router = express.Router();
 const analyticsController = new AnalyticsController();
@@ -11,98 +12,185 @@ router.use(authenticateCompanyUser);
 // Performance Metrics
 router.get(
   "/performance-metrics",
-  analyticsController.getPerformanceMetrics.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.getPerformanceMetrics(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // RFQ Analytics
 router.get(
   "/rfq-analytics",
-  analyticsController.getRFQAnalytics.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.getRFQAnalytics(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // Quote Analytics
 router.get(
   "/quote-analytics",
-  analyticsController.getQuoteAnalytics.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.getQuoteAnalytics(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // Carrier Performance
 router.get(
   "/carrier-performance",
-  analyticsController.getCarrierPerformance.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.getCarrierPerformance(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // Contact Engagement
 router.get(
   "/contact-engagement",
-  analyticsController.getContactEngagement.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.getContactEngagement(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // Route Performance
 router.get(
   "/route-performance",
-  analyticsController.getRoutePerformance.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.getRoutePerformance(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // Historical Benchmarking
 router.get(
   "/historical-benchmarking",
-  analyticsController.getHistoricalBenchmarking.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.getHistoricalBenchmarking(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // Cost Analysis
 router.get(
   "/cost-analysis",
-  analyticsController.getCostAnalysis.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.getCostAnalysis(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // Market Intelligence
 router.get(
   "/market-intelligence",
-  analyticsController.getMarketIntelligence.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.getMarketIntelligence(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // Scheduled Reports
 router.get(
   "/scheduled-reports",
-  analyticsController.getScheduledReports.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.getScheduledReports(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 router.post(
   "/scheduled-reports",
-  analyticsController.createScheduledReport.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.createScheduledReport(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 router.put(
   "/scheduled-reports/:id",
-  analyticsController.updateScheduledReport.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.updateScheduledReport(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 router.delete(
   "/scheduled-reports/:id",
-  analyticsController.deleteScheduledReport.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.deleteScheduledReport(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // Custom Reports
 router.get(
   "/custom-reports",
-  analyticsController.getCustomReports.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.getCustomReports(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 router.post(
   "/custom-reports",
-  analyticsController.createCustomReport.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.createCustomReport(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 router.put(
   "/custom-reports/:id",
-  analyticsController.updateCustomReport.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.updateCustomReport(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 router.delete(
   "/custom-reports/:id",
-  analyticsController.deleteCustomReport.bind(analyticsController)
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.deleteCustomReport(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // Export Analytics
-router.post(
-  "/export",
-  analyticsController.exportAnalytics.bind(analyticsController)
+router.post("/export", (req: Request, res: Response, next: NextFunction) =>
+  analyticsController.exportAnalytics(
+    req as unknown as CompanyRequest,
+    res,
+    next
+  )
 );
 
 export default router;
-

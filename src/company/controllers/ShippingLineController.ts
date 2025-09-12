@@ -25,10 +25,7 @@ export class ShippingLineController {
         tag,
         isCustom,
       } = (req as any).query;
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return next(new Error("Unauthorized"));
-      }
+      const companyId = req.user.companyId;
 
       const shippingLines = await this.shippingLineService.getShippingLines(
         companyId,
@@ -64,10 +61,7 @@ export class ShippingLineController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return next(new Error("Unauthorized"));
-      }
+      const companyId = req.user.companyId;
 
       const shippingLine = await this.shippingLineService.getShippingLineById(
         id,
@@ -93,14 +87,8 @@ export class ShippingLineController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return next(new Error("Unauthorized"));
-      }
-      const createdBy = req.user?.id;
-      if (!createdBy) {
-        return next(new Error("Unauthorized"));
-      }
+      const companyId = req.user.companyId;
+      const createdBy = req.user.id;
       const shippingLineData = req.body;
 
       const shippingLine = await this.shippingLineService.createShippingLine(
@@ -130,10 +118,7 @@ export class ShippingLineController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return next(new Error("Unauthorized"));
-      }
+      const companyId = req.user.companyId;
       const shippingLineData = req.body;
 
       const shippingLine = await this.shippingLineService.updateShippingLine(
@@ -158,10 +143,7 @@ export class ShippingLineController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return next(new Error("Unauthorized"));
-      }
+      const companyId = req.user.companyId;
 
       await this.shippingLineService.deleteShippingLine(id, companyId);
 
@@ -181,10 +163,7 @@ export class ShippingLineController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return next(new Error("Unauthorized"));
-      }
+      const companyId = req.user.companyId;
       const { isActive } = req.body;
 
       const shippingLine =
@@ -214,10 +193,7 @@ export class ShippingLineController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return next(new Error("Unauthorized"));
-      }
+      const companyId = req.user.companyId;
 
       const shippingLine = await this.shippingLineService.archiveShippingLine(
         id,
@@ -240,10 +216,7 @@ export class ShippingLineController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return next(new Error("Unauthorized"));
-      }
+      const companyId = req.user.companyId;
 
       const shippingLine = await this.shippingLineService.restoreShippingLine(
         id,
@@ -265,10 +238,7 @@ export class ShippingLineController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return next(new Error("Unauthorized"));
-      }
+      const companyId = req.user.companyId;
 
       const tradeLanes = await this.shippingLineService.getTradeLanes(
         companyId
@@ -289,10 +259,7 @@ export class ShippingLineController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return next(new Error("Unauthorized"));
-      }
+      const companyId = req.user.companyId;
 
       const services = await this.shippingLineService.getServices(companyId);
 
@@ -311,10 +278,7 @@ export class ShippingLineController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return next(new Error("Unauthorized"));
-      }
+      const companyId = req.user.companyId;
 
       const tags = await this.shippingLineService.getTags(companyId);
 
@@ -333,14 +297,8 @@ export class ShippingLineController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return next(new Error("Unauthorized"));
-      }
-      const createdBy = req.user?.id;
-      if (!createdBy) {
-        return next(new Error("Unauthorized"));
-      }
+      const companyId = req.user.companyId;
+      const createdBy = req.user.id;
       const { shippingLines } = req.body;
 
       const result = await this.shippingLineService.bulkImportShippingLines(

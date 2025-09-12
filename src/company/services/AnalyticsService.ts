@@ -93,7 +93,7 @@ export class AnalyticsService {
     });
 
     // Get RFQ timeline
-    const rfqTimeline = await prisma.$queryRaw`
+    const rfqTimelineRaw = (await prisma.$queryRaw`
       SELECT 
         DATE(created_at) as date,
         COUNT(*) as count
@@ -103,19 +103,25 @@ export class AnalyticsService {
         AND created_at <= ${end}
       GROUP BY DATE(created_at)
       ORDER BY date ASC
-    `;
+    `) as Array<{ date: string; count: bigint }>;
 
-    // Get response time analysis
-    const responseTimeData = await prisma.rFQRecipient.aggregate({
-      where: {
-        rfq: { companyId },
-        emailSentAt: { gte: start, lte: end },
-        responseReceivedAt: { not: null },
-      },
-      _avg: {
-        responseReceivedAt: true,
-      },
-    });
+    const rfqTimeline = rfqTimelineRaw.map((item) => ({
+      date: item.date,
+      count: Number(item.count),
+    }));
+
+    // Get response time analysis - using raw query since _avg doesn't work with DateTime fields
+    const responseTimeData = await prisma.$queryRaw`
+      SELECT 
+        AVG(EXTRACT(EPOCH FROM (response_received_at - email_sent_at))/3600) as average_response_time_hours
+      FROM rfq_recipients 
+      WHERE rfq_id IN (
+        SELECT id FROM rfqs WHERE company_id = ${companyId}
+      )
+        AND email_sent_at >= ${start}
+        AND email_sent_at <= ${end}
+        AND response_received_at IS NOT NULL
+    `;
 
     // Get quote distribution
     const quoteDistribution = await prisma.quote.groupBy({
@@ -130,20 +136,19 @@ export class AnalyticsService {
 
     return {
       byStatus: rfqsByStatus.reduce((acc, item) => {
-        acc[item.status.toLowerCase()] = item._count.id;
+        acc[item.status.toLowerCase()] = Number(item._count.id);
         return acc;
       }, {} as Record<string, number>),
       timeline: rfqTimeline as Array<{ date: string; count: number }>,
       responseTimeAnalysis: {
-        averageResponseTime: responseTimeData._avg.responseReceivedAt
-          ? this.calculateAverageResponseTime(
-              responseTimeData._avg.responseReceivedAt
-            )
+        averageResponseTime: (responseTimeData as any[])[0]
+          ?.average_response_time_hours
+          ? Number((responseTimeData as any[])[0].average_response_time_hours)
           : 0,
       },
       quoteDistribution: quoteDistribution.map((item) => ({
         currency: item.currency,
-        count: item._count.id,
+        count: Number(item._count.id),
         averageAmount: item._avg.totalAmount,
       })),
     };
@@ -163,7 +168,7 @@ export class AnalyticsService {
     const end = endDate ? new Date(endDate) : new Date();
 
     // Get quote timeline
-    const quoteTimeline = await prisma.$queryRaw`
+    const quoteTimelineRaw = (await prisma.$queryRaw`
       SELECT 
         DATE(created_at) as date,
         COUNT(*) as count
@@ -175,7 +180,12 @@ export class AnalyticsService {
         AND created_at <= ${end}
       GROUP BY DATE(created_at)
       ORDER BY date ASC
-    `;
+    `) as Array<{ date: string; count: bigint }>;
+
+    const quoteTimeline = quoteTimelineRaw.map((item) => ({
+      date: item.date,
+      count: Number(item.count),
+    }));
 
     // Get quotes by source
     const quotesBySource = await prisma.quote.groupBy({
@@ -202,7 +212,7 @@ export class AnalyticsService {
     return {
       timeline: quoteTimeline as Array<{ date: string; count: number }>,
       bySource: quotesBySource.reduce((acc, item) => {
-        acc[item.source.toLowerCase()] = item._count.id;
+        acc[item.source.toLowerCase()] = Number(item._count.id);
         return acc;
       }, {} as Record<string, number>),
       competitiveAnalysis: await Promise.all(
@@ -214,7 +224,7 @@ export class AnalyticsService {
           return {
             shippingLineId: item.shippingLineId,
             shippingLineName: shippingLine?.name || "Unknown",
-            quoteCount: item._count.id,
+            quoteCount: Number(item._count.id),
             averageAmount: item._avg.totalAmount,
             lowestAmount: item._min.totalAmount,
           };
@@ -348,7 +358,7 @@ export class AnalyticsService {
     const end = endDate ? new Date(endDate) : new Date();
 
     // Get route performance data
-    const routeData = await prisma.$queryRaw`
+    const routeDataRaw = (await prisma.$queryRaw`
       SELECT 
         origin_port,
         destination_port,
@@ -363,9 +373,16 @@ export class AnalyticsService {
         AND r.created_at <= ${end}
       GROUP BY origin_port, destination_port
       ORDER BY total_quotes DESC
-    `;
+    `) as Array<{
+      origin_port: string;
+      destination_port: string;
+      total_rfqs: bigint;
+      total_quotes: bigint;
+      average_price: number;
+      average_response_time: number;
+    }>;
 
-    return (routeData as any[]).map((route) => ({
+    return routeDataRaw.map((route) => ({
       route: `${route.origin_port} → ${route.destination_port}`,
       totalRFQs: Number(route.total_rfqs),
       totalQuotes: Number(route.total_quotes),
@@ -524,7 +541,7 @@ export class AnalyticsService {
     });
 
     // Get cost trends
-    const costTrends = await prisma.$queryRaw`
+    const costTrendsRaw = (await prisma.$queryRaw`
       SELECT 
         DATE_TRUNC('week', created_at) as period,
         COUNT(*) as shipment_count,
@@ -539,7 +556,19 @@ export class AnalyticsService {
         AND is_winner = true
       GROUP BY DATE_TRUNC('week', created_at)
       ORDER BY period ASC
-    `;
+    `) as Array<{
+      period: Date;
+      shipment_count: bigint;
+      total_cost: number;
+      average_cost: number;
+    }>;
+
+    const costTrends = costTrendsRaw.map((trend) => ({
+      period: trend.period,
+      shipment_count: Number(trend.shipment_count),
+      total_cost: Number(trend.total_cost),
+      average_cost: Number(trend.average_cost),
+    }));
 
     // Generate optimization opportunities
     const optimizationOpportunities = [
@@ -573,12 +602,13 @@ export class AnalyticsService {
       costBreakdown: costBreakdown.map((item) => ({
         category: item.currency,
         amount: Number(item._sum.totalAmount || 0),
+        count: Number(item._count.id),
         percentage:
           totalShippingCosts > 0
             ? (Number(item._sum.totalAmount || 0) / totalShippingCosts) * 100
             : 0,
       })),
-      costTrends: (costTrends as any[]).map((trend) => ({
+      costTrends: costTrends.map((trend) => ({
         period: trend.period.toISOString().split("T")[0],
         totalCost: Number(trend.total_cost || 0),
         averageCost: Number(trend.average_cost || 0),
@@ -601,7 +631,7 @@ export class AnalyticsService {
     const end = endDate ? new Date(endDate) : new Date();
 
     // Get pricing trends
-    const pricingTrends = await prisma.$queryRaw`
+    const pricingTrendsRaw = (await prisma.$queryRaw`
       SELECT 
         DATE_TRUNC('week', created_at) as period,
         AVG(total_amount) as average_price,
@@ -614,7 +644,13 @@ export class AnalyticsService {
         AND created_at <= ${end}
       GROUP BY DATE_TRUNC('week', created_at)
       ORDER BY period ASC
-    `;
+    `) as Array<{ period: Date; average_price: number; volume: bigint }>;
+
+    const pricingTrends = pricingTrendsRaw.map((trend) => ({
+      period: trend.period,
+      average_price: Number(trend.average_price),
+      volume: Number(trend.volume),
+    }));
 
     // Get competitor analysis
     const competitorAnalysis = await prisma.quote.groupBy({
@@ -628,7 +664,7 @@ export class AnalyticsService {
     });
 
     const totalQuotes = competitorAnalysis.reduce(
-      (sum, item) => sum + item._count.id,
+      (sum, item) => sum + Number(item._count.id),
       0
     );
 
@@ -641,18 +677,22 @@ export class AnalyticsService {
     };
 
     // Generate market forecast
+    const latestTrend =
+      pricingTrends.length > 0
+        ? pricingTrends[pricingTrends.length - 1]
+        : { average_price: 0, volume: 0 };
     const marketForecast = [
       {
         period: "Next Month",
-        predictedPrice: Number(pricingTrends[0]?.average_price || 0) * 1.02,
-        predictedVolume: Number(pricingTrends[0]?.volume || 0) * 1.1,
+        predictedPrice: Number(latestTrend.average_price || 0) * 1.02,
+        predictedVolume: Number(latestTrend.volume || 0) * 1.1,
         confidence: 85.0,
         factors: ["Seasonal demand", "Fuel prices", "Capacity constraints"],
       },
       {
         period: "Next Quarter",
-        predictedPrice: Number(pricingTrends[0]?.average_price || 0) * 1.05,
-        predictedVolume: Number(pricingTrends[0]?.volume || 0) * 1.2,
+        predictedPrice: Number(latestTrend.average_price || 0) * 1.05,
+        predictedVolume: Number(latestTrend.volume || 0) * 1.2,
         confidence: 72.0,
         factors: [
           "Economic indicators",
@@ -664,14 +704,14 @@ export class AnalyticsService {
 
     return {
       marketConditions,
-      pricingTrends: (pricingTrends as any[]).map((trend) => ({
+      pricingTrends: pricingTrends.map((trend) => ({
         period: trend.period.toISOString().split("T")[0],
         averagePrice: Number(trend.average_price || 0),
         priceIndex:
           100 +
           ((Number(trend.average_price || 0) -
-            Number(pricingTrends[0]?.average_price || 0)) /
-            Number(pricingTrends[0]?.average_price || 0)) *
+            Number(latestTrend.average_price || 0)) /
+            Number(latestTrend.average_price || 0)) *
             100,
       })),
       competitorAnalysis: await Promise.all(
@@ -683,7 +723,9 @@ export class AnalyticsService {
           return {
             carrier: shippingLine?.name || "Unknown",
             marketShare:
-              totalQuotes > 0 ? (item._count.id / totalQuotes) * 100 : 0,
+              totalQuotes > 0
+                ? (Number(item._count.id) / totalQuotes) * 100
+                : 0,
             averagePrice: Number(item._avg.totalAmount || 0),
           };
         })
@@ -809,14 +851,20 @@ export class AnalyticsService {
   ) {
     // This would generate and return the export file
     // For now, return mock data
+
+    // Handle case where period might be undefined or malformed
+    const startDate =
+      period?.start ||
+      new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const endDate = period?.end || new Date().toISOString();
+
     const data = {
-      period,
+      period: {
+        start: startDate,
+        end: endDate,
+      },
       metrics,
-      data: await this.getPerformanceMetrics(
-        companyId,
-        period.start,
-        period.end
-      ),
+      data: await this.getPerformanceMetrics(companyId, startDate, endDate),
     };
 
     // In a real implementation, this would generate PDF/Excel/CSV files
@@ -883,7 +931,7 @@ export class AnalyticsService {
         responseRate: Number(responseRate.toFixed(1)),
         averageResponseTime: 24, // Mock value
         winRate: 15, // Mock value
-        quoteCount: totalQuotes,
+        quoteCount: Number(totalQuotes),
         averageQuoteAmount: Number(averageAmount.toFixed(2)),
         performanceScore: this.calculatePerformanceScore(responseRate, 15, 24),
       };
@@ -917,4 +965,3 @@ export class AnalyticsService {
     return months;
   }
 }
-

@@ -62,9 +62,11 @@ export interface CompanyDashboardStats {
 import { Request } from "express";
 
 export interface CompanyRequest extends Request {
-  user?: {
+  user: {
     id: string;
     email: string;
+    firstName: string;
+    lastName: string;
     role: string;
     userType: "COMPANY_USER";
     companyId: string;

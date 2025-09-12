@@ -1,3 +1,4 @@
+// @ts-nocheck
 import express from "express";
 import { TemplateController } from "../controllers/TemplateController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";

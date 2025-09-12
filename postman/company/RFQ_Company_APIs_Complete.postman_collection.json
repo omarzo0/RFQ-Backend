@@ -1276,6 +1276,44 @@
           }
         },
         {
+          "name": "Create Quote (Minimal)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rfqId\": \"{{rfq_id}}\",\n  \"oceanFreight\": 1500.00,\n  \"currency\": \"USD\",\n  \"totalAmount\": 2000.00,\n  \"validityDate\": \"2024-03-01T00:00:00Z\",\n  \"terms\": \"FOB\",\n  \"notes\": \"Minimal quote without contact or shipping line\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/quotes",
+              "host": ["{{base_url}}"],
+              "path": ["quotes"]
+            }
+          }
+        },
+        {
+          "name": "Get Valid IDs for Testing",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/rfqs?limit=5",
+              "host": ["{{base_url}}"],
+              "path": ["rfqs"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Update Quote",
           "request": {
             "method": "PUT",
@@ -1585,9 +1623,15 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/analytics/performance-metrics",
+              "raw": "{{base_url}}/api/v1/company/analytics/performance-metrics",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "performance-metrics"]
+              "path": [
+                "api",
+                "v1",
+                "company",
+                "analytics",
+                "performance-metrics"
+              ]
             }
           }
         },
@@ -1596,9 +1640,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/analytics/rfq-analytics",
+              "raw": "{{base_url}}/api/v1/company/analytics/rfq-analytics",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "rfq-analytics"]
+              "path": ["api", "v1", "company", "analytics", "rfq-analytics"]
             }
           }
         },
@@ -1607,9 +1651,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/analytics/quote-analytics",
+              "raw": "{{base_url}}/api/v1/company/analytics/quote-analytics",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "quote-analytics"]
+              "path": ["api", "v1", "company", "analytics", "quote-analytics"]
             }
           }
         },
@@ -1618,9 +1662,15 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/analytics/carrier-performance",
+              "raw": "{{base_url}}/api/v1/company/analytics/carrier-performance",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "carrier-performance"]
+              "path": [
+                "api",
+                "v1",
+                "company",
+                "analytics",
+                "carrier-performance"
+              ]
             }
           }
         },
@@ -1629,9 +1679,15 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/analytics/contact-engagement",
+              "raw": "{{base_url}}/api/v1/company/analytics/contact-engagement",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "contact-engagement"]
+              "path": [
+                "api",
+                "v1",
+                "company",
+                "analytics",
+                "contact-engagement"
+              ]
             }
           }
         },
@@ -1640,9 +1696,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/analytics/route-performance",
+              "raw": "{{base_url}}/api/v1/company/analytics/route-performance",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "route-performance"]
+              "path": ["api", "v1", "company", "analytics", "route-performance"]
             }
           }
         },
@@ -1651,9 +1707,15 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/analytics/historical-benchmarking",
+              "raw": "{{base_url}}/api/v1/company/analytics/historical-benchmarking",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "historical-benchmarking"]
+              "path": [
+                "api",
+                "v1",
+                "company",
+                "analytics",
+                "historical-benchmarking"
+              ]
             }
           }
         },
@@ -1662,9 +1724,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/analytics/cost-analysis",
+              "raw": "{{base_url}}/api/v1/company/analytics/cost-analysis",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "cost-analysis"]
+              "path": ["api", "v1", "company", "analytics", "cost-analysis"]
             }
           }
         },
@@ -1673,9 +1735,15 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/analytics/market-intelligence",
+              "raw": "{{base_url}}/api/v1/company/analytics/market-intelligence",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "market-intelligence"]
+              "path": [
+                "api",
+                "v1",
+                "company",
+                "analytics",
+                "market-intelligence"
+              ]
             }
           }
         },
@@ -1684,9 +1752,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/analytics/scheduled-reports",
+              "raw": "{{base_url}}/api/v1/company/analytics/scheduled-reports",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "scheduled-reports"]
+              "path": ["api", "v1", "company", "analytics", "scheduled-reports"]
             }
           }
         },
@@ -1705,9 +1773,9 @@
               "raw": "{\n  \"name\": \"Weekly RFQ Report\",\n  \"reportType\": \"RFQ_ANALYTICS\",\n  \"schedule\": \"WEEKLY\",\n  \"recipients\": [\"admin@company.com\"]\n}"
             },
             "url": {
-              "raw": "{{base_url}}/analytics/scheduled-reports",
+              "raw": "{{base_url}}/api/v1/company/analytics/scheduled-reports",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "scheduled-reports"]
+              "path": ["api", "v1", "company", "analytics", "scheduled-reports"]
             }
           }
         },
@@ -1726,9 +1794,16 @@
               "raw": "{\n  \"name\": \"Updated Weekly Report\",\n  \"schedule\": \"DAILY\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/analytics/scheduled-reports/{{report_id}}",
+              "raw": "{{base_url}}/api/v1/company/analytics/scheduled-reports/{{report_id}}",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "scheduled-reports", "{{report_id}}"]
+              "path": [
+                "api",
+                "v1",
+                "company",
+                "analytics",
+                "scheduled-reports",
+                "{{report_id}}"
+              ]
             }
           }
         },
@@ -1737,9 +1812,16 @@
           "request": {
             "method": "DELETE",
             "url": {
-              "raw": "{{base_url}}/analytics/scheduled-reports/{{report_id}}",
+              "raw": "{{base_url}}/api/v1/company/analytics/scheduled-reports/{{report_id}}",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "scheduled-reports", "{{report_id}}"]
+              "path": [
+                "api",
+                "v1",
+                "company",
+                "analytics",
+                "scheduled-reports",
+                "{{report_id}}"
+              ]
             }
           }
         },
@@ -1748,9 +1830,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/analytics/custom-reports",
+              "raw": "{{base_url}}/api/v1/company/analytics/custom-reports",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "custom-reports"]
+              "path": ["api", "v1", "company", "analytics", "custom-reports"]
             }
           }
         },
@@ -1769,9 +1851,9 @@
               "raw": "{\n  \"name\": \"Custom Quote Analysis\",\n  \"description\": \"Custom report for quote analysis\",\n  \"filters\": {\n    \"dateRange\": \"30d\",\n    \"status\": \"ACTIVE\"\n  }\n}"
             },
             "url": {
-              "raw": "{{base_url}}/analytics/custom-reports",
+              "raw": "{{base_url}}/api/v1/company/analytics/custom-reports",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "custom-reports"]
+              "path": ["api", "v1", "company", "analytics", "custom-reports"]
             }
           }
         },
@@ -1790,9 +1872,16 @@
               "raw": "{\n  \"name\": \"Updated Custom Report\",\n  \"description\": \"Updated description\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/analytics/custom-reports/{{report_id}}",
+              "raw": "{{base_url}}/api/v1/company/analytics/custom-reports/{{report_id}}",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "custom-reports", "{{report_id}}"]
+              "path": [
+                "api",
+                "v1",
+                "company",
+                "analytics",
+                "custom-reports",
+                "{{report_id}}"
+              ]
             }
           }
         },
@@ -1801,9 +1890,16 @@
           "request": {
             "method": "DELETE",
             "url": {
-              "raw": "{{base_url}}/analytics/custom-reports/{{report_id}}",
+              "raw": "{{base_url}}/api/v1/company/analytics/custom-reports/{{report_id}}",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "custom-reports", "{{report_id}}"]
+              "path": [
+                "api",
+                "v1",
+                "company",
+                "analytics",
+                "custom-reports",
+                "{{report_id}}"
+              ]
             }
           }
         },
@@ -1822,9 +1918,9 @@
               "raw": "{\n  \"reportType\": \"RFQ_ANALYTICS\",\n  \"format\": \"CSV\",\n  \"dateRange\": \"30d\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/analytics/export",
+              "raw": "{{base_url}}/api/v1/company/analytics/export",
               "host": ["{{base_url}}"],
-              "path": ["analytics", "export"]
+              "path": ["api", "v1", "company", "analytics", "export"]
             }
           }
         }
@@ -2295,7 +2391,32 @@
               "host": ["{{base_url}}"],
               "path": ["profile"]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["profile"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Company profile retrieved successfully\",\n  \"data\": {\n    \"id\": \"company-uuid\",\n    \"name\": \"Example Company\",\n    \"email\": \"contact@example.com\",\n    \"domain\": \"example.com\",\n    \"phone\": \"+1234567890\",\n    \"address\": \"123 Business Street\",\n    \"city\": \"Business City\",\n    \"country\": \"United States\",\n    \"timezone\": \"America/New_York\",\n    \"subscription\": {\n      \"plan\": \"premium\",\n      \"status\": \"active\"\n    },\n    \"settings\": {\n      \"emailFooter\": \"Best regards, Example Company\",\n      \"defaultFollowUpDays\": 3,\n      \"autoFollowUpEnabled\": true\n    },\n    \"users\": [\n      {\n        \"id\": \"user-uuid-1\",\n        \"email\": \"admin@example.com\",\n        \"firstName\": \"John\",\n        \"lastName\": \"Doe\",\n        \"role\": \"ADMIN\",\n        \"isActive\": true,\n        \"lastLoginAt\": \"2024-01-15T10:30:00Z\",\n        \"createdAt\": \"2024-01-01T00:00:00Z\",\n        \"updatedAt\": \"2024-01-15T10:30:00Z\"\n      },\n      {\n        \"id\": \"user-uuid-2\",\n        \"email\": \"manager@example.com\",\n        \"firstName\": \"Jane\",\n        \"lastName\": \"Smith\",\n        \"role\": \"MANAGER\",\n        \"isActive\": true,\n        \"lastLoginAt\": \"2024-01-14T15:45:00Z\",\n        \"createdAt\": \"2024-01-05T00:00:00Z\",\n        \"updatedAt\": \"2024-01-14T15:45:00Z\"\n      }\n    ],\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": \"2024-01-15T10:30:00Z\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Update Company Profile",
@@ -2322,19 +2443,15 @@
           "name": "Upload Company Logo",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "multipart/form-data"
-              }
-            ],
+            "header": [],
             "body": {
               "mode": "formdata",
               "formdata": [
                 {
                   "key": "logo",
                   "type": "file",
-                  "src": "path/to/logo.png"
+                  "src": "path/to/logo.png",
+                  "description": "Company logo image file (PNG, JPG, GIF supported)"
                 }
               ]
             },
@@ -2343,7 +2460,107 @@
               "host": ["{{base_url}}"],
               "path": ["logo"]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "logo",
+                      "type": "file",
+                      "src": "path/to/logo.png"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/logo",
+                  "host": ["{{base_url}}"],
+                  "path": ["logo"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Company logo uploaded successfully\",\n  \"data\": {\n    \"logoUrl\": \"https://example.com/logos/company-uuid-1234567890.png\"\n  }\n}"
+            },
+            {
+              "name": "Error Response - Invalid File Type",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "logo",
+                      "type": "file",
+                      "src": "path/to/document.pdf"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/logo",
+                  "host": ["{{base_url}}"],
+                  "path": ["logo"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Only image files are allowed\",\n  \"error\": \"Only image files are allowed\"\n}"
+            },
+            {
+              "name": "Error Response - Multipart Boundary Error",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"logo\": \"base64-encoded-image\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/logo",
+                  "host": ["{{base_url}}"],
+                  "path": ["logo"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Invalid request format. Please ensure the request is sent as multipart/form-data.\",\n  \"error\": \"Multipart boundary not found. Make sure to use form-data format with proper Content-Type header.\"\n}"
+            }
+          ]
         },
         {
           "name": "Get User Preferences",

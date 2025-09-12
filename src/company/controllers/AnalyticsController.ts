@@ -439,13 +439,19 @@ export class AnalyticsController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { format, period, metrics } = req.body as any;
+      const { format = "json", period, metrics = [] } = req.body as any;
       const companyId = req.user.companyId!;
+
+      // Validate and set default period if not provided
+      const exportPeriod = period || {
+        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        end: new Date().toISOString(),
+      };
 
       const exportData = await this.analyticsService.exportAnalytics(
         companyId,
         format,
-        period,
+        exportPeriod,
         metrics
       );
 

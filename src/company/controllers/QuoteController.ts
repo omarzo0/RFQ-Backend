@@ -36,7 +36,7 @@ export class QuoteController {
         sortBy = "createdAt",
         sortOrder = "desc",
       } = (req as any).query;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
 
       const quotes = await this.quoteService.getQuotes(companyId, {
         page: Number(page),
@@ -76,7 +76,7 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
 
       const quote = await this.quoteService.getQuoteById(id, companyId);
 
@@ -95,8 +95,8 @@ export class QuoteController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const companyId = req.user!.companyId!;
+      const createdBy = req.user!.id;
       const quoteData = req.body;
 
       const quote = await this.quoteService.createQuote(
@@ -121,7 +121,7 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
       const quoteData = req.body;
 
       const quote = await this.quoteService.updateQuote(
@@ -146,7 +146,7 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
 
       await this.quoteService.deleteQuote(id, companyId);
 
@@ -166,7 +166,7 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { rfqId } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
 
       const quotes = await this.quoteService.getQuotesByRFQ(rfqId, companyId);
 
@@ -186,7 +186,7 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { rfqId } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
 
       const comparison = await this.quoteService.compareQuotes(
         rfqId,
@@ -213,8 +213,8 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
-      const awardedBy = req.user.id;
+      const companyId = req.user!.companyId!;
+      const awardedBy = req.user!.id;
       const { notes } = req.body;
 
       const quote = await this.quoteService.awardQuote(
@@ -240,7 +240,7 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
       const { reason } = req.body;
 
       const quote = await this.quoteService.rejectQuote(id, companyId, reason);
@@ -261,8 +261,8 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
-      const verifiedBy = req.user.id;
+      const companyId = req.user!.companyId!;
+      const verifiedBy = req.user!.id;
 
       const quote = await this.quoteService.verifyQuote(
         id,
@@ -286,7 +286,7 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
       const { status } = req.body;
 
       const quote = await this.quoteService.updateQuoteStatus(
@@ -311,7 +311,7 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { period, dateFrom, dateTo, rfqId } = (req as any).query;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
 
       const analytics = await this.quoteService.getQuoteAnalytics(companyId, {
         period,
@@ -336,7 +336,7 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { rfqId, period, dateFrom, dateTo } = (req as any).query;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
 
       const analysis = await this.quoteService.getPriceAnalysis(companyId, {
         rfqId,
@@ -361,7 +361,7 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { period, dateFrom, dateTo } = (req as any).query;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
 
       const performance = await this.quoteService.getCarrierPerformance(
         companyId,
@@ -388,7 +388,7 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { period, dateFrom, dateTo, route } = (req as any).query;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
 
       const trends = await this.quoteService.getMarketTrends(companyId, {
         period,
@@ -413,7 +413,7 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { rfqId, period } = (req as any).query;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
 
       const comparison = await this.quoteService.getHistoricalComparison(
         companyId,
@@ -440,7 +440,7 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { rfqId, route } = (req as any).query;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
 
       const optimization = await this.quoteService.getRateOptimization(
         companyId,
@@ -466,7 +466,7 @@ export class QuoteController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
 
       const tags = await this.quoteService.getQuoteTags(companyId);
 
@@ -485,7 +485,7 @@ export class QuoteController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
 
       const currencies = await this.quoteService.getQuoteCurrencies(companyId);
 
@@ -508,8 +508,8 @@ export class QuoteController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const companyId = req.user!.companyId!;
+      const createdBy = req.user!.id;
       const { quotes } = req.body;
 
       const result = await this.quoteService.bulkImportQuotes(
@@ -534,8 +534,8 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { id } = (req as any).params;
-      const companyId = req.user.companyId!;
-      const createdBy = req.user.id;
+      const companyId = req.user!.companyId!;
+      const createdBy = req.user!.id;
       const { rfqId, contactId } = req.body;
 
       const quote = await this.quoteService.duplicateQuote(
@@ -561,7 +561,7 @@ export class QuoteController {
   ): Promise<void> {
     try {
       const { page = 1, limit = 10 } = (req as any).query;
-      const companyId = req.user.companyId!;
+      const companyId = req.user!.companyId!;
 
       const quotes = await this.quoteService.getExpiredQuotes(companyId, {
         page: Number(page),
@@ -593,4 +593,3 @@ export class QuoteController {
     }
   }
 }
-

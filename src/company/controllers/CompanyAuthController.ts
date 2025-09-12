@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { AuthenticatedRequest } from "../../types/auth";
+import { CompanyRequest } from "../types/auth";
 import { CompanyAuthService } from "../services/CompanyAuthService";
 import { successResponse, errorResponse } from "../../utils/response";
 import { AppError } from "../../utils/errors";
@@ -48,17 +48,9 @@ export class CompanyAuthController {
   /**
    * Get current company user profile
    */
-  getProfile = async (
-    req: AuthenticatedRequest,
-    res: Response
-  ): Promise<void> => {
+  getProfile = async (req: CompanyRequest, res: Response): Promise<void> => {
     try {
-      const userId = req.user?.id;
-
-      if (!userId) {
-        errorResponse(res, "Unauthorized", 401);
-        return;
-      }
+      const userId = req.user.id;
 
       const profile: CompanyProfile =
         await this.companyAuthService.getCurrentUser(userId);
@@ -85,17 +77,12 @@ export class CompanyAuthController {
    * Change company user password
    */
   changePassword = async (
-    req: AuthenticatedRequest,
+    req: CompanyRequest,
     res: Response
   ): Promise<void> => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user.id;
       const { currentPassword, newPassword } = req.body;
-
-      if (!userId) {
-        errorResponse(res, "Unauthorized", 401);
-        return;
-      }
 
       if (!currentPassword || !newPassword) {
         res
@@ -159,14 +146,9 @@ export class CompanyAuthController {
   /**
    * Logout company user
    */
-  logout = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  logout = async (req: CompanyRequest, res: Response): Promise<void> => {
     try {
-      const userId = req.user?.id;
-
-      if (!userId) {
-        errorResponse(res, "Unauthorized", 401);
-        return;
-      }
+      const userId = req.user.id;
 
       await this.companyAuthService.logout(userId);
 

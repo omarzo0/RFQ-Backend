@@ -24,6 +24,22 @@ export class CompanyService {
         autoFollowUpEnabled: true,
         createdAt: true,
         updatedAt: true,
+        users: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            isActive: true,
+            lastLoginAt: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
       },
     });
 
@@ -50,6 +66,7 @@ export class CompanyService {
         defaultFollowUpDays: company.defaultFollowUpDays,
         autoFollowUpEnabled: company.autoFollowUpEnabled,
       },
+      users: company.users,
       createdAt: company.createdAt,
       updatedAt: company.updatedAt,
     };

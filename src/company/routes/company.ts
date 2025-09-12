@@ -1,7 +1,8 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import multer from "multer";
 import { CompanyController } from "../controllers/CompanyController";
 import { authenticate } from "../middleware/companyAuth";
+import { CompanyRequest } from "../types/auth";
 
 const router = express.Router();
 const companyController = new CompanyController();
@@ -21,119 +22,232 @@ const upload = multer({
   },
 });
 
+// Error handling middleware for multer
+const handleMulterError = (
+  err: any,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        success: false,
+        message: "File too large. Maximum size is 5MB.",
+        error: err.message,
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: "File upload error",
+      error: err.message,
+    });
+  } else if (err) {
+    // Handle multipart boundary errors
+    if (err.message && err.message.includes("Boundary not found")) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid request format. Please ensure the request is sent as multipart/form-data.",
+        error:
+          "Multipart boundary not found. Make sure to use form-data format with proper Content-Type header.",
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: "File upload error",
+      error: err.message,
+    });
+  }
+  next();
+};
+
 // Apply authentication middleware to all routes
 router.use(authenticate);
 
 // Company Profile
-router.get(
-  "/profile",
-  companyController.getCompanyProfile.bind(companyController)
+router.get("/profile", (req: Request, res: Response, next: NextFunction) =>
+  companyController.getCompanyProfile(
+    req as unknown as CompanyRequest,
+    res,
+    next
+  )
 );
-router.put(
-  "/profile",
-  companyController.updateCompanyProfile.bind(companyController)
+router.put("/profile", (req: Request, res: Response, next: NextFunction) =>
+  companyController.updateCompanyProfile(
+    req as unknown as CompanyRequest,
+    res,
+    next
+  )
 );
 router.post(
   "/logo",
   upload.single("logo"),
-  companyController.uploadCompanyLogo.bind(companyController)
+  handleMulterError,
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.uploadCompanyLogo(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // User Preferences
 router.get(
   "/user-preferences",
-  companyController.getUserPreferences.bind(companyController)
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.getUserPreferences(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 router.put(
   "/user-preferences",
-  companyController.updateUserPreferences.bind(companyController)
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.updateUserPreferences(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // Subscription Management
-router.get(
-  "/subscription",
-  companyController.getSubscription.bind(companyController)
+router.get("/subscription", (req: Request, res: Response, next: NextFunction) =>
+  companyController.getSubscription(req as unknown as CompanyRequest, res, next)
 );
-router.put(
-  "/subscription",
-  companyController.updateSubscription.bind(companyController)
+router.put("/subscription", (req: Request, res: Response, next: NextFunction) =>
+  companyController.updateSubscription(
+    req as unknown as CompanyRequest,
+    res,
+    next
+  )
 );
 
 // Usage Metrics
-router.get("/usage", companyController.getUsageMetrics.bind(companyController));
+router.get("/usage", (req: Request, res: Response, next: NextFunction) =>
+  companyController.getUsageMetrics(req as unknown as CompanyRequest, res, next)
+);
 
 // Billing History
 router.get(
   "/billing-history",
-  companyController.getBillingHistory.bind(companyController)
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.getBillingHistory(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // Payment Methods
 router.get(
   "/payment-methods",
-  companyController.getPaymentMethods.bind(companyController)
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.getPaymentMethods(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 router.post(
   "/payment-methods",
-  companyController.addPaymentMethod.bind(companyController)
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.addPaymentMethod(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 router.delete(
   "/payment-methods/:id",
-  companyController.deletePaymentMethod.bind(companyController)
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.deletePaymentMethod(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 router.put(
   "/payment-methods/:id/default",
-  companyController.setDefaultPaymentMethod.bind(companyController)
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.setDefaultPaymentMethod(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // Billing Settings
 router.get(
   "/billing-settings",
-  companyController.getBillingSettings.bind(companyController)
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.getBillingSettings(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 router.put(
   "/billing-settings",
-  companyController.updateBillingSettings.bind(companyController)
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.updateBillingSettings(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 // API Keys
-router.get("/api-keys", companyController.getAPIKeys.bind(companyController));
-router.post(
-  "/api-keys",
-  companyController.createAPIKey.bind(companyController)
+router.get("/api-keys", (req: Request, res: Response, next: NextFunction) =>
+  companyController.getAPIKeys(req as unknown as CompanyRequest, res, next)
+);
+router.post("/api-keys", (req: Request, res: Response, next: NextFunction) =>
+  companyController.createAPIKey(req as unknown as CompanyRequest, res, next)
 );
 router.delete(
   "/api-keys/:id",
-  companyController.revokeAPIKey.bind(companyController)
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.revokeAPIKey(req as unknown as CompanyRequest, res, next)
 );
 
 // Webhooks
-router.get("/webhooks", companyController.getWebhooks.bind(companyController));
-router.post(
-  "/webhooks",
-  companyController.createWebhook.bind(companyController)
+router.get("/webhooks", (req: Request, res: Response, next: NextFunction) =>
+  companyController.getWebhooks(req as unknown as CompanyRequest, res, next)
 );
-router.put(
-  "/webhooks/:id",
-  companyController.updateWebhook.bind(companyController)
+router.post("/webhooks", (req: Request, res: Response, next: NextFunction) =>
+  companyController.createWebhook(req as unknown as CompanyRequest, res, next)
+);
+router.put("/webhooks/:id", (req: Request, res: Response, next: NextFunction) =>
+  companyController.updateWebhook(req as unknown as CompanyRequest, res, next)
 );
 router.delete(
   "/webhooks/:id",
-  companyController.deleteWebhook.bind(companyController)
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.deleteWebhook(req as unknown as CompanyRequest, res, next)
 );
 
 // Integrations
-router.get(
-  "/integrations",
-  companyController.getIntegrations.bind(companyController)
+router.get("/integrations", (req: Request, res: Response, next: NextFunction) =>
+  companyController.getIntegrations(req as unknown as CompanyRequest, res, next)
 );
 router.post(
   "/integrations/:type/connect",
-  companyController.connectIntegration.bind(companyController)
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.connectIntegration(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 router.delete(
   "/integrations/:type/disconnect",
-  companyController.disconnectIntegration.bind(companyController)
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.disconnectIntegration(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 export default router;

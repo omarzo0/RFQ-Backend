@@ -1,8 +1,10 @@
-import express from "express";
+// @ts-nocheck
+import express, { Request, Response, NextFunction } from "express";
 import { body, param, query } from "express-validator";
 import { ReplyIngestionController } from "../controllers/ReplyIngestionController";
 import { authenticateCompanyUser as authenticateToken } from "../middleware/companyAuth";
 import { validateRequest } from "../../utils/validators";
+import { CompanyRequest } from "../types/auth";
 
 const router = express.Router();
 const controller = new ReplyIngestionController();
@@ -44,7 +46,8 @@ router.get(
       .withMessage("Contact ID must be a valid UUID"),
   ],
   validateRequest,
-  controller.getEmailReplies
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.getEmailReplies(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -57,7 +60,8 @@ router.get(
   authenticateToken,
   [param("replyId").isUUID().withMessage("Reply ID must be a valid UUID")],
   validateRequest,
-  controller.getEmailReply
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.getEmailReply(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -80,7 +84,8 @@ router.put(
       .withMessage("Review notes must be a string"),
   ],
   validateRequest,
-  controller.updateReviewStatus
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.updateReviewStatus(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -115,7 +120,8 @@ router.post(
       .withMessage("Validity date must be a valid date"),
   ],
   validateRequest,
-  controller.createQuoteFromReply
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.createQuoteFromReply(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -137,7 +143,12 @@ router.get(
       .withMessage("Limit must be between 1 and 100"),
   ],
   validateRequest,
-  controller.getRepliesRequiringReview
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.getRepliesRequiringReview(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 /**
@@ -157,7 +168,8 @@ router.post(
   authenticateToken,
   [param("replyId").isUUID().withMessage("Reply ID must be a valid UUID")],
   validateRequest,
-  controller.reprocessEmailReply
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.reprocessEmailReply(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -170,7 +182,8 @@ router.delete(
   authenticateToken,
   [param("replyId").isUUID().withMessage("Reply ID must be a valid UUID")],
   validateRequest,
-  controller.deleteEmailReply
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.deleteEmailReply(req as unknown as CompanyRequest, res, next)
 );
 
 // IMAP Configuration Management Routes
@@ -192,7 +205,8 @@ router.get(
   authenticateToken,
   [param("configId").isUUID().withMessage("Config ID must be a valid UUID")],
   validateRequest,
-  controller.getIMAPConfig
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.getIMAPConfig(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -223,7 +237,8 @@ router.post(
       .withMessage("Max emails per check must be between 1 and 1000"),
   ],
   validateRequest,
-  controller.createIMAPConfig
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.createIMAPConfig(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -275,7 +290,8 @@ router.put(
       .withMessage("Max emails per check must be between 1 and 1000"),
   ],
   validateRequest,
-  controller.updateIMAPConfig
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.updateIMAPConfig(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -288,7 +304,8 @@ router.delete(
   authenticateToken,
   [param("configId").isUUID().withMessage("Config ID must be a valid UUID")],
   validateRequest,
-  controller.deleteIMAPConfig
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.deleteIMAPConfig(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -310,7 +327,8 @@ router.post(
     body("folder").optional().isString().withMessage("Folder must be a string"),
   ],
   validateRequest,
-  controller.testIMAPConnection
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.testIMAPConnection(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -323,7 +341,8 @@ router.post(
   authenticateToken,
   [param("configId").isUUID().withMessage("Config ID must be a valid UUID")],
   validateRequest,
-  controller.processIMAPEmails
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.processIMAPEmails(req as unknown as CompanyRequest, res, next)
 );
 
 // Webhook Management Routes
@@ -350,7 +369,8 @@ router.post(
     body("secret").optional().isString().withMessage("Secret must be a string"),
   ],
   validateRequest,
-  controller.createWebhookConfig
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.createWebhookConfig(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -384,7 +404,8 @@ router.put(
       .withMessage("Is active must be a boolean"),
   ],
   validateRequest,
-  controller.updateWebhookConfig
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.updateWebhookConfig(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -397,7 +418,8 @@ router.delete(
   authenticateToken,
   [param("webhookId").isUUID().withMessage("Webhook ID must be a valid UUID")],
   validateRequest,
-  controller.deleteWebhookConfig
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.deleteWebhookConfig(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -417,7 +439,8 @@ router.post(
   authenticateToken,
   [param("webhookId").isUUID().withMessage("Webhook ID must be a valid UUID")],
   validateRequest,
-  controller.testWebhookEndpoint
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.testWebhookEndpoint(req as unknown as CompanyRequest, res, next)
 );
 
 // AI Parsing Management Routes
@@ -432,7 +455,8 @@ router.get(
   authenticateToken,
   [param("replyId").isUUID().withMessage("Reply ID must be a valid UUID")],
   validateRequest,
-  controller.getParsingResults
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.getParsingResults(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -454,7 +478,12 @@ router.put(
       .withMessage("Validation notes must be a string"),
   ],
   validateRequest,
-  controller.validateParsingResult
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.validateParsingResult(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 /**
@@ -476,7 +505,8 @@ router.get(
   authenticateToken,
   [param("rfqId").isUUID().withMessage("RFQ ID must be a valid UUID")],
   validateRequest,
-  controller.getThreadHistory
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.getThreadHistory(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -498,7 +528,8 @@ router.get(
       .withMessage("Limit must be between 1 and 100"),
   ],
   validateRequest,
-  controller.getUnmatchedEmails
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.getUnmatchedEmails(req as unknown as CompanyRequest, res, next)
 );
 
 /**
@@ -514,7 +545,8 @@ router.post(
     body("rfqId").isUUID().withMessage("RFQ ID must be a valid UUID"),
   ],
   validateRequest,
-  controller.linkEmailToRFQ
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.linkEmailToRFQ(req as unknown as CompanyRequest, res, next)
 );
 
 // Public Webhook Endpoint
@@ -528,7 +560,8 @@ router.post(
   "/webhooks/:webhookId",
   [param("webhookId").isUUID().withMessage("Webhook ID must be a valid UUID")],
   validateRequest,
-  controller.handleWebhook
+  (req: Request, res: Response, next: NextFunction) =>
+    controller.handleWebhook(req as unknown as CompanyRequest, res, next)
 );
 
 export default router;
