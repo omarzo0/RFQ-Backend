@@ -47,6 +47,16 @@
       "type": "string"
     },
     {
+      "key": "subscriptionPlanId",
+      "value": "sample-subscription-plan-id-123",
+      "type": "string"
+    },
+    {
+      "key": "transactionId",
+      "value": "sample-transaction-id-123",
+      "type": "string"
+    },
+    {
       "key": "companyUserId",
       "value": "",
       "type": "string"
@@ -153,6 +163,69 @@
               "raw": "{{baseUrl}}/auth/logout",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "logout"]
+            }
+          }
+        },
+        {
+          "name": "Request Password Reset (Send OTP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-otp"]
+            }
+          }
+        },
+        {
+          "name": "Reset Password with OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"NewSecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
             }
           }
         }
@@ -1221,6 +1294,530 @@
               "raw": "{{baseUrl}}/tickets/statistics",
               "host": ["{{baseUrl}}"],
               "path": ["tickets", "statistics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscription Plan Management",
+      "item": [
+        {
+          "name": "Get All Subscription Plans",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/subscription-plans?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscription-plans"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "isActive",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Plan by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/subscription-plans/{{subscriptionPlanId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscription-plans", "{{subscriptionPlanId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Subscription Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Professional Plan\",\n  \"description\": \"Advanced features for growing businesses\",\n  \"priceMonthly\": 99.99,\n  \"priceYearly\": 999.99,\n  \"maxUsers\": 50,\n  \"maxRFQsPerMonth\": 500,\n  \"maxContacts\": 1000,\n  \"maxEmailSendsPerMonth\": 5000,\n  \"features\": {\n    \"aiParsing\": true,\n    \"advancedAnalytics\": true,\n    \"customTemplates\": true,\n    \"prioritySupport\": true\n  },\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/subscription-plans",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscription-plans"]
+            }
+          }
+        },
+        {
+          "name": "Update Subscription Plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Professional Plan Updated\",\n  \"description\": \"Updated advanced features for growing businesses\",\n  \"priceMonthly\": 119.99,\n  \"priceYearly\": 1199.99,\n  \"maxUsers\": 75,\n  \"maxRFQsPerMonth\": 750,\n  \"maxContacts\": 1500,\n  \"maxEmailSendsPerMonth\": 7500,\n  \"features\": {\n    \"aiParsing\": true,\n    \"advancedAnalytics\": true,\n    \"customTemplates\": true,\n    \"prioritySupport\": true,\n    \"apiAccess\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/subscription-plans/{{subscriptionPlanId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscription-plans", "{{subscriptionPlanId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Subscription Plan",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/subscription-plans/{{subscriptionPlanId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscription-plans", "{{subscriptionPlanId}}"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Subscription Plan Status",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/subscription-plans/{{subscriptionPlanId}}/toggle-status",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "subscription-plans",
+                "{{subscriptionPlanId}}",
+                "toggle-status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Plan Usage Statistics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/subscription-plans/{{subscriptionPlanId}}/usage",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscription-plans", "{{subscriptionPlanId}}", "usage"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transaction Management",
+      "item": [
+        {
+          "name": "Get All Transactions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/transactions?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "companyId",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "dateFrom",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "dateTo",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Transaction by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/transactions/{{transactionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "{{transactionId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"companyId\": \"{{companyId}}\",\n  \"subscriptionPlanId\": \"{{subscriptionPlanId}}\",\n  \"transactionType\": \"SUBSCRIPTION\",\n  \"amount\": 99.99,\n  \"currency\": \"USD\",\n  \"paymentMethod\": \"CREDIT_CARD\",\n  \"paymentProvider\": \"stripe\",\n  \"externalId\": \"txn_123456789\",\n  \"description\": \"Monthly subscription payment\",\n  \"invoiceNumber\": \"INV-001\",\n  \"invoiceUrl\": \"https://example.com/invoice/INV-001\",\n  \"receiptUrl\": \"https://example.com/receipt/INV-001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions"]
+            }
+          }
+        },
+        {
+          "name": "Update Transaction",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\",\n  \"description\": \"Updated transaction description\",\n  \"invoiceNumber\": \"INV-001-UPDATED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/transactions/{{transactionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "{{transactionId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Transaction",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/transactions/{{transactionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "{{transactionId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Transaction Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\",\n  \"failureReason\": \"\",\n  \"refundReason\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/transactions/{{transactionId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "{{transactionId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Process Refund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refundAmount\": 50.00,\n  \"refundReason\": \"Customer requested partial refund\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/transactions/{{transactionId}}/refund",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "{{transactionId}}", "refund"]
+            }
+          }
+        },
+        {
+          "name": "Get Transaction Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/transactions/analytics?dateFrom=2024-01-01&dateTo=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "analytics"],
+              "query": [
+                {
+                  "key": "dateFrom",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "dateTo",
+                  "value": "2024-12-31"
+                },
+                {
+                  "key": "companyId",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Transactions by Company",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/transactions/company/{{companyId}}?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "company", "{{companyId}}"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Financial Management",
+      "item": [
+        {
+          "name": "Get All Financial Details",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/financial?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["financial"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "companyId",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "sortBy",
+                  "value": "totalRevenue"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Financial Dashboard",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/financial/dashboard?period=30days",
+              "host": ["{{baseUrl}}"],
+              "path": ["financial", "dashboard"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "30days"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Financial Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/financial/analytics?dateFrom=2024-01-01&dateTo=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["financial", "analytics"],
+              "query": [
+                {
+                  "key": "dateFrom",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "dateTo",
+                  "value": "2024-12-31"
+                },
+                {
+                  "key": "companyId",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Revenue Trends",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/financial/revenue-trends?period=12months",
+              "host": ["{{baseUrl}}"],
+              "path": ["financial", "revenue-trends"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "12months"
+                },
+                {
+                  "key": "companyId",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Top Performing Companies",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/financial/top-companies?limit=10&metric=revenue",
+              "host": ["{{baseUrl}}"],
+              "path": ["financial", "top-companies"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "metric",
+                  "value": "revenue"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Financial Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/financial/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["financial", "health"]
+            }
+          }
+        },
+        {
+          "name": "Get Financial Details by Company",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/financial/company/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["financial", "company", "{{companyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Financial Details",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"totalRevenue\": 50000.00,\n  \"monthlyRecurringRevenue\": 5000.00,\n  \"annualRecurringRevenue\": 60000.00,\n  \"churnRate\": 2.5,\n  \"customerLifetimeValue\": 15000.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/financial/company/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["financial", "company", "{{companyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Recalculate Financial Details",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/financial/company/{{companyId}}/recalculate",
+              "host": ["{{baseUrl}}"],
+              "path": ["financial", "company", "{{companyId}}", "recalculate"]
             }
           }
         }

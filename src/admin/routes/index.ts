@@ -7,6 +7,9 @@ import adminSubscriptionRoutes from "./adminSubscription";
 import adminManagementRoutes from "./adminManagement";
 import adminTicketsRoutes from "./adminTickets";
 import adminComprehensiveDashboardRoutes from "./adminComprehensiveDashboard";
+import adminSubscriptionPlanRoutes from "./adminSubscriptionPlan";
+import adminTransactionRoutes from "./adminTransaction";
+import adminFinancialRoutes from "./adminFinancial";
 
 const router = Router();
 
@@ -24,6 +27,15 @@ router.use("/analytics", adminAnalyticsRoutes);
 
 // Admin subscription management routes
 router.use("/subscriptions", adminSubscriptionRoutes);
+
+// Admin subscription plan management routes
+router.use("/subscription-plans", adminSubscriptionPlanRoutes);
+
+// Admin transaction management routes
+router.use("/transactions", adminTransactionRoutes);
+
+// Admin financial management routes
+router.use("/financial", adminFinancialRoutes);
 
 // Admin management routes (super admin only)
 router.use("/management", adminManagementRoutes);
