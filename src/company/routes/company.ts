@@ -112,18 +112,6 @@ router.put(
     )
 );
 
-// Subscription Management
-router.get("/subscription", (req: Request, res: Response, next: NextFunction) =>
-  companyController.getSubscription(req as unknown as CompanyRequest, res, next)
-);
-router.put("/subscription", (req: Request, res: Response, next: NextFunction) =>
-  companyController.updateSubscription(
-    req as unknown as CompanyRequest,
-    res,
-    next
-  )
-);
-
 // Usage Metrics
 router.get("/usage", (req: Request, res: Response, next: NextFunction) =>
   companyController.getUsageMetrics(req as unknown as CompanyRequest, res, next)

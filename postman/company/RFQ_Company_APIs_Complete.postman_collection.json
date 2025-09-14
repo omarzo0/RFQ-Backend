@@ -2654,38 +2654,6 @@
           }
         },
         {
-          "name": "Get Subscription",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/subscription",
-              "host": ["{{base_url}}"],
-              "path": ["subscription"]
-            }
-          }
-        },
-        {
-          "name": "Update Subscription",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"planId\": \"premium\",\n  \"billingCycle\": \"MONTHLY\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/subscription",
-              "host": ["{{base_url}}"],
-              "path": ["subscription"]
-            }
-          }
-        },
-        {
           "name": "Get Usage Metrics",
           "request": {
             "method": "GET",

@@ -141,51 +141,6 @@ export class CompanyController {
   }
 
   /**
-   * GET /api/v1/company/subscription
-   */
-  async getSubscription(
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const { companyId } = this.getUserAndCompanyId(req);
-      const subscription = await this.companyService.getSubscription(companyId);
-
-      successResponse(
-        res,
-        subscription,
-        "Subscription details retrieved successfully"
-      );
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * PUT /api/v1/company/subscription
-   */
-  async updateSubscription(
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const { companyId } = this.getUserAndCompanyId(req);
-      const subscriptionData = req.body;
-
-      const subscription = await this.companyService.updateSubscription(
-        companyId,
-        subscriptionData
-      );
-
-      successResponse(res, subscription, "Subscription updated successfully");
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
    * GET /api/v1/company/usage
    */
   async getUsageMetrics(
