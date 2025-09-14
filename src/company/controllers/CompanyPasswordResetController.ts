@@ -45,21 +45,29 @@ export class CompanyPasswordResetController {
   /**
    * Verify OTP and reset password for company user
    * POST /api/v1/company/auth/reset-password
+   * Email is extracted from the access token, not from request body
    */
   resetPassword = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email, otp, newPassword } = req.body;
+      const { otp, newPassword } = req.body;
+      const user = (req as any).user; // Get user from authentication middleware
 
-      if (!email || !otp || !newPassword) {
-        errorResponse(res, "Email, OTP and new password are required", 400);
+      if (!otp || !newPassword) {
+        errorResponse(res, "OTP and new password are required", 400);
+        return;
+      }
+
+      if (!user) {
+        errorResponse(res, "Authentication required", 401);
         return;
       }
 
       const result = await this.passwordResetService.verifyOTPAndResetPassword({
-        email: email.toLowerCase(),
+        email: user.email,
         otp,
         newPassword,
         userType: UserType.COMPANY_USER,
+        userId: user.id,
       });
 
       successResponse(res, result, result.message, 200);
@@ -77,20 +85,28 @@ export class CompanyPasswordResetController {
   /**
    * Verify OTP
    * POST /api/v1/company/auth/verify-otp
+   * Email is extracted from the access token, not from request body
    */
   verifyOTP = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email, otp } = req.body;
+      const { otp } = req.body;
+      const user = (req as any).user; // Get user from authentication middleware
 
-      if (!email || !otp) {
-        errorResponse(res, "Email and OTP are required", 400);
+      if (!otp) {
+        errorResponse(res, "OTP is required", 400);
+        return;
+      }
+
+      if (!user) {
+        errorResponse(res, "Authentication required", 401);
         return;
       }
 
       const result = await this.passwordResetService.verifyOTP({
-        email: email.toLowerCase(),
+        email: user.email,
         otp,
         userType: UserType.COMPANY_USER,
+        userId: user.id,
       });
 
       successResponse(res, result, result.message, 200);

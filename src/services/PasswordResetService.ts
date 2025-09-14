@@ -109,20 +109,22 @@ export class PasswordResetService {
     logger.info(`Password reset OTP sent for ${userType}: ${user.email}`);
     return {
       message: "OTP has been sent to your email address.",
-      otp: process.env.NODE_ENV === "development" ? otp : undefined, // Only return OTP in development
+      // OTP is only sent via email, never returned in response
     };
   }
 
   /**
    * Verify OTP and reset password
+   * Email is extracted from the access token, not from request body
    */
   async verifyOTPAndResetPassword(data: {
     email: string;
     otp: string;
     newPassword: string;
     userType: UserType;
+    userId: string; // User ID from access token
   }) {
-    const { email, otp, newPassword, userType } = data;
+    const { email, otp, newPassword, userType, userId } = data;
 
     // Validate password strength
     this.validatePasswordStrength(newPassword);
@@ -138,6 +140,11 @@ export class PasswordResetService {
         userType,
         isUsed: false,
         expiresAt: { gt: new Date() },
+        // Verify the token belongs to the authenticated user
+        OR: [
+          { adminUserId: userType === UserType.ADMIN ? userId : null },
+          { companyUserId: userType === UserType.COMPANY_USER ? userId : null },
+        ],
       },
       include: {
         admin: true,
@@ -195,9 +202,15 @@ export class PasswordResetService {
 
   /**
    * Verify OTP only (without resetting password)
+   * Email is extracted from the access token, not from request body
    */
-  async verifyOTP(data: { email: string; otp: string; userType: UserType }) {
-    const { email, otp, userType } = data;
+  async verifyOTP(data: {
+    email: string;
+    otp: string;
+    userType: UserType;
+    userId: string; // User ID from access token
+  }) {
+    const { email, otp, userType, userId } = data;
 
     // Hash the OTP to find the record
     const tokenHash = crypto.createHash("sha256").update(otp).digest("hex");
@@ -210,6 +223,11 @@ export class PasswordResetService {
         userType,
         isUsed: false,
         expiresAt: { gt: new Date() },
+        // Verify the token belongs to the authenticated user
+        OR: [
+          { adminUserId: userType === UserType.ADMIN ? userId : null },
+          { companyUserId: userType === UserType.COMPANY_USER ? userId : null },
+        ],
       },
     });
 

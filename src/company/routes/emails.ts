@@ -60,6 +60,42 @@ router.get(
   emailController.getEmailAnalytics
 );
 
+// Email logs
+router.get(
+  "/logs",
+  [
+    query("page").optional().isInt({ min: 1 }),
+    query("limit").optional().isInt({ min: 1, max: 100 }),
+    query("search").optional().trim(),
+    query("emailType")
+      .optional()
+      .isIn([
+        "RFQ",
+        "FOLLOW_UP",
+        "BULK_EMAIL",
+        "CAMPAIGN",
+        "NOTIFICATION",
+        "SYSTEM",
+      ]),
+    query("status")
+      .optional()
+      .isIn([
+        "QUEUED",
+        "SENT",
+        "DELIVERED",
+        "OPENED",
+        "CLICKED",
+        "BOUNCED",
+        "FAILED",
+      ]),
+    query("dateFrom").optional().isISO8601(),
+    query("dateTo").optional().isISO8601(),
+    query("bulkEmailId").optional().isUUID(),
+    query("campaignId").optional().isUUID(),
+  ],
+  emailController.getEmailLogs
+);
+
 // Email retry
 router.post(
   "/retry",
@@ -71,17 +107,20 @@ router.post(
 );
 
 // Email tracking (public routes - no authentication)
-router.post(
-  "/track/:trackingPixelId",
-  [body("engagementType").isIn(["OPEN", "CLICK"])],
-  emailController.trackEmailEngagement
-);
+// GET route for email open tracking - returns JSON response
+router.get("/track/:trackingPixelId", emailController.trackEmailEngagement);
 
 router.post(
   "/bounce",
   [
-    body("emailLogId").isUUID(),
-    body("bounceType").isIn(["HARD", "SOFT", "SPAM", "BLOCKED", "INVALID"]),
+    body("emailLogId").isUUID().withMessage("emailLogId must be a valid UUID"),
+    body("bounceType")
+      .isIn(["HARD", "SOFT", "SPAM", "BLOCKED", "INVALID"])
+      .withMessage(
+        "bounceType must be one of: HARD, SOFT, SPAM, BLOCKED, INVALID"
+      ),
+    body("bounceReason").optional().isString().trim(),
+    body("bounceCode").optional().isString().trim(),
   ],
   emailController.handleEmailBounce
 );

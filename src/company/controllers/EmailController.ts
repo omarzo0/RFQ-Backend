@@ -163,6 +163,46 @@ export class EmailController {
   };
 
   /**
+   * GET /api/v1/emails/logs
+   */
+  getEmailLogs = async (
+    req: CompanyRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const companyId = req.user!.companyId;
+      const {
+        page = 1,
+        limit = 10,
+        search,
+        emailType,
+        status,
+        dateFrom,
+        dateTo,
+        bulkEmailId,
+        campaignId,
+      } = req.query;
+
+      const logs = await this.emailService.getEmailLogs(companyId, {
+        page: Number(page),
+        limit: Number(limit),
+        search: search as string,
+        emailType: emailType as any,
+        status: status as string,
+        dateFrom: dateFrom ? new Date(dateFrom as string) : undefined,
+        dateTo: dateTo ? new Date(dateTo as string) : undefined,
+        bulkEmailId: bulkEmailId as string,
+        campaignId: campaignId as string,
+      });
+
+      successResponse(res, logs, "Email logs retrieved successfully");
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * POST /api/v1/emails/retry
    */
   retryFailedEmails = async (
@@ -186,7 +226,8 @@ export class EmailController {
   };
 
   /**
-   * POST /api/v1/emails/track/:trackingPixelId
+   * GET /api/v1/emails/track/:trackingPixelId
+   * Returns JSON response indicating if email was opened
    */
   trackEmailEngagement = async (
     req: Request,
@@ -195,69 +236,162 @@ export class EmailController {
   ): Promise<void> => {
     try {
       const { trackingPixelId } = req.params;
-      const {
-        engagementType,
-        userAgent,
-        ipAddress,
-        location,
-        device,
-        browser,
-        os,
-        linkUrl,
-        linkText,
-      } = req.body;
 
-      const result = await this.emailService.trackEmailEngagement(
-        trackingPixelId,
-        engagementType,
-        {
-          userAgent,
-          ipAddress,
-          location,
-          device,
-          browser,
-          os,
-          linkUrl,
-          linkText,
-        }
+      // Extract tracking data from request
+      const trackingData = {
+        userAgent: req.headers["user-agent"] || req.body?.userAgent,
+        ipAddress:
+          req.ip || req.headers["x-forwarded-for"] || req.body?.ipAddress,
+        location: req.body?.location,
+        device: req.body?.device,
+        browser: req.body?.browser,
+        os: req.body?.os,
+        linkUrl: req.body?.linkUrl,
+        linkText: req.body?.linkText,
+      };
+
+      // Log the tracking attempt for debugging
+      console.log(`📧 Tracking pixel accessed: ${trackingPixelId}`);
+      console.log(`🔍 User Agent: ${trackingData.userAgent}`);
+      console.log(`🌐 IP Address: ${trackingData.ipAddress}`);
+      console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
+
+      // Check if this is a legitimate email open vs automated scan
+      const isLegitimateOpen = this.isLegitimateEmailOpen(
+        trackingData.userAgent || ""
       );
 
-      // Check if this is an API call (JSON) or tracking pixel request
-      const acceptHeader = req.headers.accept || "";
-      const isApiCall = acceptHeader.includes("application/json");
-
-      if (isApiCall) {
-        // Return JSON response for API testing
+      if (!isLegitimateOpen) {
+        console.log(`🤖 Automated scan detected, not tracking as email open`);
+        // Return success but don't track as open
         res.json({
           success: true,
-          message: "Email engagement tracked successfully",
+          message: "Automated scan detected - not counted as email open",
           data: {
             trackingPixelId,
-            engagementType,
+            status: "SCANNED",
             timestamp: new Date().toISOString(),
+            userAgent: trackingData.userAgent,
+            ipAddress: trackingData.ipAddress,
           },
         });
-      } else {
-        // Return 1x1 transparent pixel for email tracking
-        const pixel = Buffer.from(
-          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
-          "base64"
-        );
-
-        res.set({
-          "Content-Type": "image/png",
-          "Content-Length": pixel.length,
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-        });
-
-        res.send(pixel);
+        return;
       }
+
+      // Track the email open for legitimate opens only
+      await this.emailService.trackEmailEngagement(
+        trackingPixelId,
+        "OPEN",
+        trackingData
+      );
+
+      console.log(`✅ Email open tracked successfully: ${trackingPixelId}`);
+
+      // Return JSON response indicating email was opened
+      res.json({
+        success: true,
+        message: "Email opened successfully",
+        data: {
+          trackingPixelId,
+          status: "OPENED",
+          timestamp: new Date().toISOString(),
+          userAgent: trackingData.userAgent,
+          ipAddress: trackingData.ipAddress,
+        },
+      });
     } catch (error) {
-      next(error);
+      // If tracking fails, return error response
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.log(`❌ Tracking failed: ${errorMessage}`);
+
+      res.status(400).json({
+        success: false,
+        message: "Email not opened or tracking failed",
+        data: {
+          trackingPixelId: req.params.trackingPixelId,
+          status: "NOT_OPENED",
+          error: errorMessage,
+          timestamp: new Date().toISOString(),
+        },
+      });
     }
   };
+
+  /**
+   * Check if the email open is legitimate (not an automated scan)
+   */
+  private isLegitimateEmailOpen(userAgent: string): boolean {
+    if (!userAgent) return false;
+
+    const userAgentLower = userAgent.toLowerCase();
+
+    // Common automated scanners and email security services
+    const automatedScanners = [
+      "brevo",
+      "sendgrid",
+      "mailgun",
+      "postmark",
+      "amazonses",
+      "mandrill",
+      "sparkpost",
+      "sendinblue",
+      "mailchimp",
+      "constantcontact",
+      "bot",
+      "crawler",
+      "spider",
+      "scan",
+      "security",
+      "antivirus",
+      "virus",
+      "malware",
+      "threat",
+      "protection",
+      "filter",
+      "proxy",
+      "gateway",
+      "curl",
+      "wget",
+      "postman",
+      "insomnia",
+      "httpie",
+    ];
+
+    // Check if user agent contains any automated scanner keywords
+    const isAutomatedScan = automatedScanners.some((scanner) =>
+      userAgentLower.includes(scanner)
+    );
+
+    if (isAutomatedScan) {
+      return false;
+    }
+
+    // Check for legitimate email clients and browsers
+    const legitimateClients = [
+      "mozilla",
+      "chrome",
+      "safari",
+      "firefox",
+      "edge",
+      "opera",
+      "outlook",
+      "mail",
+      "thunderbird",
+      "apple",
+      "android",
+      "ios",
+      "iphone",
+      "ipad",
+      "mobile",
+    ];
+
+    const isLegitimateClient = legitimateClients.some((client) =>
+      userAgentLower.includes(client)
+    );
+
+    return isLegitimateClient;
+  }
 
   /**
    * POST /api/v1/emails/bounce

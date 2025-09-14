@@ -1,0 +1,645 @@
+import Stripe from "stripe";
+import { prisma } from "../../app";
+import logger from "../../utils/logger";
+import PaymentEmailService from "./PaymentEmailService";
+
+export interface CreatePaymentIntentRequest {
+  companyId: string;
+  amount: number;
+  currency: string;
+  description?: string;
+  metadata?: Record<string, string>;
+}
+
+export interface CreateSubscriptionRequest {
+  companyId: string;
+  priceId: string;
+  paymentMethodId?: string;
+  trialPeriodDays?: number;
+}
+
+export interface UpdateSubscriptionRequest {
+  subscriptionId: string;
+  priceId?: string;
+  quantity?: number;
+  prorationBehavior?: "create_prorations" | "none" | "always_invoice";
+}
+
+export interface PaymentMethodData {
+  id: string;
+  type: string;
+  card?: {
+    brand: string;
+    last4: string;
+    expMonth: number;
+    expYear: number;
+  };
+  billing_details: {
+    email?: string;
+    name?: string;
+    address?: any;
+  };
+}
+
+export class PaymentService {
+  private stripe: Stripe;
+  private paymentEmailService: PaymentEmailService;
+
+  constructor() {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error("STRIPE_SECRET_KEY environment variable is required");
+    }
+
+    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-08-27.basil",
+    });
+    this.paymentEmailService = new PaymentEmailService();
+  }
+
+  /**
+   * Get or create Stripe customer for company
+   */
+  private async getOrCreateCustomer(
+    companyId: string
+  ): Promise<Stripe.Customer> {
+    try {
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: { stripeCustomerId: true, name: true, email: true },
+      });
+
+      if (!company) {
+        throw new Error("Company not found");
+      }
+
+      if (company.stripeCustomerId) {
+        // Retrieve existing customer
+        return (await this.stripe.customers.retrieve(
+          company.stripeCustomerId
+        )) as Stripe.Customer;
+      }
+
+      // Create new customer
+      const customer = await this.stripe.customers.create({
+        name: company.name,
+        email: company.email,
+        metadata: {
+          companyId: companyId,
+        },
+      });
+
+      // Update company with Stripe customer ID
+      await prisma.company.update({
+        where: { id: companyId },
+        data: { stripeCustomerId: customer.id },
+      });
+
+      logger.info(
+        `Created Stripe customer for company ${companyId}: ${customer.id}`
+      );
+      return customer;
+    } catch (error) {
+      logger.error("Error creating/retrieving Stripe customer:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a payment intent for one-time payments
+   */
+  async createPaymentIntent(
+    data: CreatePaymentIntentRequest
+  ): Promise<Stripe.PaymentIntent> {
+    try {
+      const customer = await this.getOrCreateCustomer(data.companyId);
+
+      const paymentIntent = await this.stripe.paymentIntents.create({
+        amount: Math.round(data.amount * 100), // Convert to cents
+        currency: data.currency,
+        customer: customer.id,
+        description: data.description,
+        metadata: {
+          companyId: data.companyId,
+          ...data.metadata,
+        },
+      });
+
+      logger.info(
+        `Created payment intent for company ${data.companyId}: ${paymentIntent.id}`
+      );
+      return paymentIntent;
+    } catch (error) {
+      logger.error("Error creating payment intent:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upgrade company subscription to a paid plan
+   * Companies can only upgrade from trial, not create new subscriptions
+   */
+  async upgradeSubscription(
+    data: CreateSubscriptionRequest
+  ): Promise<Stripe.Subscription> {
+    try {
+      // Check if company is on trial
+      const company = await prisma.company.findUnique({
+        where: { id: data.companyId },
+        select: {
+          subscriptionPlan: true,
+          subscriptionStatus: true,
+          trialEndsAt: true,
+          stripeCustomerId: true,
+        },
+      });
+
+      if (!company) {
+        throw new Error("Company not found");
+      }
+
+      // Only allow upgrade if company is on trial
+      if (company.subscriptionPlan !== "trial") {
+        throw new Error("Company can only upgrade from trial plan");
+      }
+
+      const customer = await this.getOrCreateCustomer(data.companyId);
+
+      const subscriptionData: Stripe.SubscriptionCreateParams = {
+        customer: customer.id,
+        items: [{ price: data.priceId }],
+        payment_behavior: "default_incomplete",
+        payment_settings: { save_default_payment_method: "on_subscription" },
+        expand: ["latest_invoice.payment_intent"],
+        metadata: {
+          companyId: data.companyId,
+        },
+      };
+
+      if (data.paymentMethodId) {
+        subscriptionData.default_payment_method = data.paymentMethodId;
+      }
+
+      const subscription = await this.stripe.subscriptions.create(
+        subscriptionData
+      );
+
+      // Get plan details for email
+      const plan = await prisma.subscriptionPlan.findFirst({
+        where: { id: data.priceId },
+        select: { name: true, priceMonthly: true },
+      });
+
+      // Update company subscription plan
+      await prisma.company.update({
+        where: { id: data.companyId },
+        data: {
+          subscriptionPlan: plan?.name || "premium",
+          subscriptionStatus: "ACTIVE",
+        },
+      });
+
+      // Send upgrade confirmation email
+      try {
+        await this.paymentEmailService.sendPlanUpgradeConfirmationWithData(
+          data.companyId,
+          plan?.name || "Premium Plan",
+          Number(plan?.priceMonthly) || 0,
+          "USD"
+        );
+      } catch (emailError) {
+        logger.error("Failed to send upgrade confirmation email:", emailError);
+        // Don't throw error, just log it
+      }
+
+      logger.info(
+        `Upgraded subscription for company ${data.companyId}: ${subscription.id}`
+      );
+      return subscription;
+    } catch (error) {
+      logger.error("Error upgrading subscription:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing subscription
+   */
+  async updateSubscription(
+    data: UpdateSubscriptionRequest
+  ): Promise<Stripe.Subscription> {
+    try {
+      const updateData: Stripe.SubscriptionUpdateParams = {};
+
+      if (data.priceId) {
+        updateData.items = [{ price: data.priceId }];
+      }
+
+      if (data.quantity) {
+        updateData.items = [{ quantity: data.quantity }];
+      }
+
+      if (data.prorationBehavior) {
+        updateData.proration_behavior = data.prorationBehavior;
+      }
+
+      const subscription = await this.stripe.subscriptions.update(
+        data.subscriptionId,
+        updateData
+      );
+
+      return subscription;
+    } catch (error) {
+      logger.error("Error updating subscription:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel a subscription
+   */
+  async cancelSubscription(
+    subscriptionId: string,
+    immediately: boolean = false
+  ): Promise<Stripe.Subscription> {
+    try {
+      const subscription = await this.stripe.subscriptions.update(
+        subscriptionId,
+        {
+          cancel_at_period_end: !immediately,
+          ...(immediately && { cancel_at: Math.floor(Date.now() / 1000) }),
+        }
+      );
+
+      logger.info(`Cancelled subscription ${subscriptionId}`);
+      return subscription;
+    } catch (error) {
+      logger.error("Error cancelling subscription:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get payment methods for a company
+   */
+  async getPaymentMethods(companyId: string): Promise<PaymentMethodData[]> {
+    try {
+      const customer = await this.getOrCreateCustomer(companyId);
+
+      const paymentMethods = await this.stripe.paymentMethods.list({
+        customer: customer.id,
+        type: "card",
+      });
+
+      return paymentMethods.data.map((pm) => ({
+        id: pm.id,
+        type: pm.type,
+        card: pm.card
+          ? {
+              brand: pm.card.brand,
+              last4: pm.card.last4,
+              expMonth: pm.card.exp_month,
+              expYear: pm.card.exp_year,
+            }
+          : undefined,
+        billing_details: {
+          email: pm.billing_details.email || undefined,
+          name: pm.billing_details.name || undefined,
+          address: pm.billing_details.address || undefined,
+        },
+      }));
+    } catch (error) {
+      logger.error("Error retrieving payment methods:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a setup intent for saving payment methods
+   */
+  async createSetupIntent(companyId: string): Promise<Stripe.SetupIntent> {
+    try {
+      const customer = await this.getOrCreateCustomer(companyId);
+
+      const setupIntent = await this.stripe.setupIntents.create({
+        customer: customer.id,
+        payment_method_types: ["card"],
+        usage: "off_session",
+      });
+
+      logger.info(
+        `Created setup intent for company ${companyId}: ${setupIntent.id}`
+      );
+      return setupIntent;
+    } catch (error) {
+      logger.error("Error creating setup intent:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get subscription details
+   */
+  async getSubscription(subscriptionId: string): Promise<Stripe.Subscription> {
+    try {
+      return await this.stripe.subscriptions.retrieve(subscriptionId, {
+        expand: ["latest_invoice", "default_payment_method"],
+      });
+    } catch (error) {
+      logger.error("Error retrieving subscription:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get company's subscriptions
+   */
+  async getCompanySubscriptions(
+    companyId: string
+  ): Promise<Stripe.Subscription[]> {
+    try {
+      const customer = await this.getOrCreateCustomer(companyId);
+
+      const subscriptions = await this.stripe.subscriptions.list({
+        customer: customer.id,
+        status: "all",
+        expand: ["data.default_payment_method"],
+      });
+
+      return subscriptions.data;
+    } catch (error) {
+      logger.error("Error retrieving company subscriptions:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Process refund
+   */
+  async processRefund(
+    paymentIntentId: string,
+    amount?: number,
+    reason?: string
+  ): Promise<Stripe.Refund> {
+    try {
+      const refundData: Stripe.RefundCreateParams = {
+        payment_intent: paymentIntentId,
+      };
+
+      if (amount) {
+        refundData.amount = Math.round(amount * 100); // Convert to cents
+      }
+
+      if (reason) {
+        refundData.reason = reason as Stripe.RefundCreateParams.Reason;
+      }
+
+      const refund = await this.stripe.refunds.create(refundData);
+
+      logger.info(
+        `Processed refund for payment intent ${paymentIntentId}: ${refund.id}`
+      );
+      return refund;
+    } catch (error) {
+      logger.error("Error processing refund:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Handle Stripe webhooks
+   */
+  async handleWebhook(event: Stripe.Event): Promise<void> {
+    try {
+      switch (event.type) {
+        case "payment_intent.succeeded":
+          await this.handlePaymentIntentSucceeded(
+            event.data.object as Stripe.PaymentIntent
+          );
+          break;
+        case "payment_intent.payment_failed":
+          logger.info(`Payment failed: ${event.data.object.id}`);
+          break;
+        case "invoice.payment_succeeded":
+          await this.handleInvoicePaymentSucceeded(
+            event.data.object as Stripe.Invoice
+          );
+          break;
+        case "invoice.payment_failed":
+          logger.info(`Invoice payment failed: ${event.data.object.id}`);
+          break;
+        case "customer.subscription.updated":
+          logger.info(`Subscription updated: ${event.data.object.id}`);
+          break;
+        case "customer.subscription.deleted":
+          logger.info(`Subscription deleted: ${event.data.object.id}`);
+          break;
+        default:
+          logger.info(`Unhandled webhook event type: ${event.type}`);
+      }
+    } catch (error) {
+      logger.error("Error handling webhook:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Handle successful payment intent
+   */
+  private async handlePaymentIntentSucceeded(
+    paymentIntent: Stripe.PaymentIntent
+  ): Promise<void> {
+    try {
+      logger.info(`Payment succeeded: ${paymentIntent.id}`);
+
+      // Get company ID from metadata
+      const companyId = paymentIntent.metadata.companyId;
+      if (!companyId) {
+        logger.warn(
+          `No company ID found in payment intent metadata: ${paymentIntent.id}`
+        );
+        return;
+      }
+
+      // Get subscription details if this is a subscription payment
+      let planName: string | undefined;
+      if (paymentIntent.metadata.subscriptionId) {
+        const subscription = await this.stripe.subscriptions.retrieve(
+          paymentIntent.metadata.subscriptionId
+        );
+        // You might want to get plan name from subscription items
+        planName = "Subscription Plan";
+      }
+
+      // Send payment receipt email
+      try {
+        await this.paymentEmailService.sendPaymentReceiptWithData(
+          companyId,
+          paymentIntent,
+          planName
+        );
+      } catch (emailError) {
+        logger.error("Failed to send payment receipt email:", emailError);
+      }
+    } catch (error) {
+      logger.error("Error handling payment intent succeeded:", error);
+    }
+  }
+
+  /**
+   * Handle successful invoice payment
+   */
+  private async handleInvoicePaymentSucceeded(
+    invoice: Stripe.Invoice
+  ): Promise<void> {
+    try {
+      logger.info(`Invoice payment succeeded: ${invoice.id}`);
+
+      // Get company ID from customer
+      if (invoice.customer) {
+        const customer = await this.stripe.customers.retrieve(
+          invoice.customer as string
+        );
+        const companyId = (customer as any).metadata?.companyId;
+
+        if (companyId) {
+          // Create a payment intent object for the email
+          const paymentIntent = {
+            id: (invoice as any).payment_intent as string,
+            amount: invoice.amount_paid,
+            currency: invoice.currency,
+            status: "succeeded",
+            created: Math.floor(Date.now() / 1000),
+            client_secret: "",
+            metadata: { companyId },
+          } as any;
+
+          // Send payment receipt email
+          try {
+            await this.paymentEmailService.sendPaymentReceiptWithData(
+              companyId,
+              paymentIntent,
+              "Subscription Payment"
+            );
+          } catch (emailError) {
+            logger.error("Failed to send payment receipt email:", emailError);
+          }
+        }
+      }
+    } catch (error) {
+      logger.error("Error handling invoice payment succeeded:", error);
+    }
+  }
+
+  /**
+   * Get available subscription plans for companies to upgrade to
+   */
+  async getAvailableSubscriptionPlans() {
+    try {
+      const plans = await prisma.subscriptionPlan.findMany({
+        where: {
+          isActive: true,
+          name: { not: "trial" }, // Exclude trial plan
+        },
+        orderBy: { priceMonthly: "asc" },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          priceMonthly: true,
+          priceYearly: true,
+          maxUsers: true,
+          maxRFQsPerMonth: true,
+          maxContacts: true,
+          maxEmailSendsPerMonth: true,
+          features: true,
+        },
+      });
+
+      return plans;
+    } catch (error) {
+      logger.error("Error retrieving subscription plans:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get company's current subscription status
+   */
+  async getCompanySubscriptionStatus(companyId: string) {
+    try {
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: {
+          subscriptionPlan: true,
+          subscriptionStatus: true,
+          trialEndsAt: true,
+          stripeCustomerId: true,
+        },
+      });
+
+      if (!company) {
+        throw new Error("Company not found");
+      }
+
+      const isTrialExpired =
+        company.trialEndsAt && new Date() > company.trialEndsAt;
+      const daysLeftInTrial = company.trialEndsAt
+        ? Math.ceil(
+            (company.trialEndsAt.getTime() - new Date().getTime()) /
+              (1000 * 60 * 60 * 24)
+          )
+        : 0;
+
+      return {
+        currentPlan: company.subscriptionPlan,
+        status: company.subscriptionStatus,
+        trialEndsAt: company.trialEndsAt,
+        isTrialExpired,
+        daysLeftInTrial: Math.max(0, daysLeftInTrial),
+        canUpgrade: company.subscriptionPlan === "trial",
+        hasStripeCustomer: !!company.stripeCustomerId,
+      };
+    } catch (error) {
+      logger.error("Error getting company subscription status:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get company's transaction history (simplified)
+   */
+  async getCompanyTransactions(
+    companyId: string,
+    limit: number = 50,
+    offset: number = 0
+  ) {
+    // For now, return empty array to avoid Prisma issues
+    // This can be implemented later when the Prisma client is properly configured
+    logger.info(`Getting transactions for company ${companyId}`);
+    return [];
+  }
+
+  /**
+   * Get company's financial summary (simplified)
+   */
+  async getCompanyFinancialSummary(companyId: string) {
+    // For now, return basic info to avoid Prisma issues
+    // This can be implemented later when the Prisma client is properly configured
+    logger.info(`Getting financial summary for company ${companyId}`);
+    return {
+      totalRevenue: 0,
+      totalTransactions: 0,
+      successfulTransactions: 0,
+      failedTransactions: 0,
+      refundedTransactions: 0,
+      averageTransactionValue: 0,
+      monthlyRecurringRevenue: 0,
+      annualRecurringRevenue: 0,
+      churnRate: 0,
+      customerLifetimeValue: 0,
+      lastUpdatedAt: new Date(),
+    };
+  }
+}
+
+export default PaymentService;

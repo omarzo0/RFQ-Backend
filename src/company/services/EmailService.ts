@@ -229,7 +229,7 @@ export class EmailService {
           data: {
             companyId,
             toEmail: contact.email,
-            fromEmail: "", // Will be set from company settings
+            fromEmail: process.env.EMAIL_FROM_ADDRESS || "noreply@company.com",
             subject: options.subject,
             bodyHtml: options.bodyHtml,
             bodyText: options.bodyText,
@@ -352,7 +352,10 @@ export class EmailService {
 
     for (const emailLog of emailLogs) {
       try {
-        // Update status to sending
+        // Send email first, then update status
+        await this.sendEmailViaProvider(emailLog);
+
+        // Update status to sent only after successful sending
         await prisma.emailLog.update({
           where: { id: emailLog.id },
           data: {
@@ -361,18 +364,8 @@ export class EmailService {
           },
         });
 
-        // Here you would integrate with your email provider (SendGrid, AWS SES, etc.)
-        // For now, we'll simulate sending
-        await this.sendEmailViaProvider(emailLog);
-
-        // Update status to delivered
-        await prisma.emailLog.update({
-          where: { id: emailLog.id },
-          data: {
-            status: EmailStatus.DELIVERED,
-            deliveredAt: new Date(),
-          },
-        });
+        // Don't update to DELIVERED status here - wait for tracking pixel to be loaded
+        // The status will be updated to OPENED when the tracking pixel is accessed
 
         // Update bulk email counters if applicable
         if (emailLog.bulkEmailId) {
@@ -403,10 +396,51 @@ export class EmailService {
   }
 
   /**
+   * Embed tracking pixel in email HTML
+   */
+  private embedTrackingPixel(html: string, trackingPixelId: string): string {
+    if (!html || !trackingPixelId) return html;
+
+    const baseUrl = process.env.API_BASE_URL || "http://localhost:3000/api/v1";
+    const trackingPixelUrl = `${baseUrl}/emails/track/${trackingPixelId}`;
+
+    // Create tracking pixel HTML
+    const trackingPixel = `
+      <img src="${trackingPixelUrl}" 
+           width="1" height="1" 
+           style="display:none; width:1px; height:1px; border:0;" 
+           alt="" 
+           onload="this.style.display='none';" />
+    `;
+
+    // Try to find the closing body tag and insert before it
+    const bodyCloseIndex = html.lastIndexOf("</body>");
+    if (bodyCloseIndex !== -1) {
+      return (
+        html.slice(0, bodyCloseIndex) +
+        trackingPixel +
+        html.slice(bodyCloseIndex)
+      );
+    }
+
+    // If no body tag found, append to the end
+    return html + trackingPixel;
+  }
+
+  /**
    * Send email via Brevo SMTP
    */
   private async sendEmailViaProvider(emailLog: any) {
     try {
+      // Embed tracking pixel in HTML if trackingPixelId exists
+      let processedHtml = emailLog.bodyHtml;
+      if (emailLog.trackingPixelId) {
+        processedHtml = this.embedTrackingPixel(
+          emailLog.bodyHtml,
+          emailLog.trackingPixelId
+        );
+      }
+
       // Prepare email options
       const mailOptions = {
         from: {
@@ -416,8 +450,8 @@ export class EmailService {
         },
         to: emailLog.toEmail, // This allows sending to ANY email address
         subject: emailLog.subject,
-        html: emailLog.bodyHtml,
-        text: emailLog.bodyText || this.htmlToText(emailLog.bodyHtml),
+        html: processedHtml,
+        text: emailLog.bodyText || this.htmlToText(processedHtml),
         // Optional: Reply-To can be different from From
         replyTo: emailLog.fromEmail || process.env.EMAIL_FROM_ADDRESS,
         // Add tracking headers if needed
@@ -532,6 +566,22 @@ export class EmailService {
       throw new ValidationError("Email not found");
     }
 
+    // Prevent tracking if email was sent too recently (less than 30 seconds ago)
+    // This helps prevent automated scans from being counted as opens
+    if (emailLog.sentAt) {
+      const timeSinceSent = Date.now() - emailLog.sentAt.getTime();
+      const minimumDelay = 30 * 1000; // 30 seconds
+
+      if (timeSinceSent < minimumDelay) {
+        console.log(
+          `⚠️ Email tracking attempted too soon after sending (${timeSinceSent}ms). Ignoring.`
+        );
+        throw new ValidationError(
+          "Email tracking attempted too soon after sending"
+        );
+      }
+    }
+
     // Create engagement record
     await prisma.emailEngagement.create({
       data: {
@@ -583,12 +633,29 @@ export class EmailService {
     bounceReason?: string,
     bounceCode?: string
   ) {
+    // Validate emailLogId format
+    if (!emailLogId || typeof emailLogId !== "string") {
+      throw new ValidationError("Invalid emailLogId provided");
+    }
+
+    // Check if emailLogId is a valid UUID format
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(emailLogId)) {
+      throw new ValidationError(
+        "Invalid emailLogId format - must be a valid UUID"
+      );
+    }
+
     const emailLog = await prisma.emailLog.findUnique({
       where: { id: emailLogId },
     });
 
     if (!emailLog) {
-      throw new ValidationError("Email not found");
+      console.log(
+        `❌ Email bounce handling failed: Email with ID ${emailLogId} not found`
+      );
+      throw new ValidationError(`Email with ID ${emailLogId} not found`);
     }
 
     // Create bounce record
@@ -683,6 +750,12 @@ export class EmailService {
     if (options.bulkEmailId) where.bulkEmailId = options.bulkEmailId;
     if (options.campaignId) where.campaignId = options.campaignId;
 
+    // Debug logging
+    console.log(
+      `📊 Email Analytics Query for Company ${companyId}:`,
+      JSON.stringify(where, null, 2)
+    );
+
     const [
       totalEmails,
       sentEmails,
@@ -693,33 +766,73 @@ export class EmailService {
       failedEmails,
     ] = await Promise.all([
       prisma.emailLog.count({ where }),
-      prisma.emailLog.count({ where: { ...where, status: EmailStatus.SENT } }),
+      // Count emails that have been sent (SENT or higher status)
       prisma.emailLog.count({
-        where: { ...where, status: EmailStatus.DELIVERED },
+        where: {
+          ...where,
+          status: {
+            in: [
+              EmailStatus.SENT,
+              EmailStatus.DELIVERED,
+              EmailStatus.OPENED,
+              EmailStatus.CLICKED,
+            ],
+          },
+        },
       }),
+      // Count emails that have been delivered (DELIVERED or higher status)
       prisma.emailLog.count({
-        where: { ...where, status: EmailStatus.OPENED },
+        where: {
+          ...where,
+          status: {
+            in: [
+              EmailStatus.DELIVERED,
+              EmailStatus.OPENED,
+              EmailStatus.CLICKED,
+            ],
+          },
+        },
       }),
+      // Count emails that have been opened (OPENED or higher status)
       prisma.emailLog.count({
-        where: { ...where, status: EmailStatus.CLICKED },
+        where: {
+          ...where,
+          status: {
+            in: [EmailStatus.OPENED, EmailStatus.CLICKED],
+          },
+        },
       }),
+      // Count emails that have been clicked
       prisma.emailLog.count({
-        where: { ...where, status: EmailStatus.BOUNCED },
+        where: {
+          ...where,
+          status: EmailStatus.CLICKED,
+        },
       }),
+      // Count emails that bounced
       prisma.emailLog.count({
-        where: { ...where, status: EmailStatus.FAILED },
+        where: {
+          ...where,
+          status: EmailStatus.BOUNCED,
+        },
+      }),
+      // Count emails that failed
+      prisma.emailLog.count({
+        where: {
+          ...where,
+          status: EmailStatus.FAILED,
+        },
       }),
     ]);
 
+    // Calculate rates based on sent emails
     const deliveryRate =
       sentEmails > 0 ? (deliveredEmails / sentEmails) * 100 : 0;
-    const openRate =
-      deliveredEmails > 0 ? (openedEmails / deliveredEmails) * 100 : 0;
-    const clickRate =
-      deliveredEmails > 0 ? (clickedEmails / deliveredEmails) * 100 : 0;
+    const openRate = sentEmails > 0 ? (openedEmails / sentEmails) * 100 : 0;
+    const clickRate = sentEmails > 0 ? (clickedEmails / sentEmails) * 100 : 0;
     const bounceRate = sentEmails > 0 ? (bouncedEmails / sentEmails) * 100 : 0;
 
-    return {
+    const analytics = {
       totalEmails,
       sentEmails,
       deliveredEmails,
@@ -731,6 +844,110 @@ export class EmailService {
       openRate: Math.round(openRate * 100) / 100,
       clickRate: Math.round(clickRate * 100) / 100,
       bounceRate: Math.round(bounceRate * 100) / 100,
+    };
+
+    // Debug logging
+    console.log(
+      `📊 Email Analytics Results:`,
+      JSON.stringify(analytics, null, 2)
+    );
+
+    return analytics;
+  }
+
+  /**
+   * Get email logs with pagination and filtering
+   */
+  async getEmailLogs(
+    companyId: string,
+    options: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      emailType?: EmailType;
+      status?: string;
+      dateFrom?: Date;
+      dateTo?: Date;
+      bulkEmailId?: string;
+      campaignId?: string;
+    } = {}
+  ) {
+    const page = options.page || 1;
+    const limit = options.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const where: any = { companyId };
+
+    // Add filters
+    if (options.search) {
+      where.OR = [
+        { subject: { contains: options.search, mode: "insensitive" } },
+        { toEmail: { contains: options.search, mode: "insensitive" } },
+        { fromEmail: { contains: options.search, mode: "insensitive" } },
+      ];
+    }
+
+    if (options.emailType) where.emailType = options.emailType;
+    if (options.status) where.status = options.status;
+    if (options.bulkEmailId) where.bulkEmailId = options.bulkEmailId;
+    if (options.campaignId) where.campaignId = options.campaignId;
+
+    if (options.dateFrom || options.dateTo) {
+      where.createdAt = {};
+      if (options.dateFrom) where.createdAt.gte = options.dateFrom;
+      if (options.dateTo) where.createdAt.lte = options.dateTo;
+    }
+
+    const [emailLogs, total] = await Promise.all([
+      prisma.emailLog.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: {
+          contact: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              shippingLine: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+          rfq: {
+            select: {
+              id: true,
+              rfqNumber: true,
+              title: true,
+            },
+          },
+          template: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          bulkEmail: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+      prisma.emailLog.count({ where }),
+    ]);
+
+    return {
+      data: emailLogs,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 

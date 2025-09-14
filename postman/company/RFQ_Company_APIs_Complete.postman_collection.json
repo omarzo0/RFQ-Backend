@@ -593,19 +593,15 @@
           }
         },
         {
-          "name": "Track Email Engagement",
+          "name": "Track Email Open (GET)",
           "request": {
-            "method": "POST",
+            "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"engagementType\": \"OPEN\"\n}"
-            },
             "url": {
               "raw": "{{base_url}}/emails/track/{{tracking_pixel_id}}",
               "host": ["{{base_url}}"],
@@ -4068,6 +4064,298 @@
                   "value": "5"
                 }
               ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Create Payment Intent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 29.99,\n  \"currency\": \"USD\",\n  \"description\": \"Monthly subscription payment\",\n  \"metadata\": {\n    \"plan\": \"premium\",\n    \"feature\": \"advanced_analytics\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/intent",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "intent"]
+            }
+          }
+        },
+        {
+          "name": "Create Setup Intent",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/payments/setup-intent",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "setup-intent"]
+            }
+          }
+        },
+        {
+          "name": "Upgrade Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priceId\": \"price_1234567890\",\n  \"paymentMethodId\": \"pm_1234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/upgrade",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "upgrade"]
+            }
+          }
+        },
+        {
+          "name": "Update Subscription",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priceId\": \"price_0987654321\",\n  \"quantity\": 2,\n  \"prorationBehavior\": \"create_prorations\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/subscription/{{subscription_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "subscription", "{{subscription_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Subscription",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"immediately\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/subscription/{{subscription_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "subscription", "{{subscription_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Details",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/payments/subscription/{{subscription_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "subscription", "{{subscription_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Company Subscriptions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/payments/subscriptions",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "subscriptions"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment Methods",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/payments/methods",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "methods"]
+            }
+          }
+        },
+        {
+          "name": "Process Refund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 15.00,\n  \"reason\": \"requested_by_customer\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/refund/{{payment_intent_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "refund", "{{payment_intent_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Company Transactions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/payments/transactions?limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "transactions"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Financial Summary",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/payments/financial-summary",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "financial-summary"]
+            }
+          }
+        },
+        {
+          "name": "Get Available Plans",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/payments/plans",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "plans"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/payments/status",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "status"]
+            }
+          }
+        },
+        {
+          "name": "Stripe Webhook (Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "stripe-signature",
+                "value": "t=1234567890,v1=test_signature"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"evt_test_webhook\",\n  \"object\": \"event\",\n  \"api_version\": \"2020-08-27\",\n  \"created\": 1234567890,\n  \"data\": {\n    \"object\": {\n      \"id\": \"pi_test_payment_intent\",\n      \"object\": \"payment_intent\",\n      \"amount\": 2999,\n      \"currency\": \"usd\",\n      \"status\": \"succeeded\",\n      \"metadata\": {\n        \"companyId\": \"{{company_id}}\"\n      }\n    }\n  },\n  \"livemode\": false,\n  \"pending_webhooks\": 1,\n  \"request\": {\n    \"id\": \"req_test_request\",\n    \"idempotency_key\": null\n  },\n  \"type\": \"payment_intent.succeeded\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/webhook",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "webhook"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trial Notifications",
+      "item": [
+        {
+          "name": "Check Trial Warnings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{company_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/trial-notifications/check-warnings",
+              "host": ["{{base_url}}"],
+              "path": ["trial-notifications", "check-warnings"]
+            }
+          }
+        },
+        {
+          "name": "Check Expired Trials",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{company_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/trial-notifications/check-expired",
+              "host": ["{{base_url}}"],
+              "path": ["trial-notifications", "check-expired"]
+            }
+          }
+        },
+        {
+          "name": "Run All Trial Checks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{company_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/trial-notifications/run-all",
+              "host": ["{{base_url}}"],
+              "path": ["trial-notifications", "run-all"]
             }
           }
         }

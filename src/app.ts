@@ -8,6 +8,9 @@ import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import logger from "./utils/logger";
 
+// Import cron jobs
+import "./jobs/trialNotificationCron";
+
 // Load environment variables
 dotenv.config();
 
