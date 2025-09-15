@@ -11,31 +11,31 @@ async function main() {
     {
       name: "Email Tracking",
       featureKey: "email_tracking",
-      featureType: "BOOLEAN",
+      featureType: "BOOLEAN" as const,
       description: "Track email opens, clicks, and delivery status",
     },
     {
       name: "AI Quote Parsing",
       featureKey: "ai_parsing",
-      featureType: "BOOLEAN",
+      featureType: "BOOLEAN" as const,
       description: "Automatically parse quotes from emails using AI",
     },
     {
       name: "Advanced Analytics",
       featureKey: "analytics_advanced",
-      featureType: "BOOLEAN",
+      featureType: "BOOLEAN" as const,
       description: "Advanced reporting and analytics features",
     },
     {
       name: "Max RFQs Per Month",
       featureKey: "max_rfqs_monthly",
-      featureType: "LIMIT",
+      featureType: "LIMIT" as const,
       description: "Maximum number of RFQs that can be created per month",
     },
     {
       name: "Max Contacts",
       featureKey: "max_contacts",
-      featureType: "LIMIT",
+      featureType: "LIMIT" as const,
       description: "Maximum number of contacts that can be stored",
     },
   ];
@@ -115,11 +115,16 @@ async function main() {
 
   console.log("Creating subscription plans...");
   for (const plan of plans) {
-    await prisma.subscriptionPlan.upsert({
+    // Check if plan already exists
+    const existingPlan = await prisma.subscriptionPlan.findFirst({
       where: { name: plan.name },
-      update: {},
-      create: plan,
     });
+
+    if (!existingPlan) {
+      await prisma.subscriptionPlan.create({
+        data: plan,
+      });
+    }
   }
 
   // Create super admin user

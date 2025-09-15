@@ -19,6 +19,8 @@ export class CompanyService {
         timezone: true,
         subscriptionPlan: true,
         subscriptionStatus: true,
+        stripeCustomerId: true,
+        stripeSubscriptionId: true,
         emailFooter: true,
         defaultFollowUpDays: true,
         autoFollowUpEnabled: true,
@@ -60,6 +62,8 @@ export class CompanyService {
       subscription: {
         plan: company.subscriptionPlan,
         status: company.subscriptionStatus,
+        customerId: company.stripeCustomerId,
+        subscriptionId: company.stripeSubscriptionId,
       },
       settings: {
         emailFooter: company.emailFooter,

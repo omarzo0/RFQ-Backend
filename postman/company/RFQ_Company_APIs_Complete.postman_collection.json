@@ -2473,7 +2473,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"success\": true,\n  \"message\": \"Company profile retrieved successfully\",\n  \"data\": {\n    \"id\": \"company-uuid\",\n    \"name\": \"Example Company\",\n    \"email\": \"contact@example.com\",\n    \"domain\": \"example.com\",\n    \"phone\": \"+1234567890\",\n    \"address\": \"123 Business Street\",\n    \"city\": \"Business City\",\n    \"country\": \"United States\",\n    \"timezone\": \"America/New_York\",\n    \"subscription\": {\n      \"plan\": \"premium\",\n      \"status\": \"active\"\n    },\n    \"settings\": {\n      \"emailFooter\": \"Best regards, Example Company\",\n      \"defaultFollowUpDays\": 3,\n      \"autoFollowUpEnabled\": true\n    },\n    \"users\": [\n      {\n        \"id\": \"user-uuid-1\",\n        \"email\": \"admin@example.com\",\n        \"firstName\": \"John\",\n        \"lastName\": \"Doe\",\n        \"role\": \"ADMIN\",\n        \"isActive\": true,\n        \"lastLoginAt\": \"2024-01-15T10:30:00Z\",\n        \"createdAt\": \"2024-01-01T00:00:00Z\",\n        \"updatedAt\": \"2024-01-15T10:30:00Z\"\n      },\n      {\n        \"id\": \"user-uuid-2\",\n        \"email\": \"manager@example.com\",\n        \"firstName\": \"Jane\",\n        \"lastName\": \"Smith\",\n        \"role\": \"MANAGER\",\n        \"isActive\": true,\n        \"lastLoginAt\": \"2024-01-14T15:45:00Z\",\n        \"createdAt\": \"2024-01-05T00:00:00Z\",\n        \"updatedAt\": \"2024-01-14T15:45:00Z\"\n      }\n    ],\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": \"2024-01-15T10:30:00Z\"\n  }\n}"
+              "body": "{\n  \"success\": true,\n  \"message\": \"Company profile retrieved successfully\",\n  \"data\": {\n    \"id\": \"company-uuid\",\n    \"name\": \"Example Company\",\n    \"email\": \"contact@example.com\",\n    \"domain\": \"example.com\",\n    \"phone\": \"+1234567890\",\n    \"address\": \"123 Business Street\",\n    \"city\": \"Business City\",\n    \"country\": \"United States\",\n    \"timezone\": \"America/New_York\",\n    \"subscription\": {\n      \"plan\": \"premium\",\n      \"status\": \"active\",\n      \"customerId\": \"cus_1234567890\",\n      \"subscriptionId\": \"sub_1234567890\"\n    },\n    \"settings\": {\n      \"emailFooter\": \"Best regards, Example Company\",\n      \"defaultFollowUpDays\": 3,\n      \"autoFollowUpEnabled\": true\n    },\n    \"users\": [\n      {\n        \"id\": \"user-uuid-1\",\n        \"email\": \"admin@example.com\",\n        \"firstName\": \"John\",\n        \"lastName\": \"Doe\",\n        \"role\": \"ADMIN\",\n        \"isActive\": true,\n        \"lastLoginAt\": \"2024-01-15T10:30:00Z\",\n        \"createdAt\": \"2024-01-01T00:00:00Z\",\n        \"updatedAt\": \"2024-01-15T10:30:00Z\"\n      },\n      {\n        \"id\": \"user-uuid-2\",\n        \"email\": \"manager@example.com\",\n        \"firstName\": \"Jane\",\n        \"lastName\": \"Smith\",\n        \"role\": \"MANAGER\",\n        \"isActive\": true,\n        \"lastLoginAt\": \"2024-01-14T15:45:00Z\",\n        \"createdAt\": \"2024-01-05T00:00:00Z\",\n        \"updatedAt\": \"2024-01-14T15:45:00Z\"\n      }\n    ],\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": \"2024-01-15T10:30:00Z\"\n  }\n}"
             }
           ]
         },
@@ -4074,6 +4074,23 @@
         },
         {
           "name": "Upgrade Subscription",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.subscriptionId) {",
+                  "        pm.environment.set('subscription_id', response.data.subscriptionId);",
+                  "        console.log('Subscription ID set to:', response.data.subscriptionId);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -4084,7 +4101,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"priceId\": \"price_1234567890\",\n  \"paymentMethodId\": \"pm_1234567890\"\n}"
+              "raw": "{\n  \"priceId\": \"{{price_id}}\",\n  \"paymentMethodId\": \"pm_1234567890\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/payments/upgrade",
@@ -4105,7 +4122,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"priceId\": \"price_0987654321\",\n  \"quantity\": 2,\n  \"prorationBehavior\": \"create_prorations\"\n}"
+              "raw": "{\n  \"priceId\": \"{{price_id}}\",\n  \"quantity\": 2,\n  \"prorationBehavior\": \"create_prorations\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/payments/subscription/{{subscription_id}}",
@@ -4148,6 +4165,27 @@
         },
         {
           "name": "Get Company Subscriptions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.length > 0) {",
+                  "        // Get the first active subscription",
+                  "        const activeSubscription = response.data.find(sub => sub.status === 'active' || sub.status === 'trialing');",
+                  "        if (activeSubscription && activeSubscription.id) {",
+                  "            pm.environment.set('subscription_id', activeSubscription.id);",
+                  "            console.log('Subscription ID set to:', activeSubscription.id);",
+                  "        }",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "url": {
@@ -4223,6 +4261,28 @@
         },
         {
           "name": "Get Available Plans",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.plans && response.data.plans.length > 0) {",
+                  "        // Get the first available plan (usually the cheapest)",
+                  "        const firstPlan = response.data.plans[0];",
+                  "        if (firstPlan.priceId) {",
+                  "            pm.environment.set('price_id', firstPlan.priceId);",
+                  "            console.log('Price ID set to:', firstPlan.priceId);",
+                  "            console.log('Plan name:', firstPlan.name);",
+                  "        }",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "url": {

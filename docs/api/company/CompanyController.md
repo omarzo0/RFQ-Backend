@@ -41,6 +41,12 @@ Authorization: Bearer <company_jwt_token>
     "size": "50-100",
     "description": "Leading ocean freight services provider",
     "isActive": true,
+    "subscription": {
+      "plan": "premium",
+      "status": "active",
+      "customerId": "cus_1234567890",
+      "subscriptionId": "sub_1234567890"
+    },
     "settings": {
       "timezone": "Asia/Shanghai",
       "currency": "USD",
