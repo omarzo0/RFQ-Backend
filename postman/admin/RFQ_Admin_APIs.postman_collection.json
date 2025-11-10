@@ -78,7 +78,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"omarkhaled202080@gmail.com\",\n  \"password\": \"564712Omar@@!!\"\n}"
+              "raw": "{\n  \"email\": \"omarkhaled202080@gmail.com\",\n  \"password\": \"\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
