@@ -78,7 +78,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@rfq.com\",\n  \"password\": \"AdminPassword123!\"\n}"
+              "raw": "{\n  \"email\": \"omarkhaled202080@gmail.com\",\n  \"password\": \"564712Omar@@!!\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",

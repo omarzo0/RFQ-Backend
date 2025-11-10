@@ -9,7 +9,7 @@ export interface SubscriptionUpdateData {
     | "INACTIVE"
     | "SUSPENDED"
     | "CANCELED"
-    | "ACTIVE" // Changed from TRIAL as it's not a valid SubscriptionStatus;
+    | "ACTIVE"; // Changed from TRIAL as it's not a valid SubscriptionStatus;
   trialEndsAt?: Date;
   billingCycle?: "MONTHLY" | "YEARLY";
   monthlyFee?: number;
@@ -90,15 +90,15 @@ export class AdminSubscriptionService {
           trialEndsAt: true,
           createdAt: true,
           updatedAt: true,
-        _count: {
-          select: {
-            users: true,
-            rfqs: true,
-            emailLogs: true,
-            contacts: true,
-            shippingLines: true,
+          _count: {
+            select: {
+              users: true,
+              rfqs: true,
+              emailLogs: true,
+              contacts: true,
+              shippingLines: true,
+            },
           },
-        },
         },
       }),
       prisma.company.count({ where }),
@@ -157,18 +157,6 @@ export class AdminSubscriptionService {
 
     if (!company) {
       throw new AppError("Company not found", 404);
-    }
-
-    // Validate subscription status transition
-    if (data.subscriptionStatus) {
-      const validTransitions = this.getValidStatusTransitions(
-        company.subscriptionStatus
-      );
-      if (!validTransitions.includes(data.subscriptionStatus)) {
-        throw new ValidationError(
-          `Invalid status transition from ${company.subscriptionStatus} to ${data.subscriptionStatus}`
-        );
-      }
     }
 
     const updatedCompany = await prisma.company.update({
@@ -497,7 +485,6 @@ export class AdminSubscriptionService {
 
     return transitions[currentStatus] || [];
   }
-
 
   /**
    * Get plan limits

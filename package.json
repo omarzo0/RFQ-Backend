@@ -26,7 +26,8 @@
     "create-company-data": "node scripts/create-company-data.js",
     "create-additional-test-data": "node scripts/create-additional-test-data.js",
     "setup-company-environment": "node scripts/setup-company-environment.js",
-    "verify-company-data": "node scripts/verify-company-data.js"
+    "verify-company-data": "node scripts/verify-company-data.js",
+    "test:email": "ts-node scripts/test-email-simple.ts"
   },
   "keywords": [],
   "author": "",
