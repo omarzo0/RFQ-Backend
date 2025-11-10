@@ -11,6 +11,7 @@
 **Overall Status:** ✅ **OPERATIONAL** (with minor compilation warnings)
 
 The RFQ Backend is a comprehensive **Request for Quotation automation platform** built with:
+
 - **TypeScript** + **Node.js** + **Express**
 - **PostgreSQL** database with **Prisma ORM**
 - **Multi-tenant architecture** (Admin + Company portals)
@@ -68,6 +69,7 @@ src/
 ### Database Models (38 Total)
 
 #### Core Models
+
 1. **Admin** - Admin user accounts
 2. **Company** - Multi-tenant company accounts
 3. **CompanyUser** - Company employee accounts
@@ -75,12 +77,14 @@ src/
 5. **PasswordResetToken** - Password reset OTPs
 
 #### Financial Models
+
 6. **Transaction** - Payment transactions
 7. **FinancialDetails** - Company financial info
 8. **SubscriptionPlan** - Subscription plans
 9. **UsageMetric** - Usage tracking
 
 #### Logistics Models
+
 10. **ShippingLine** - Carrier/shipping companies
 11. **Contact** - Shipping line contacts
 12. **RFQ** - Request for quotations
@@ -91,6 +95,7 @@ src/
 17. **RoutePerformanceMetric** - Route analytics
 
 #### Email System Models
+
 18. **EmailTemplate** - Email templates
 19. **EmailLog** - Email sending logs
 20. **EmailEngagement** - Opens, clicks tracking
@@ -105,6 +110,7 @@ src/
 29. **ScheduledFollowUp** - Scheduled follow-ups
 
 #### Integration Models
+
 30. **IMAPConfiguration** - Email reply ingestion
 31. **EmailWebhook** - Webhook handlers
 32. **WebhookEndpoint** - Webhook endpoints
@@ -112,6 +118,7 @@ src/
 34. **ParsingLearningData** - ML training data
 
 #### Support Models
+
 35. **SupportTicket** - Customer support
 36. **SystemFeature** - Feature flags
 37. **CompanyFeature** - Per-company features
@@ -140,13 +147,16 @@ EmailLog (1) -----> (*) EmailBounce
 **Status:** ✅ **FULLY IMPLEMENTED**
 
 #### JWT-Based Authentication
+
 - **Access Tokens:** 7 days (configurable)
 - **Refresh Tokens:** 30 days (stored in database)
 - **Token Rotation:** Yes (on refresh)
 - **Revocation:** Supported
 
 #### User Types
+
 1. **Admin** - Platform administrators
+
    - Roles: SUPER_ADMIN, ADMIN
    - Access: Full platform management
 
@@ -155,6 +165,7 @@ EmailLog (1) -----> (*) EmailBounce
    - Access: Company-specific data only
 
 #### Security Features
+
 - ✅ Password hashing with bcrypt (12 rounds)
 - ✅ Token-based authentication
 - ✅ Refresh token rotation
@@ -165,6 +176,7 @@ EmailLog (1) -----> (*) EmailBounce
 - ✅ Request logging
 
 #### Middleware
+
 ```typescript
 Location: src/admin/middleware/auth.ts
 
@@ -186,39 +198,39 @@ authorize(roles) - Check user roles
 
 ### Admin Portal (`/api/v1/admin`)
 
-| Category | Endpoints | Controller |
-|----------|-----------|------------|
-| **Authentication** | Login, Refresh, Logout | AdminAuthController |
-| **Dashboard** | Stats, metrics, overview | AdminDashboardController |
-| **Analytics** | System analytics | AdminAnalyticsController |
-| **Management** | Admin CRUD | AdminManagementController |
-| **Companies** | Company management | AdminCompanyController |
-| **Subscriptions** | Plan management | AdminSubscriptionController |
-| **Transactions** | Payment history | AdminTransactionController |
-| **Support** | Ticket management | AdminTicketController |
+| Category           | Endpoints                | Controller                  |
+| ------------------ | ------------------------ | --------------------------- |
+| **Authentication** | Login, Refresh, Logout   | AdminAuthController         |
+| **Dashboard**      | Stats, metrics, overview | AdminDashboardController    |
+| **Analytics**      | System analytics         | AdminAnalyticsController    |
+| **Management**     | Admin CRUD               | AdminManagementController   |
+| **Companies**      | Company management       | AdminCompanyController      |
+| **Subscriptions**  | Plan management          | AdminSubscriptionController |
+| **Transactions**   | Payment history          | AdminTransactionController  |
+| **Support**        | Ticket management        | AdminTicketController       |
 
 ### Company Portal (`/api/v1/company`)
 
-| Category | Endpoints | Controller |
-|----------|-----------|------------|
-| **Authentication** | Login, Refresh, Logout, Password Reset | CompanyAuthController |
-| **RFQs** | Create, list, update, delete | RFQController |
-| **Quotes** | Receive, compare, award | QuoteController |
-| **Contacts** | Manage carrier contacts | ContactController |
-| **Shipping Lines** | Carrier management | ShippingLineController |
-| **Templates** | RFQ templates | TemplateController |
-| **Emails** | Email campaigns, tracking | EmailController |
-| **Analytics** | Company analytics | AnalyticsController |
-| **Users** | Team management | UserController |
-| **Payments** | Subscriptions, billing | PaymentController |
-| **Support** | Tickets | CompanyTicketController |
-| **Reply Ingestion** | Email reply processing | ReplyIngestionController |
+| Category            | Endpoints                              | Controller               |
+| ------------------- | -------------------------------------- | ------------------------ |
+| **Authentication**  | Login, Refresh, Logout, Password Reset | CompanyAuthController    |
+| **RFQs**            | Create, list, update, delete           | RFQController            |
+| **Quotes**          | Receive, compare, award                | QuoteController          |
+| **Contacts**        | Manage carrier contacts                | ContactController        |
+| **Shipping Lines**  | Carrier management                     | ShippingLineController   |
+| **Templates**       | RFQ templates                          | TemplateController       |
+| **Emails**          | Email campaigns, tracking              | EmailController          |
+| **Analytics**       | Company analytics                      | AnalyticsController      |
+| **Users**           | Team management                        | UserController           |
+| **Payments**        | Subscriptions, billing                 | PaymentController        |
+| **Support**         | Tickets                                | CompanyTicketController  |
+| **Reply Ingestion** | Email reply processing                 | ReplyIngestionController |
 
 ### Global Endpoints
 
-| Endpoint | Purpose |
-|----------|---------|
-| `GET /health` | Health check |
+| Endpoint      | Purpose         |
+| ------------- | --------------- |
+| `GET /health` | Health check    |
 | `GET /api/v1` | API information |
 
 ---
@@ -230,9 +242,11 @@ authorize(roles) - Check user roles
 **Status:** ✅ **FULLY FUNCTIONAL** (tested)
 
 #### 1. EmailService
+
 **Location:** `src/company/services/EmailService.ts`
 
 **Features:**
+
 - ✅ Single email sending
 - ✅ Bulk email sending (rate-limited)
 - ✅ Email tracking pixels
@@ -244,33 +258,40 @@ authorize(roles) - Check user roles
 - ✅ HTML/text email support
 
 **Configuration:**
+
 - Provider: Brevo (smtp-relay.brevo.com:587)
 - Pool Size: 5 connections
 - Messages per connection: 100
 - Default rate limit: 10 emails/minute
 
 #### 2. PasswordResetService
+
 **Location:** `src/services/PasswordResetService.ts`
 
 **Features:**
+
 - ✅ OTP generation (6 digits)
 - ✅ Email delivery
 - ✅ 10-minute expiry
 - ✅ Admin & company user support
 
 #### 3. PaymentEmailService
+
 **Location:** `src/company/services/PaymentEmailService.ts`
 
 **Features:**
+
 - ✅ Plan upgrade confirmation
 - ✅ Trial ending warnings (3 days)
 - ✅ Trial expired notifications
 - ✅ Payment receipts
 
 #### 4. FollowUpService
+
 **Location:** `src/company/services/FollowUpService.ts`
 
 **Features:**
+
 - ✅ Automated follow-ups
 - ✅ Conditional triggers
 - ✅ Custom schedules
@@ -280,6 +301,7 @@ authorize(roles) - Check user roles
 ### Email Analytics
 
 **Tracked Metrics:**
+
 - Total emails sent
 - Delivery rate
 - Open rate
@@ -297,16 +319,10 @@ authorize(roles) - Check user roles
 
 **Status:** ✅ **CONFIGURED**
 
-**Configuration:**
-```env
-STRIPE_SECRET_KEY=sk_test_51S6YYvGfgrMxyDLY...
-STRIPE_PUBLISHABLE_KEY=pk_test_51S6YYvGfgrMxyDLY...
-STRIPE_WEBHOOK_SECRET=whsec_wRNftLajMZNeslQOP6vEPm4iVx5NlZ6z
-```
-
 **Service:** `src/company/services/PaymentService.ts`
 
 **Features:**
+
 - ✅ Customer creation
 - ✅ Payment intent creation
 - ✅ Subscription management
@@ -316,6 +332,7 @@ STRIPE_WEBHOOK_SECRET=whsec_wRNftLajMZNeslQOP6vEPm4iVx5NlZ6z
 - ✅ Usage-based billing
 
 **Supported Operations:**
+
 1. Create payment intent
 2. Create subscription
 3. Update subscription
@@ -334,6 +351,7 @@ STRIPE_WEBHOOK_SECRET=whsec_wRNftLajMZNeslQOP6vEPm4iVx5NlZ6z
 **Status:** ⚠️ **CONFIGURED BUT KEY PLACEHOLDER**
 
 **Configuration:**
+
 ```env
 OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 ```
@@ -343,6 +361,7 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 **Purpose:** Parse email replies to extract quote information
 
 **Features:**
+
 - Quote parsing from email text
 - Structured data extraction
 - Price detection
@@ -362,6 +381,7 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 **Service:** `src/company/services/IMAPService.ts`
 
 **Features:**
+
 - ✅ Connect to IMAP servers
 - ✅ Fetch unread emails
 - ✅ Parse email content
@@ -370,11 +390,13 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 - ✅ AI-powered parsing
 
 **Configuration:**
+
 - Per-company IMAP settings
 - Stored in `IMAPConfiguration` model
 - Scheduled jobs for polling
 
 **Related Services:**
+
 - `EmailReplyService` - Reply processing
 - `ThreadMatchingService` - Match replies to RFQs
 - `AIParsingService` - Extract quote data
@@ -401,6 +423,7 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 **Status:** ✅ **COMPREHENSIVE**
 
 **Handles:**
+
 - ✅ Custom AppError classes
 - ✅ ValidationError (400)
 - ✅ Prisma errors (P2002, P2025, etc.)
@@ -409,6 +432,7 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 - ✅ Production-safe error messages
 
 **Error Response Format:**
+
 ```json
 {
   "error": "Error",
@@ -429,17 +453,20 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 **Status:** ✅ **IMPLEMENTED**
 
 #### 1. Trial Notification Job
+
 **Location:** `src/jobs/trialNotificationCron.ts`
 
 **Schedule:** Daily at 9 AM
 **Purpose:** Send trial ending/expired notifications
 
 #### 2. Email Scheduler
+
 **Location:** `src/company/jobs/EmailScheduler.ts`
 
 **Purpose:** Process scheduled emails and follow-ups
 
 #### 3. Reply Ingestion Job
+
 **Location:** `src/company/jobs/ReplyIngestionScheduler.ts`
 
 **Schedule:** Every 5 minutes
@@ -452,26 +479,31 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 ### ✅ Strengths
 
 1. **Authentication**
+
    - JWT with refresh tokens
    - Token rotation on refresh
    - Secure password hashing (bcrypt, 12 rounds)
 
 2. **Authorization**
+
    - Role-based access control
    - Multi-tenant data isolation
    - Company-specific data scoping
 
 3. **Input Validation**
+
    - Express-validator integration
    - Prisma schema validation
    - Request body size limits
 
 4. **Security Headers**
+
    - Helmet.js middleware
    - CORS configuration
    - Rate limiting
 
 5. **Database Security**
+
    - Parameterized queries (Prisma)
    - Connection pooling
    - No SQL injection risk
@@ -485,18 +517,22 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 ### ⚠️ Recommendations
 
 1. **Environment Variables**
+
    - ⚠️ Some secrets in code (fallbacks)
    - ✅ Recommendation: Remove fallbacks in production
 
 2. **API Rate Limiting**
+
    - ✅ Global rate limit: 1000/15min
    - 💡 Consider endpoint-specific limits
 
 3. **CSRF Protection**
+
    - ⚠️ Not implemented (API-only, token-based)
    - ✅ OK for API-only architecture
 
 4. **File Upload Security**
+
    - ✅ Size limits (10MB)
    - 💡 Add file type validation
    - 💡 Add virus scanning for production
@@ -514,12 +550,14 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 ### Database Performance
 
 **Optimizations:**
+
 - ✅ Connection pooling (5-100 connections)
 - ✅ Slow query logging (>1000ms)
 - ✅ Prisma query optimization
 - ✅ Indexes on foreign keys (Prisma default)
 
 **Recommendations:**
+
 - 💡 Add custom indexes for frequent queries
 - 💡 Implement caching (Redis available)
 - 💡 Add database query monitoring
@@ -527,12 +565,14 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 ### API Performance
 
 **Current Setup:**
+
 - ✅ Response compression (gzip)
 - ✅ Connection pooling (email service)
 - ✅ Async/await patterns
 - ⏱️ No caching layer
 
 **Recommendations:**
+
 - 💡 Implement Redis caching
 - 💡 Add API response caching headers
 - 💡 Implement pagination everywhere
@@ -547,6 +587,7 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 **Status:** ⚠️ **10 ERRORS FOUND**
 
 **Errors:**
+
 1. Missing module `../validators/authValidators`
 2. Import path issues (`../app`, `../utils/password`)
 3. EmailJobProcessor not found
@@ -598,6 +639,7 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 **Test Suite:** `scripts/test-email-simple.ts`
 
 **Results:**
+
 - ✅ 4/4 tests passed (100%)
 - ✅ SMTP connection working
 - ✅ Email delivery confirmed
@@ -610,6 +652,7 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 **Status:** ⚠️ **NO TEST SUITE**
 
 **Recommendation:**
+
 - 💡 Add Jest/Mocha test suite
 - 💡 Unit tests for services
 - 💡 Integration tests for API endpoints
@@ -622,6 +665,7 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 ### Production Dependencies (26)
 
 **Major Libraries:**
+
 - **express** - Web framework
 - **@prisma/client** - Database ORM
 - **jsonwebtoken** - Authentication
@@ -637,6 +681,7 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 ### Development Dependencies (18)
 
 **Major Tools:**
+
 - **typescript** - Type system
 - **ts-node** - Development runtime
 - **nodemon** - Auto-restart
@@ -651,6 +696,7 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 ### ✅ Production Ready
 
 1. **Core Functionality**
+
    - ✅ Authentication & authorization
    - ✅ RFQ management
    - ✅ Quote processing
@@ -658,12 +704,14 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
    - ✅ Payment processing (Stripe)
 
 2. **Security**
+
    - ✅ JWT authentication
    - ✅ Password hashing
    - ✅ Rate limiting
    - ✅ Security headers
 
 3. **Database**
+
    - ✅ Prisma migrations
    - ✅ Connection pooling
    - ✅ Data validation
@@ -676,22 +724,26 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 ### ⚠️ Pre-Production Tasks
 
 1. **Code Issues**
+
    - ❌ Fix TypeScript compilation errors
    - 💡 Resolve import path issues
    - 💡 Remove missing dependencies
 
 2. **Testing**
+
    - 💡 Add comprehensive test suite
    - 💡 Load testing
    - 💡 Security audit
 
 3. **Configuration**
+
    - ⚠️ Set real OpenAI API key
    - 💡 Configure production database
    - 💡 Set up monitoring/logging
    - 💡 Configure backup strategy
 
 4. **Performance**
+
    - 💡 Add Redis caching
    - 💡 Optimize database queries
    - 💡 CDN for static assets
@@ -737,6 +789,7 @@ OPENAI_API_KEY="your-openai-key"  # ⚠️ Needs real API key
 The RFQ Backend is a **well-architected, feature-rich platform** with:
 
 ✅ **Strengths:**
+
 - Comprehensive feature set
 - Multi-tenant architecture
 - Robust email automation
@@ -746,6 +799,7 @@ The RFQ Backend is a **well-architected, feature-rich platform** with:
 - Good code organization
 
 ⚠️ **Areas for Improvement:**
+
 - TypeScript compilation errors
 - Missing test coverage
 - Performance optimization needed
@@ -755,15 +809,15 @@ The RFQ Backend is a **well-architected, feature-rich platform** with:
 
 **Overall: 7.5/10** - Good, but needs fixes
 
-| Category | Score | Status |
-|----------|-------|--------|
-| Core Functionality | 9/10 | ✅ Excellent |
-| Code Quality | 7/10 | ✅ Good |
-| Security | 8/10 | ✅ Good |
-| Performance | 6/10 | ⚠️ Needs Work |
-| Testing | 4/10 | ⚠️ Needs Work |
-| Documentation | 7/10 | ✅ Good |
-| Deployment | 6/10 | ⚠️ Needs Work |
+| Category           | Score | Status        |
+| ------------------ | ----- | ------------- |
+| Core Functionality | 9/10  | ✅ Excellent  |
+| Code Quality       | 7/10  | ✅ Good       |
+| Security           | 8/10  | ✅ Good       |
+| Performance        | 6/10  | ⚠️ Needs Work |
+| Testing            | 4/10  | ⚠️ Needs Work |
+| Documentation      | 7/10  | ✅ Good       |
+| Deployment         | 6/10  | ⚠️ Needs Work |
 
 ### Recommendation
 
@@ -777,6 +831,7 @@ The backend is suitable for **staging environment deployment** with the understa
 4. Performance testing required
 
 **Timeline to Production:**
+
 - Fix critical issues: 1-2 days
 - Add testing: 1 week
 - Performance optimization: 1-2 weeks
