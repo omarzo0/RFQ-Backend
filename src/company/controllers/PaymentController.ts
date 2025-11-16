@@ -100,7 +100,7 @@ export class PaymentController {
   };
 
   /**
-   * Update a subscription
+   * Update current company's subscription (request plan change with 6-hour payment window)
    */
   updateSubscription = async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -109,34 +109,48 @@ export class PaymentController {
         return errorResponse(res, "Validation failed", 400, errors.array());
       }
 
-      const { subscriptionId } = req.params;
-      const { priceId, quantity, prorationBehavior } = req.body;
+      const companyId = req.user?.companyId;
 
-      const subscription = await this.paymentService.updateSubscription({
-        subscriptionId,
-        priceId,
-        quantity,
-        prorationBehavior,
-      });
+      if (!companyId) {
+        return errorResponse(res, "Company ID not found in request", 400);
+      }
+
+      const { planId } = req.body;
+
+      if (!planId) {
+        return errorResponse(res, "Plan ID is required", 400);
+      }
+
+      // Request plan change with 6-hour payment window
+      const result = await this.paymentService.requestPlanChange(
+        companyId,
+        planId
+      );
 
       return successResponse(
         res,
         {
-          subscriptionId: subscription.id,
-          status: subscription.status,
-          currentPeriodStart: (subscription as any).current_period_start,
-          currentPeriodEnd: (subscription as any).current_period_end,
+          planId: result.planId,
+          planName: result.planName,
+          priceMonthly: result.priceMonthly,
+          paymentDeadline: result.paymentDeadline,
+          hoursRemaining: result.hoursRemaining,
+          message: "Plan change requested. Please complete payment within 6 hours.",
         },
-        "Subscription updated successfully"
+        "Subscription update requested successfully"
       );
     } catch (error) {
       logger.error("Error updating subscription:", error);
-      return errorResponse(res, "Failed to update subscription", 500);
+      return errorResponse(
+        res,
+        (error as Error).message || "Failed to update subscription",
+        500
+      );
     }
   };
 
   /**
-   * Cancel a subscription
+   * Cancel current company's subscription
    */
   cancelSubscription = async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -145,11 +159,26 @@ export class PaymentController {
         return errorResponse(res, "Validation failed", 400, errors.array());
       }
 
-      const { subscriptionId } = req.params;
+      const companyId = req.user?.companyId;
+
+      if (!companyId) {
+        return errorResponse(res, "Company ID not found in request", 400);
+      }
+
       const { immediately } = req.body;
 
+      // Get company's current subscription
+      const subscriptions = await this.paymentService.getCompanySubscriptions(
+        companyId
+      );
+      const currentSubscription = subscriptions.find(sub => sub.status === 'active') || subscriptions[0];
+
+      if (!currentSubscription) {
+        return errorResponse(res, "No active subscription found for company", 404);
+      }
+
       const subscription = await this.paymentService.cancelSubscription(
-        subscriptionId,
+        currentSubscription.id,
         immediately || false
       );
 
@@ -229,28 +258,63 @@ export class PaymentController {
   };
 
   /**
-   * Get subscription details
+   * Get subscription details for current company
    */
   getSubscription = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { subscriptionId } = req.params;
+      const companyId = req.user?.companyId;
 
-      const subscription = await this.paymentService.getSubscription(
-        subscriptionId
+      if (!companyId) {
+        return errorResponse(res, "Company ID not found in request", 400);
+      }
+
+      // Get subscription status from database (includes trial subscriptions)
+      const subscriptionStatus = await this.paymentService.getCompanySubscriptionStatus(
+        companyId
       );
+
+      if (!subscriptionStatus) {
+        return errorResponse(res, "No subscription found for company", 404);
+      }
+
+      // Try to get Stripe subscription details if exists
+      let stripeSubscription = null;
+      if (subscriptionStatus.hasStripeCustomer && subscriptionStatus.currentPlan !== 'trial') {
+        try {
+          const subscriptions = await this.paymentService.getCompanySubscriptions(
+            companyId
+          );
+          stripeSubscription = subscriptions.find(sub => sub.status === 'active') || subscriptions[0];
+        } catch (error) {
+          logger.warn("Could not fetch Stripe subscription details:", error);
+          // Continue without Stripe details
+        }
+      }
 
       return successResponse(
         res,
         {
-          subscriptionId: subscription.id,
-          status: subscription.status,
-          currentPeriodStart: (subscription as any).current_period_start,
-          currentPeriodEnd: (subscription as any).current_period_end,
-          trialEnd: subscription.trial_end,
-          cancelAtPeriodEnd: subscription.cancel_at_period_end,
-          canceledAt: subscription.canceled_at,
-          defaultPaymentMethod: subscription.default_payment_method,
-          items: subscription.items.data,
+          currentPlan: subscriptionStatus.currentPlan,
+          status: subscriptionStatus.status,
+          trialEndsAt: subscriptionStatus.trialEndsAt,
+          isTrialExpired: subscriptionStatus.isTrialExpired,
+          daysLeftInTrial: subscriptionStatus.daysLeftInTrial,
+          canUpgrade: subscriptionStatus.canUpgrade,
+          hasStripeCustomer: subscriptionStatus.hasStripeCustomer,
+          // Include Stripe details if available
+          ...(stripeSubscription && {
+            stripeSubscription: {
+              subscriptionId: stripeSubscription.id,
+              status: stripeSubscription.status,
+              currentPeriodStart: (stripeSubscription as any).current_period_start,
+              currentPeriodEnd: (stripeSubscription as any).current_period_end,
+              trialEnd: stripeSubscription.trial_end,
+              cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
+              canceledAt: stripeSubscription.canceled_at,
+              defaultPaymentMethod: stripeSubscription.default_payment_method,
+              items: stripeSubscription.items.data,
+            }
+          })
         },
         "Subscription retrieved successfully"
       );
@@ -475,6 +539,139 @@ export class PaymentController {
       return errorResponse(res, "Failed to get subscription status", 500);
     }
   };
+
+  /**
+   * Complete plan upgrade after payment
+   */
+  completePlanUpgrade = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const companyId = req.user?.companyId;
+
+      if (!companyId) {
+        return errorResponse(res, "Company ID not found in request", 400);
+      }
+
+      const result = await this.paymentService.completePlanUpgrade(companyId);
+
+      return successResponse(
+        res,
+        {
+          planName: result.planName,
+          priceMonthly: result.priceMonthly,
+          status: result.status,
+        },
+        "Plan upgraded successfully"
+      );
+    } catch (error) {
+      logger.error("Error completing plan upgrade:", error);
+      return errorResponse(
+        res,
+        (error as Error).message || "Failed to complete plan upgrade",
+        500
+      );
+    }
+  };
+
+  /**
+   * Cancel pending plan upgrade
+   */
+  cancelPendingUpgrade = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const companyId = req.user?.companyId;
+
+      if (!companyId) {
+        return errorResponse(res, "Company ID not found in request", 400);
+      }
+
+      await this.paymentService.cancelPendingPlanUpgrade(companyId);
+
+      return successResponse(
+        res,
+        null,
+        "Pending plan upgrade cancelled successfully"
+      );
+    } catch (error) {
+      logger.error("Error cancelling pending upgrade:", error);
+      return errorResponse(res, "Failed to cancel pending upgrade", 500);
+    }
+  };
+
+  /**
+   * Get pending payment invoice
+   */
+  getPendingPaymentInvoice = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ) => {
+    try {
+      const companyId = req.user?.companyId;
+
+      if (!companyId) {
+        return errorResponse(res, "Company ID not found in request", 400);
+      }
+
+      const invoice = await this.paymentService.getPendingPaymentInvoice(
+        companyId
+      );
+
+      return successResponse(
+        res,
+        invoice,
+        "Payment invoice retrieved successfully"
+      );
+    } catch (error) {
+      logger.error("Error getting payment invoice:", error);
+      return errorResponse(
+        res,
+        (error as Error).message || "Failed to get payment invoice",
+        error instanceof Error &&
+          error.message === "No pending payment found"
+          ? 404
+          : 500
+      );
+    }
+  };
+
+  /**
+   * Process payment for pending plan upgrade
+   */
+  processPendingPlanPayment = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return errorResponse(res, "Validation failed", 400, errors.array());
+      }
+
+      const companyId = req.user?.companyId;
+
+      if (!companyId) {
+        return errorResponse(res, "Company ID not found in request", 400);
+      }
+
+      const { paymentMethodId } = req.body;
+
+      const result = await this.paymentService.processPendingPlanPayment(
+        companyId,
+        { paymentMethodId }
+      );
+
+      return successResponse(
+        res,
+        result,
+        "Payment processed successfully"
+      );
+    } catch (error) {
+      logger.error("Error processing payment:", error);
+      return errorResponse(
+        res,
+        (error as Error).message || "Failed to process payment",
+        500
+      );
+    }
+  };
 }
 
 // Validation rules
@@ -508,23 +705,12 @@ export const upgradeSubscriptionValidation = [
 ];
 
 export const updateSubscriptionValidation = [
-  param("subscriptionId").isString().withMessage("Subscription ID is required"),
-  body("priceId")
-    .optional()
+  body("planId")
     .isString()
-    .withMessage("Price ID must be a string"),
-  body("quantity")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("Quantity must be a positive integer"),
-  body("prorationBehavior")
-    .optional()
-    .isIn(["create_prorations", "none", "always_invoice"])
-    .withMessage("Invalid proration behavior"),
+    .withMessage("Plan ID is required and must be a string"),
 ];
 
 export const cancelSubscriptionValidation = [
-  param("subscriptionId").isString().withMessage("Subscription ID is required"),
   body("immediately")
     .optional()
     .isBoolean()
@@ -547,10 +733,6 @@ export const processRefundValidation = [
     .withMessage("Invalid refund reason"),
 ];
 
-export const getSubscriptionValidation = [
-  param("subscriptionId").isString().withMessage("Subscription ID is required"),
-];
-
 export const getTransactionsValidation = [
   query("limit")
     .optional()
@@ -560,6 +742,12 @@ export const getTransactionsValidation = [
     .optional()
     .isInt({ min: 0 })
     .withMessage("Offset must be a non-negative integer"),
+];
+
+export const processPendingPaymentValidation = [
+  body("paymentMethodId")
+    .isString()
+    .withMessage("Payment method ID is required"),
 ];
 
 export default PaymentController;

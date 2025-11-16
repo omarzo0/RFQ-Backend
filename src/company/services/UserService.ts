@@ -395,4 +395,89 @@ export class UserService {
       permissions[user.role as keyof typeof permissions] || permissions.EMPLOYEE
     );
   }
+
+  /**
+   * Update current user's own profile
+   * Only allows updating firstName, lastName, and email
+   */
+  async updateMyProfile(userId: string, companyId: string, profileData: any) {
+    // Check if email is being changed and if it already exists
+    if (profileData.email) {
+      const existingUser = await prisma.companyUser.findFirst({
+        where: {
+          email: profileData.email.toLowerCase(),
+          id: { not: userId },
+        },
+      });
+
+      if (existingUser) {
+        throw new ValidationError("Email already exists");
+      }
+    }
+
+    // Only allow updating specific fields (not role or status)
+    const allowedFields: any = {};
+    
+    if (profileData.firstName !== undefined) {
+      allowedFields.firstName = profileData.firstName;
+    }
+    if (profileData.lastName !== undefined) {
+      allowedFields.lastName = profileData.lastName;
+    }
+    if (profileData.email !== undefined) {
+      allowedFields.email = profileData.email.toLowerCase();
+    }
+
+    // Update password if provided
+    if (profileData.currentPassword && profileData.newPassword) {
+      // Verify current password
+      const user = await prisma.companyUser.findUnique({
+        where: { id: userId },
+        select: { passwordHash: true },
+      });
+
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      const isPasswordValid = await PasswordUtils.compare(
+        profileData.currentPassword,
+        user.passwordHash
+      );
+
+      if (!isPasswordValid) {
+        throw new ValidationError("Current password is incorrect");
+      }
+
+      // Validate new password strength
+      const passwordValidation = PasswordUtils.validate(profileData.newPassword);
+      if (!passwordValidation.isValid) {
+        throw new ValidationError("Invalid new password", passwordValidation.errors);
+      }
+
+      // Hash new password
+      allowedFields.passwordHash = await PasswordUtils.hash(profileData.newPassword);
+    }
+
+    const updatedUser = await prisma.companyUser.update({
+      where: { id: userId, companyId },
+      data: allowedFields,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        isActive: true,
+        lastLoginAt: true,
+        createdAt: true,
+        updatedAt: true,
+        company: {
+          select: { name: true, subscriptionPlan: true },
+        },
+      },
+    });
+
+    return updatedUser;
+  }
 }

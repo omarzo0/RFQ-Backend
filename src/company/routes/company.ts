@@ -112,11 +112,6 @@ router.put(
     )
 );
 
-// Usage Metrics
-router.get("/usage", (req: Request, res: Response, next: NextFunction) =>
-  companyController.getUsageMetrics(req as unknown as CompanyRequest, res, next)
-);
-
 // Billing History
 router.get(
   "/billing-history",
@@ -171,15 +166,6 @@ router.get(
   "/billing-settings",
   (req: Request, res: Response, next: NextFunction) =>
     companyController.getBillingSettings(
-      req as unknown as CompanyRequest,
-      res,
-      next
-    )
-);
-router.put(
-  "/billing-settings",
-  (req: Request, res: Response, next: NextFunction) =>
-    companyController.updateBillingSettings(
       req as unknown as CompanyRequest,
       res,
       next

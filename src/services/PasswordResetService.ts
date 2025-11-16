@@ -115,14 +115,14 @@ export class PasswordResetService {
 
   /**
    * Verify OTP and reset password
-   * Email is extracted from the access token, not from request body
+   * Works without authentication - email is provided in request
    */
   async verifyOTPAndResetPassword(data: {
     email: string;
     otp: string;
     newPassword: string;
     userType: UserType;
-    userId: string; // User ID from access token
+    userId?: string; // Optional - for backward compatibility
   }) {
     const { email, otp, newPassword, userType, userId } = data;
 
@@ -132,20 +132,26 @@ export class PasswordResetService {
     // Hash the OTP to find the record
     const tokenHash = crypto.createHash("sha256").update(otp).digest("hex");
 
+    // Build where clause
+    const whereClause: any = {
+      tokenHash,
+      email: email.toLowerCase(),
+      userType,
+      isUsed: false,
+      expiresAt: { gt: new Date() },
+    };
+
+    // Add userId check only if provided (for backward compatibility)
+    if (userId) {
+      whereClause.OR = [
+        { adminUserId: userType === UserType.ADMIN ? userId : null },
+        { companyUserId: userType === UserType.COMPANY_USER ? userId : null },
+      ];
+    }
+
     // Find the password reset token
     const resetToken = await prisma.passwordResetToken.findFirst({
-      where: {
-        tokenHash,
-        email: email.toLowerCase(),
-        userType,
-        isUsed: false,
-        expiresAt: { gt: new Date() },
-        // Verify the token belongs to the authenticated user
-        OR: [
-          { adminUserId: userType === UserType.ADMIN ? userId : null },
-          { companyUserId: userType === UserType.COMPANY_USER ? userId : null },
-        ],
-      },
+      where: whereClause,
       include: {
         admin: true,
         companyUser: true,
@@ -202,33 +208,39 @@ export class PasswordResetService {
 
   /**
    * Verify OTP only (without resetting password)
-   * Email is extracted from the access token, not from request body
+   * Works without authentication - email is provided in request
    */
   async verifyOTP(data: {
     email: string;
     otp: string;
     userType: UserType;
-    userId: string; // User ID from access token
+    userId?: string; // Optional - for backward compatibility
   }) {
     const { email, otp, userType, userId } = data;
 
     // Hash the OTP to find the record
     const tokenHash = crypto.createHash("sha256").update(otp).digest("hex");
 
+    // Build where clause
+    const whereClause: any = {
+      tokenHash,
+      email: email.toLowerCase(),
+      userType,
+      isUsed: false,
+      expiresAt: { gt: new Date() },
+    };
+
+    // Add userId check only if provided (for backward compatibility)
+    if (userId) {
+      whereClause.OR = [
+        { adminUserId: userType === UserType.ADMIN ? userId : null },
+        { companyUserId: userType === UserType.COMPANY_USER ? userId : null },
+      ];
+    }
+
     // Find the password reset token
     const resetToken = await prisma.passwordResetToken.findFirst({
-      where: {
-        tokenHash,
-        email: email.toLowerCase(),
-        userType,
-        isUsed: false,
-        expiresAt: { gt: new Date() },
-        // Verify the token belongs to the authenticated user
-        OR: [
-          { adminUserId: userType === UserType.ADMIN ? userId : null },
-          { companyUserId: userType === UserType.COMPANY_USER ? userId : null },
-        ],
-      },
+      where: whereClause,
     });
 
     if (!resetToken) {

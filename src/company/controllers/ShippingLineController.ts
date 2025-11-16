@@ -24,6 +24,8 @@ export class ShippingLineController {
         service,
         tag,
         isCustom,
+        email,
+        category,
       } = (req as any).query;
       const companyId = req.user.companyId;
 
@@ -38,6 +40,8 @@ export class ShippingLineController {
           service,
           tag,
           isCustom: isCustom === "true",
+          email,
+          category,
         }
       );
 

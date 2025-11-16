@@ -5,8 +5,8 @@ import PaymentController, {
   updateSubscriptionValidation,
   cancelSubscriptionValidation,
   processRefundValidation,
-  getSubscriptionValidation,
   getTransactionsValidation,
+  processPendingPaymentValidation,
 } from "../controllers/PaymentController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
 
@@ -39,23 +39,23 @@ router.post(
 );
 
 /**
- * @route PUT /api/v1/company/payments/subscription/:subscriptionId
- * @desc Update an existing subscription
+ * @route PUT /api/v1/company/payments/subscription
+ * @desc Update current company's subscription
  * @access Private (Company)
  */
 router.put(
-  "/subscription/:subscriptionId",
+  "/subscription",
   updateSubscriptionValidation,
   paymentController.updateSubscription
 );
 
 /**
- * @route DELETE /api/v1/company/payments/subscription/:subscriptionId
- * @desc Cancel a subscription
+ * @route DELETE /api/v1/company/payments/subscription
+ * @desc Cancel current company's subscription
  * @access Private (Company)
  */
 router.delete(
-  "/subscription/:subscriptionId",
+  "/subscription",
   cancelSubscriptionValidation,
   paymentController.cancelSubscription
 );
@@ -75,13 +75,12 @@ router.get("/methods", paymentController.getPaymentMethods);
 router.post("/setup-intent", paymentController.createSetupIntent);
 
 /**
- * @route GET /api/v1/company/payments/subscription/:subscriptionId
- * @desc Get subscription details
+ * @route GET /api/v1/company/payments/subscription
+ * @desc Get current company's subscription details
  * @access Private (Company)
  */
 router.get(
-  "/subscription/:subscriptionId",
-  getSubscriptionValidation,
+  "/subscription",
   paymentController.getSubscription
 );
 
@@ -134,6 +133,38 @@ router.get("/plans", paymentController.getAvailablePlans);
  * @access Private (Company)
  */
 router.get("/status", paymentController.getSubscriptionStatus);
+
+/**
+ * @route POST /api/v1/company/payments/complete-upgrade
+ * @desc Complete plan upgrade after payment
+ * @access Private (Company)
+ */
+router.post("/complete-upgrade", paymentController.completePlanUpgrade);
+
+/**
+ * @route POST /api/v1/company/payments/cancel-pending-upgrade
+ * @desc Cancel pending plan upgrade
+ * @access Private (Company)
+ */
+router.post("/cancel-pending-upgrade", paymentController.cancelPendingUpgrade);
+
+/**
+ * @route GET /api/v1/company/payments/pending-invoice
+ * @desc Get pending payment invoice details
+ * @access Private (Company)
+ */
+router.get("/pending-invoice", paymentController.getPendingPaymentInvoice);
+
+/**
+ * @route POST /api/v1/company/payments/process-payment
+ * @desc Process payment for pending plan upgrade
+ * @access Private (Company)
+ */
+router.post(
+  "/process-payment",
+  processPendingPaymentValidation,
+  paymentController.processPendingPlanPayment
+);
 
 /**
  * @route POST /api/v1/company/payments/webhook

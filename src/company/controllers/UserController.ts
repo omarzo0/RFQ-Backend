@@ -234,4 +234,49 @@ export class UserController {
       next(error);
     }
   }
+
+  /**
+   * GET /api/v1/users/me
+   * Get current user's profile
+   */
+  async getMyProfile(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { userId, companyId } = this.getUserAndCompanyId(req as CompanyRequest);
+
+      const profile = await this.userService.getUserById(userId, companyId);
+
+      successResponse(res, profile, "Profile retrieved successfully");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * PUT /api/v1/users/me
+   * Update current user's profile
+   */
+  async updateMyProfile(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { userId, companyId } = this.getUserAndCompanyId(req as CompanyRequest);
+      const profileData = req.body;
+
+      const updatedProfile = await this.userService.updateMyProfile(
+        userId,
+        companyId,
+        profileData
+      );
+
+      successResponse(res, updatedProfile, "Profile updated successfully");
+    } catch (error) {
+      next(error);
+    }
+  }
 }

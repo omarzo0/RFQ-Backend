@@ -40,6 +40,8 @@ model Company {
   stripeCustomerId    String?                    @map("stripe_customer_id")
   stripeSubscriptionId String?                   @map("stripe_subscription_id")
   trialEndsAt         DateTime?                  @map("trial_ends_at")
+  pendingPlanId       String?                    @map("pending_plan_id")
+  paymentDeadline     DateTime?                  @map("payment_deadline")
   emailFooter         String?                    @map("email_footer")
   defaultFollowUpDays Int                        @default(3) @map("default_follow_up_days")
   autoFollowUpEnabled Boolean                    @default(true) @map("auto_follow_up_enabled")
@@ -209,6 +211,8 @@ model ShippingLine {
   companyId            String                     @map("company_id")
   name                 String
   code                 String?
+  email                String?
+  category             String?
   website              String?
   headquartersLocation String?                    @map("headquarters_location")
   description          String?
@@ -248,6 +252,7 @@ model Contact {
   lastName             String              @map("last_name")
   email                String
   phone                String?
+  companyName          String?             @map("company_name")
   jobTitle             String?             @map("job_title")
   department           String?
   tags                 String[]

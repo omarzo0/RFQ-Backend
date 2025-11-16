@@ -141,24 +141,6 @@ export class CompanyController {
   }
 
   /**
-   * GET /api/v1/company/usage
-   */
-  async getUsageMetrics(
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const { companyId } = this.getUserAndCompanyId(req);
-      const usage = await this.companyService.getUsageMetrics(companyId);
-
-      successResponse(res, usage, "Usage metrics retrieved successfully");
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
    * GET /api/v1/company/billing-history
    */
   async getBillingHistory(
@@ -281,33 +263,6 @@ export class CompanyController {
       const settings = await this.companyService.getBillingSettings(companyId);
 
       successResponse(res, settings, "Billing settings retrieved successfully");
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * PUT /api/v1/company/billing-settings
-   */
-  async updateBillingSettings(
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const { companyId } = this.getUserAndCompanyId(req);
-      const settings = req.body;
-
-      const updatedSettings = await this.companyService.updateBillingSettings(
-        companyId,
-        settings
-      );
-
-      successResponse(
-        res,
-        updatedSettings,
-        "Billing settings updated successfully"
-      );
     } catch (error) {
       next(error);
     }

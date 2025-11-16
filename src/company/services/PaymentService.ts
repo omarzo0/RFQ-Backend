@@ -73,10 +73,30 @@ export class PaymentService {
       }
 
       if (company.stripeCustomerId) {
-        // Retrieve existing customer
-        return (await this.stripe.customers.retrieve(
-          company.stripeCustomerId
-        )) as Stripe.Customer;
+        try {
+          // Try to retrieve existing customer
+          const customer = await this.stripe.customers.retrieve(
+            company.stripeCustomerId
+          );
+          
+          // Check if customer was deleted
+          if (customer.deleted) {
+            logger.warn(
+              `Stripe customer ${company.stripeCustomerId} was deleted. Creating new customer.`
+            );
+          } else {
+            return customer as Stripe.Customer;
+          }
+        } catch (error: any) {
+          // If customer doesn't exist in Stripe, create a new one
+          if (error.code === "resource_missing") {
+            logger.warn(
+              `Stripe customer ${company.stripeCustomerId} not found. Creating new customer.`
+            );
+          } else {
+            throw error;
+          }
+        }
       }
 
       // Create new customer
@@ -88,7 +108,7 @@ export class PaymentService {
         },
       });
 
-      // Update company with Stripe customer ID
+      // Update company with new Stripe customer ID
       await prisma.company.update({
         where: { id: companyId },
         data: { stripeCustomerId: customer.id },
@@ -713,6 +733,8 @@ export class PaymentService {
           subscriptionStatus: true,
           trialEndsAt: true,
           stripeCustomerId: true,
+          pendingPlanId: true,
+          paymentDeadline: true,
         },
       });
 
@@ -729,6 +751,10 @@ export class PaymentService {
           )
         : 0;
 
+      // Check if payment deadline has passed
+      const hasPaymentDeadlinePassed =
+        company.paymentDeadline && new Date() > company.paymentDeadline;
+
       return {
         currentPlan: company.subscriptionPlan,
         status: company.subscriptionStatus,
@@ -737,9 +763,363 @@ export class PaymentService {
         daysLeftInTrial: Math.max(0, daysLeftInTrial),
         canUpgrade: company.subscriptionPlan === "trial",
         hasStripeCustomer: !!company.stripeCustomerId,
+        pendingPlanId: company.pendingPlanId,
+        paymentDeadline: company.paymentDeadline,
+        hasPaymentDeadlinePassed,
       };
     } catch (error) {
       logger.error("Error getting company subscription status:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Request plan change with 6-hour payment window
+   */
+  async requestPlanChange(companyId: string, planId: string) {
+    try {
+      // Validate plan exists
+      const plan = await prisma.subscriptionPlan.findUnique({
+        where: { id: planId },
+        select: {
+          id: true,
+          name: true,
+          priceMonthly: true,
+          isActive: true,
+        },
+      });
+
+      if (!plan || !plan.isActive) {
+        throw new Error("Invalid or inactive plan");
+      }
+
+      // Set payment deadline to 6 hours from now
+      const paymentDeadline = new Date();
+      paymentDeadline.setHours(paymentDeadline.getHours() + 6);
+
+      // Update company with pending plan
+      await prisma.company.update({
+        where: { id: companyId },
+        data: {
+          pendingPlanId: planId,
+          paymentDeadline: paymentDeadline,
+        },
+      });
+
+      logger.info(
+        `Plan change requested for company ${companyId} to plan ${planId}. Payment deadline: ${paymentDeadline}`
+      );
+
+      return {
+        planId: plan.id,
+        planName: plan.name,
+        priceMonthly: plan.priceMonthly,
+        paymentDeadline: paymentDeadline,
+        hoursRemaining: 6,
+      };
+    } catch (error) {
+      logger.error("Error requesting plan change:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Complete plan upgrade after successful payment
+   */
+  async completePlanUpgrade(companyId: string) {
+    try {
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: {
+          pendingPlanId: true,
+          paymentDeadline: true,
+        },
+      });
+
+      if (!company || !company.pendingPlanId) {
+        throw new Error("No pending plan upgrade found");
+      }
+
+      // Check if payment deadline has passed
+      if (company.paymentDeadline && new Date() > company.paymentDeadline) {
+        // Cancel the pending upgrade
+        await this.cancelPendingPlanUpgrade(companyId);
+        throw new Error("Payment deadline has passed. Plan upgrade cancelled.");
+      }
+
+      // Get plan details
+      const plan = await prisma.subscriptionPlan.findUnique({
+        where: { id: company.pendingPlanId },
+        select: { name: true, priceMonthly: true },
+      });
+
+      if (!plan) {
+        throw new Error("Plan not found");
+      }
+
+      // Update company to the new plan
+      await prisma.company.update({
+        where: { id: companyId },
+        data: {
+          subscriptionPlan: plan.name,
+          subscriptionStatus: "ACTIVE",
+          pendingPlanId: null,
+          paymentDeadline: null,
+        },
+      });
+
+      logger.info(
+        `Completed plan upgrade for company ${companyId} to ${plan.name}`
+      );
+
+      return {
+        planName: plan.name,
+        priceMonthly: plan.priceMonthly,
+        status: "ACTIVE",
+      };
+    } catch (error) {
+      logger.error("Error completing plan upgrade:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel pending plan upgrade
+   */
+  async cancelPendingPlanUpgrade(companyId: string) {
+    try {
+      await prisma.company.update({
+        where: { id: companyId },
+        data: {
+          pendingPlanId: null,
+          paymentDeadline: null,
+        },
+      });
+
+      logger.info(`Cancelled pending plan upgrade for company ${companyId}`);
+      return { success: true };
+    } catch (error) {
+      logger.error("Error cancelling pending plan upgrade:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check and cancel expired pending upgrades (run periodically)
+   */
+  async cancelExpiredPendingUpgrades() {
+    try {
+      const now = new Date();
+
+      const expiredCompanies = await prisma.company.findMany({
+        where: {
+          pendingPlanId: { not: null },
+          paymentDeadline: { lt: now },
+        },
+        select: { id: true, name: true },
+      });
+
+      for (const company of expiredCompanies) {
+        await this.cancelPendingPlanUpgrade(company.id);
+        logger.info(
+          `Auto-cancelled expired plan upgrade for company ${company.name}`
+        );
+      }
+
+      return {
+        cancelledCount: expiredCompanies.length,
+        companies: expiredCompanies,
+      };
+    } catch (error) {
+      logger.error("Error cancelling expired pending upgrades:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get pending payment invoice details
+   */
+  async getPendingPaymentInvoice(companyId: string) {
+    try {
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          subscriptionPlan: true,
+          pendingPlanId: true,
+          paymentDeadline: true,
+        },
+      });
+
+      if (!company) {
+        throw new Error("Company not found");
+      }
+
+      if (!company.pendingPlanId || !company.paymentDeadline) {
+        throw new Error("No pending payment found");
+      }
+
+      // Check if payment deadline has passed
+      if (new Date() > company.paymentDeadline) {
+        await this.cancelPendingPlanUpgrade(companyId);
+        throw new Error("Payment deadline has expired");
+      }
+
+      // Get pending plan details
+      const pendingPlan = await prisma.subscriptionPlan.findUnique({
+        where: { id: company.pendingPlanId },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          priceMonthly: true,
+          priceYearly: true,
+          maxUsers: true,
+          maxRFQsPerMonth: true,
+          maxContacts: true,
+          maxEmailSendsPerMonth: true,
+          features: true,
+        },
+      });
+
+      if (!pendingPlan) {
+        throw new Error("Pending plan not found");
+      }
+
+      // Calculate time remaining
+      const now = new Date();
+      const timeRemaining = company.paymentDeadline.getTime() - now.getTime();
+      const hoursRemaining = Math.floor(timeRemaining / (1000 * 60 * 60));
+      const minutesRemaining = Math.floor(
+        (timeRemaining % (1000 * 60 * 60)) / (1000 * 60)
+      );
+
+      // Calculate amounts (using monthly price by default)
+      const subtotal = Number(pendingPlan.priceMonthly);
+      const tax = subtotal * 0.1; // 10% tax (adjust as needed)
+      const total = subtotal + tax;
+
+      return {
+        invoiceId: `INV-${company.id.substring(0, 8)}-${Date.now()}`,
+        company: {
+          id: company.id,
+          name: company.name,
+          email: company.email,
+        },
+        currentPlan: company.subscriptionPlan,
+        pendingPlan: {
+          id: pendingPlan.id,
+          name: pendingPlan.name,
+          description: pendingPlan.description,
+          features: pendingPlan.features,
+          maxUsers: pendingPlan.maxUsers,
+          maxRFQsPerMonth: pendingPlan.maxRFQsPerMonth,
+          maxContacts: pendingPlan.maxContacts,
+          maxEmailSendsPerMonth: pendingPlan.maxEmailSendsPerMonth,
+        },
+        billing: {
+          subtotal: subtotal,
+          tax: tax,
+          total: total,
+          currency: "USD",
+          billingCycle: "monthly",
+        },
+        paymentDeadline: company.paymentDeadline,
+        timeRemaining: {
+          hours: hoursRemaining,
+          minutes: minutesRemaining,
+          totalMinutes: Math.floor(timeRemaining / (1000 * 60)),
+        },
+        createdAt: new Date(),
+      };
+    } catch (error) {
+      logger.error("Error getting pending payment invoice:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Process payment for pending plan upgrade
+   */
+  async processPendingPlanPayment(
+    companyId: string,
+    paymentData: {
+      cardNumber?: string;
+      expMonth?: string;
+      expYear?: string;
+      cvc?: string;
+      paymentMethodId?: string;
+    }
+  ) {
+    try {
+      // Get invoice details first
+      const invoice = await this.getPendingPaymentInvoice(companyId);
+
+      // Get or create Stripe customer
+      const customer = await this.getOrCreateCustomer(companyId);
+
+      const paymentMethodId = paymentData.paymentMethodId;
+
+      if (!paymentMethodId) {
+        throw new Error(
+          "PaymentMethod ID is required. For testing, use Stripe test payment methods like 'pm_card_visa'."
+        );
+      }
+
+      // Create payment intent
+      // Note: PaymentMethod will be automatically attached to customer when confirmed
+      const paymentIntent = await this.stripe.paymentIntents.create({
+        amount: Math.round(invoice.billing.total * 100), // Convert to cents
+        currency: invoice.billing.currency.toLowerCase(),
+        customer: customer.id,
+        payment_method: paymentMethodId,
+        confirm: true,
+        description: `Subscription upgrade to ${invoice.pendingPlan.name}`,
+        metadata: {
+          companyId: companyId,
+          planId: invoice.pendingPlan.id,
+          planName: invoice.pendingPlan.name,
+          invoiceId: invoice.invoiceId,
+        },
+        automatic_payment_methods: {
+          enabled: true,
+          allow_redirects: "never",
+        },
+        setup_future_usage: "off_session",
+      });
+
+      // If payment succeeded, complete the upgrade
+      if (paymentIntent.status === "succeeded") {
+        await this.completePlanUpgrade(companyId);
+
+        // Send confirmation email
+        try {
+          await this.paymentEmailService.sendPlanUpgradeConfirmationWithData(
+            companyId,
+            invoice.pendingPlan.name,
+            invoice.billing.total,
+            invoice.billing.currency
+          );
+        } catch (emailError) {
+          logger.error("Failed to send upgrade confirmation email:", emailError);
+        }
+
+        logger.info(
+          `Payment processed successfully for company ${companyId}: ${paymentIntent.id}`
+        );
+      }
+
+      return {
+        paymentIntentId: paymentIntent.id,
+        status: paymentIntent.status,
+        amount: paymentIntent.amount / 100,
+        currency: paymentIntent.currency,
+        clientSecret: paymentIntent.client_secret,
+      };
+    } catch (error) {
+      logger.error("Error processing pending plan payment:", error);
       throw error;
     }
   }

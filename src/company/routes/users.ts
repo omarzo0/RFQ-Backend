@@ -9,6 +9,14 @@ const userController = new UserController();
 // Apply authentication middleware to all routes
 router.use(authenticateCompanyUser);
 
+// Current User Profile (must come before /:id routes)
+router.get("/me", (req: Request, res: Response, next: NextFunction) =>
+  userController.getMyProfile(req as unknown as CompanyRequest, res, next)
+);
+router.put("/me", (req: Request, res: Response, next: NextFunction) =>
+  userController.updateMyProfile(req as unknown as CompanyRequest, res, next)
+);
+
 // User Roles and Permissions (must come before /:id routes)
 router.get("/roles", (req: Request, res: Response, next: NextFunction) =>
   userController.getUserRoles(req as unknown as CompanyRequest, res, next)

@@ -45,29 +45,22 @@ export class CompanyPasswordResetController {
   /**
    * Verify OTP and reset password for company user
    * POST /api/v1/company/auth/reset-password
-   * Email is extracted from the access token, not from request body
+   * This is a public endpoint - no authentication required
    */
   resetPassword = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { otp, newPassword } = req.body;
-      const user = (req as any).user; // Get user from authentication middleware
+      const { email, otp, newPassword } = req.body;
 
-      if (!otp || !newPassword) {
-        errorResponse(res, "OTP and new password are required", 400);
-        return;
-      }
-
-      if (!user) {
-        errorResponse(res, "Authentication required", 401);
+      if (!email || !otp || !newPassword) {
+        errorResponse(res, "Email, OTP and new password are required", 400);
         return;
       }
 
       const result = await this.passwordResetService.verifyOTPAndResetPassword({
-        email: user.email,
+        email: email.toLowerCase(),
         otp,
         newPassword,
         userType: UserType.COMPANY_USER,
-        userId: user.id,
       });
 
       successResponse(res, result, result.message, 200);
@@ -85,28 +78,21 @@ export class CompanyPasswordResetController {
   /**
    * Verify OTP
    * POST /api/v1/company/auth/verify-otp
-   * Email is extracted from the access token, not from request body
+   * This is a public endpoint - no authentication required
    */
   verifyOTP = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { otp } = req.body;
-      const user = (req as any).user; // Get user from authentication middleware
+      const { email, otp } = req.body;
 
-      if (!otp) {
-        errorResponse(res, "OTP is required", 400);
-        return;
-      }
-
-      if (!user) {
-        errorResponse(res, "Authentication required", 401);
+      if (!email || !otp) {
+        errorResponse(res, "Email and OTP are required", 400);
         return;
       }
 
       const result = await this.passwordResetService.verifyOTP({
-        email: user.email,
+        email: email.toLowerCase(),
         otp,
         userType: UserType.COMPANY_USER,
-        userId: user.id,
       });
 
       successResponse(res, result, result.message, 200);

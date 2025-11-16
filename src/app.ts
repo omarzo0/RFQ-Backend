@@ -10,6 +10,7 @@ import logger from "./utils/logger";
 
 // Import cron jobs
 import "./jobs/trialNotificationCron";
+import { startCancelExpiredUpgradesCron } from "./company/jobs/cancelExpiredUpgrades";
 
 // Load environment variables
 dotenv.config();
@@ -112,8 +113,9 @@ async function startServer() {
     await prisma.$connect();
     logger.info("✅ Database connected successfully");
 
-    // Job schedulers will be started later when needed
-    logger.info("📧 Job schedulers will be started when needed");
+    // Start cron jobs
+    startCancelExpiredUpgradesCron();
+    logger.info("⏰ Cron jobs started");
 
     // Start server
     app.listen(PORT, () => {

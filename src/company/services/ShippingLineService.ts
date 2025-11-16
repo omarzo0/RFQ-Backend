@@ -16,9 +16,11 @@ export class ShippingLineService {
       service?: string;
       tag?: string;
       isCustom?: boolean;
+      email?: string;
+      category?: string;
     }
   ) {
-    const { page, limit, search, status, tradeLane, service, tag, isCustom } =
+    const { page, limit, search, status, tradeLane, service, tag, isCustom, email, category } =
       options;
     const skip = (page - 1) * limit;
 
@@ -71,6 +73,16 @@ export class ShippingLineService {
       };
     }
 
+    // Email filtering
+    if (email) {
+      where.email = { contains: email, mode: "insensitive" };
+    }
+
+    // Category filtering
+    if (category) {
+      where.category = { contains: category, mode: "insensitive" };
+    }
+
     const [shippingLines, total] = await Promise.all([
       prisma.shippingLine.findMany({
         where,
@@ -81,6 +93,8 @@ export class ShippingLineService {
           id: true,
           name: true,
           code: true,
+          email: true,
+          category: true,
           scacCode: true,
           website: true,
           headquartersLocation: true,
@@ -134,6 +148,8 @@ export class ShippingLineService {
         id: true,
         name: true,
         code: true,
+        email: true,
+        category: true,
         scacCode: true,
         website: true,
         headquartersLocation: true,
@@ -225,6 +241,8 @@ export class ShippingLineService {
         companyId,
         name: shippingLineData.name,
         code: shippingLineData.code,
+        email: shippingLineData.email,
+        category: shippingLineData.category,
         scacCode: shippingLineData.scacCode,
         website: shippingLineData.website,
         headquartersLocation: shippingLineData.headquartersLocation,
@@ -244,6 +262,8 @@ export class ShippingLineService {
         id: true,
         name: true,
         code: true,
+        email: true,
+        category: true,
         scacCode: true,
         website: true,
         headquartersLocation: true,
@@ -317,6 +337,8 @@ export class ShippingLineService {
       data: {
         name: shippingLineData.name,
         code: shippingLineData.code,
+        email: shippingLineData.email,
+        category: shippingLineData.category,
         scacCode: shippingLineData.scacCode,
         website: shippingLineData.website,
         headquartersLocation: shippingLineData.headquartersLocation,
@@ -334,6 +356,8 @@ export class ShippingLineService {
         id: true,
         name: true,
         code: true,
+        email: true,
+        category: true,
         scacCode: true,
         website: true,
         headquartersLocation: true,
@@ -525,6 +549,8 @@ export class ShippingLineService {
             companyId,
             name: shippingLineData.name,
             code: shippingLineData.code,
+            email: shippingLineData.email,
+            category: shippingLineData.category,
             scacCode: shippingLineData.scacCode,
             website: shippingLineData.website,
             headquartersLocation: shippingLineData.headquartersLocation,

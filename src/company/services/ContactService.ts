@@ -109,6 +109,7 @@ export class ContactService {
           lastName: true,
           email: true,
           phone: true,
+          companyName: true,
           jobTitle: true,
           department: true,
           tags: true,
@@ -209,6 +210,7 @@ export class ContactService {
         lastName: true,
         email: true,
         phone: true,
+        companyName: true,
         jobTitle: true,
         department: true,
         tags: true,
@@ -260,8 +262,10 @@ export class ContactService {
    */
   async createContact(companyId: string, createdBy: string, contactData: any) {
     // Debug: Log the shipping line ID being used
-    console.log(`🔍 Creating contact with shippingLineId: ${contactData.shippingLineId}`);
-    
+    console.log(
+      `🔍 Creating contact with shippingLineId: ${contactData.shippingLineId}`
+    );
+
     // First, verify the shipping line exists
     const shippingLine = await prisma.shippingLine.findFirst({
       where: {
@@ -271,13 +275,17 @@ export class ContactService {
     });
 
     if (!shippingLine) {
-      console.log(`❌ Shipping line not found: ${contactData.shippingLineId} for company: ${companyId}`);
+      console.log(
+        `❌ Shipping line not found: ${contactData.shippingLineId} for company: ${companyId}`
+      );
       throw new ValidationError(
         `Shipping line with ID ${contactData.shippingLineId} not found or doesn't belong to this company`
       );
     }
 
-    console.log(`✅ Found shipping line: ${shippingLine.name} (${shippingLine.id})`);
+    console.log(
+      `✅ Found shipping line: ${shippingLine.name} (${shippingLine.id})`
+    );
 
     // Check if contact with same email already exists in the same shipping line
     const existingContact = await prisma.contact.findFirst({
@@ -329,6 +337,7 @@ export class ContactService {
         lastName: contactData.lastName,
         email: contactData.email.toLowerCase(),
         phone: contactData.phone,
+        companyName: contactData.companyName || contactData.company,
         jobTitle: contactData.jobTitle,
         department: contactData.department,
         tags: contactData.tags || [],
@@ -349,6 +358,7 @@ export class ContactService {
         lastName: true,
         email: true,
         phone: true,
+        companyName: true,
         jobTitle: true,
         department: true,
         tags: true,
@@ -444,6 +454,7 @@ export class ContactService {
         lastName: contactData.lastName,
         email: contactData.email?.toLowerCase(),
         phone: contactData.phone,
+        companyName: contactData.companyName || contactData.company,
         jobTitle: contactData.jobTitle,
         department: contactData.department,
         tags: contactData.tags,
@@ -463,6 +474,7 @@ export class ContactService {
         lastName: true,
         email: true,
         phone: true,
+        companyName: true,
         jobTitle: true,
         department: true,
         tags: true,
@@ -759,6 +771,7 @@ export class ContactService {
             lastName: contactData.lastName,
             email: contactData.email.toLowerCase(),
             phone: contactData.phone,
+            companyName: contactData.companyName || contactData.company,
             jobTitle: contactData.jobTitle,
             department: contactData.department,
             tags: contactData.tags || [],

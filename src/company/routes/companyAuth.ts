@@ -22,16 +22,17 @@ router.post(
 router.post(
   "/verify-otp",
   [
+    body("email").isEmail().normalizeEmail(),
     body("otp")
       .isLength({ min: 6, max: 6 })
       .withMessage("OTP must be 6 digits"),
   ],
-  authenticateCompanyUser, // Require authentication to get email from token
   companyPasswordResetController.verifyOTP
 );
 router.post(
   "/reset-password",
   [
+    body("email").isEmail().normalizeEmail(),
     body("otp")
       .isLength({ min: 6, max: 6 })
       .withMessage("OTP must be 6 digits"),
@@ -39,7 +40,6 @@ router.post(
       .isLength({ min: 8 })
       .withMessage("Password must be at least 8 characters long"),
   ],
-  authenticateCompanyUser, // Require authentication to get email from token
   companyPasswordResetController.resetPassword
 );
 

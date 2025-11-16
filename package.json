@@ -61,7 +61,7 @@
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "node-imap": "^0.9.6",
-    "nodemailer": "^7.0.5",
+    "nodemailer": "^7.0.10",
     "openai": "^5.19.1",
     "stripe": "^18.5.0",
     "swagger-jsdoc": "^6.2.8",

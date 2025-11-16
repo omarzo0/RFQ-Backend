@@ -165,7 +165,7 @@ export class AdminSubscriptionService {
         subscriptionPlan: data.subscriptionPlan,
         subscriptionStatus: data.subscriptionStatus,
         trialEndsAt: data.trialEndsAt,
-        // Add other fields as needed
+        // Add other fields as neede
       },
     });
 
