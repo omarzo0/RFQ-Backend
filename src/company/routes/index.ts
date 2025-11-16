@@ -13,6 +13,8 @@ import replyIngestionRoutes from "./reply-ingestion";
 import ticketsRoutes from "./tickets";
 import paymentsRoutes from "./payments";
 import trialNotificationsRoutes from "./trialNotifications";
+import notificationRoutes from "./notifications";
+import warningRoutes from "./warnings";
 
 const router = Router();
 
@@ -35,5 +37,7 @@ router.use("/analytics", analyticsRoutes);
 router.use("/reply-ingestion", replyIngestionRoutes);
 router.use("/payments", paymentsRoutes);
 router.use("/trial-notifications", trialNotificationsRoutes);
+router.use("/notifications", notificationRoutes);
+router.use("/warnings", warningRoutes);
 
 export default router;

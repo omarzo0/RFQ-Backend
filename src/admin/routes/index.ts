@@ -10,6 +10,8 @@ import adminComprehensiveDashboardRoutes from "./adminComprehensiveDashboard";
 import adminSubscriptionPlanRoutes from "./adminSubscriptionPlan";
 import adminTransactionRoutes from "./adminTransaction";
 import adminFinancialRoutes from "./adminFinancial";
+import notificationRoutes from "./notifications";
+import warningRoutes from "./warnings";
 
 const router = Router();
 
@@ -42,6 +44,12 @@ router.use("/management", adminManagementRoutes);
 
 // Admin ticket management routes
 router.use("/tickets", adminTicketsRoutes);
+
+// Admin notification routes
+router.use("/notifications", notificationRoutes);
+
+// Admin warning routes
+router.use("/warnings", warningRoutes);
 
 // Admin system features management routes
 
