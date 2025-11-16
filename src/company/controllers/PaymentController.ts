@@ -135,7 +135,8 @@ export class PaymentController {
           priceMonthly: result.priceMonthly,
           paymentDeadline: result.paymentDeadline,
           hoursRemaining: result.hoursRemaining,
-          message: "Plan change requested. Please complete payment within 6 hours.",
+          message:
+            "Plan change requested. Please complete payment within 6 hours.",
         },
         "Subscription update requested successfully"
       );
@@ -171,10 +172,16 @@ export class PaymentController {
       const subscriptions = await this.paymentService.getCompanySubscriptions(
         companyId
       );
-      const currentSubscription = subscriptions.find(sub => sub.status === 'active') || subscriptions[0];
+      const currentSubscription =
+        subscriptions.find((sub) => sub.status === "ACTIVE") ||
+        subscriptions[0];
 
       if (!currentSubscription) {
-        return errorResponse(res, "No active subscription found for company", 404);
+        return errorResponse(
+          res,
+          "No active subscription found for company",
+          404
+        );
       }
 
       const subscription = await this.paymentService.cancelSubscription(
@@ -187,8 +194,8 @@ export class PaymentController {
         {
           subscriptionId: subscription.id,
           status: subscription.status,
-          canceledAt: subscription.canceled_at,
-          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          canceledAt: (subscription as any).canceled_at,
+          cancelAtPeriodEnd: (subscription as any).cancel_at_period_end,
         },
         "Subscription cancelled successfully"
       );
@@ -269,9 +276,8 @@ export class PaymentController {
       }
 
       // Get subscription status from database (includes trial subscriptions)
-      const subscriptionStatus = await this.paymentService.getCompanySubscriptionStatus(
-        companyId
-      );
+      const subscriptionStatus =
+        await this.paymentService.getCompanySubscriptionStatus(companyId);
 
       if (!subscriptionStatus) {
         return errorResponse(res, "No subscription found for company", 404);
@@ -279,15 +285,19 @@ export class PaymentController {
 
       // Try to get Stripe subscription details if exists
       let stripeSubscription = null;
-      if (subscriptionStatus.hasStripeCustomer && subscriptionStatus.currentPlan !== 'trial') {
+      if (
+        subscriptionStatus.hasStripeCustomer &&
+        subscriptionStatus.currentPlan !== "trial"
+      ) {
         try {
-          const subscriptions = await this.paymentService.getCompanySubscriptions(
-            companyId
-          );
-          stripeSubscription = subscriptions.find(sub => sub.status === 'active') || subscriptions[0];
+          const subscriptions =
+            await this.paymentService.getCompanySubscriptions(companyId);
+          stripeSubscription =
+            subscriptions.find((sub) => sub.status === "ACTIVE") ||
+            subscriptions[0];
         } catch (error) {
-          logger.warn("Could not fetch Stripe subscription details:", error);
-          // Continue without Stripe details
+          logger.warn("Could not fetch subscription details:", error);
+          // Continue without subscription details
         }
       }
 
@@ -301,20 +311,17 @@ export class PaymentController {
           daysLeftInTrial: subscriptionStatus.daysLeftInTrial,
           canUpgrade: subscriptionStatus.canUpgrade,
           hasStripeCustomer: subscriptionStatus.hasStripeCustomer,
-          // Include Stripe details if available
+          // Include subscription details if available
           ...(stripeSubscription && {
-            stripeSubscription: {
-              subscriptionId: stripeSubscription.id,
+            subscription: {
+              id: stripeSubscription.id,
+              plan: stripeSubscription.plan,
               status: stripeSubscription.status,
-              currentPeriodStart: (stripeSubscription as any).current_period_start,
-              currentPeriodEnd: (stripeSubscription as any).current_period_end,
-              trialEnd: stripeSubscription.trial_end,
-              cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
-              canceledAt: stripeSubscription.canceled_at,
-              defaultPaymentMethod: stripeSubscription.default_payment_method,
-              items: stripeSubscription.items.data,
-            }
-          })
+              trialEndsAt: stripeSubscription.trialEndsAt,
+              createdAt: stripeSubscription.createdAt,
+              updatedAt: stripeSubscription.updatedAt,
+            },
+          }),
         },
         "Subscription retrieved successfully"
       );
@@ -345,17 +352,7 @@ export class PaymentController {
       return successResponse(
         res,
         {
-          subscriptions: subscriptions.map((sub) => ({
-            id: sub.id,
-            status: sub.status,
-            currentPeriodStart: (sub as any).current_period_start,
-            currentPeriodEnd: (sub as any).current_period_end,
-            trialEnd: sub.trial_end,
-            cancelAtPeriodEnd: sub.cancel_at_period_end,
-            canceledAt: sub.canceled_at,
-            defaultPaymentMethod: sub.default_payment_method,
-            items: sub.items.data,
-          })),
+          subscriptions,
           count: subscriptions.length,
         },
         "Company subscriptions retrieved successfully"
@@ -624,8 +621,7 @@ export class PaymentController {
       return errorResponse(
         res,
         (error as Error).message || "Failed to get payment invoice",
-        error instanceof Error &&
-          error.message === "No pending payment found"
+        error instanceof Error && error.message === "No pending payment found"
           ? 404
           : 500
       );
@@ -658,11 +654,7 @@ export class PaymentController {
         { paymentMethodId }
       );
 
-      return successResponse(
-        res,
-        result,
-        "Payment processed successfully"
-      );
+      return successResponse(res, result, "Payment processed successfully");
     } catch (error) {
       logger.error("Error processing payment:", error);
       return errorResponse(

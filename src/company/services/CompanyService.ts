@@ -1,4 +1,5 @@
 import { prisma } from "../../app";
+import logger from "../../utils/logger";
 
 export class CompanyService {
   /**
@@ -349,24 +350,33 @@ export class CompanyService {
    * Get billing history
    */
   async getBillingHistory(companyId: string) {
-    // This would typically come from Stripe or a billing table
-    // For now, return mock data
-    return [
-      {
-        id: "inv_001",
-        date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        amount: 99.0,
-        status: "paid",
-        description: "Professional Plan - Monthly",
-      },
-      {
-        id: "inv_002",
-        date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
-        amount: 99.0,
-        status: "paid",
-        description: "Professional Plan - Monthly",
-      },
-    ];
+    try {
+      // Import PaymentService dynamically to avoid circular dependency
+      const PaymentService = (await import("./PaymentService")).default;
+      const paymentService = new PaymentService();
+
+      // Get transactions from Stripe
+      const transactions = await paymentService.getCompanyTransactions(
+        companyId,
+        100,
+        0
+      );
+
+      // Map to billing history format
+      return transactions.map((transaction) => ({
+        id: transaction.id,
+        date: transaction.createdAt,
+        amount: transaction.amount,
+        currency: transaction.currency,
+        status: transaction.status === "succeeded" ? "paid" : transaction.status,
+        description: transaction.description,
+        paymentMethod: transaction.paymentMethod,
+        metadata: transaction.metadata,
+      }));
+    } catch (error) {
+      logger.error("Error fetching billing history:", error);
+      return [];
+    }
   }
 
   /**

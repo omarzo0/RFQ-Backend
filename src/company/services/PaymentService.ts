@@ -506,19 +506,38 @@ export class PaymentService {
   /**
    * Get company's subscriptions
    */
-  async getCompanySubscriptions(
-    companyId: string
-  ): Promise<Stripe.Subscription[]> {
+  async getCompanySubscriptions(companyId: string) {
     try {
-      const customer = await this.getOrCreateCustomer(companyId);
-
-      const subscriptions = await this.stripe.subscriptions.list({
-        customer: customer.id,
-        status: "all",
-        expand: ["data.default_payment_method"],
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: {
+          id: true,
+          name: true,
+          subscriptionPlan: true,
+          subscriptionStatus: true,
+          trialEndsAt: true,
+          stripeSubscriptionId: true,
+          stripeCustomerId: true,
+          createdAt: true,
+          updatedAt: true,
+        },
       });
 
-      return subscriptions.data;
+      if (!company) {
+        throw new Error("Company not found");
+      }
+
+      // Return current subscription details
+      return [
+        {
+          id: company.stripeSubscriptionId || company.id,
+          plan: company.subscriptionPlan,
+          status: company.subscriptionStatus,
+          trialEndsAt: company.trialEndsAt,
+          createdAt: company.createdAt,
+          updatedAt: company.updatedAt,
+        },
+      ];
     } catch (error) {
       logger.error("Error retrieving company subscriptions:", error);
       throw error;
@@ -1132,32 +1151,137 @@ export class PaymentService {
     limit: number = 50,
     offset: number = 0
   ) {
-    // For now, return empty array to avoid Prisma issues
-    // This can be implemented later when the Prisma client is properly configured
-    logger.info(`Getting transactions for company ${companyId}`);
-    return [];
+    try {
+      const customer = await this.getOrCreateCustomer(companyId);
+
+      // Get payment intents for this customer
+      const paymentIntents = await this.stripe.paymentIntents.list({
+        customer: customer.id,
+        limit: limit,
+      });
+
+      // Map to transaction format
+      const transactions = paymentIntents.data.map((pi) => ({
+        id: pi.id,
+        amount: pi.amount / 100, // Convert from cents
+        currency: pi.currency.toUpperCase(),
+        status: pi.status,
+        description: pi.description || "Payment",
+        createdAt: new Date(pi.created * 1000),
+        paymentMethod: pi.payment_method,
+        metadata: pi.metadata,
+      }));
+
+      logger.info(
+        `Retrieved ${transactions.length} transactions for company ${companyId}`
+      );
+      return transactions;
+    } catch (error) {
+      logger.error("Error getting company transactions:", error);
+      return [];
+    }
   }
 
   /**
-   * Get company's financial summary (simplified)
+   * Get company's financial summary
    */
   async getCompanyFinancialSummary(companyId: string) {
-    // For now, return basic info to avoid Prisma issues
-    // This can be implemented later when the Prisma client is properly configured
-    logger.info(`Getting financial summary for company ${companyId}`);
-    return {
-      totalRevenue: 0,
-      totalTransactions: 0,
-      successfulTransactions: 0,
-      failedTransactions: 0,
-      refundedTransactions: 0,
-      averageTransactionValue: 0,
-      monthlyRecurringRevenue: 0,
-      annualRecurringRevenue: 0,
-      churnRate: 0,
-      customerLifetimeValue: 0,
-      lastUpdatedAt: new Date(),
-    };
+    try {
+      const customer = await this.getOrCreateCustomer(companyId);
+
+      // Get all payment intents
+      const paymentIntents = await this.stripe.paymentIntents.list({
+        customer: customer.id,
+        limit: 100,
+      });
+
+      // Calculate metrics
+      const successfulPayments = paymentIntents.data.filter(
+        (pi) => pi.status === "succeeded"
+      );
+      const failedPayments = paymentIntents.data.filter(
+        (pi) => pi.status === "canceled" || (pi as any).status === "payment_failed"
+      );
+
+      const totalRevenue = successfulPayments.reduce(
+        (sum, pi) => sum + pi.amount / 100,
+        0
+      );
+
+      // Get refunds
+      const refunds = await this.stripe.refunds.list({
+        limit: 100,
+      });
+      const companyRefunds = refunds.data.filter((refund) =>
+        successfulPayments.some((pi) => pi.id === refund.payment_intent)
+      );
+
+      const totalRefunded = companyRefunds.reduce(
+        (sum, refund) => sum + refund.amount / 100,
+        0
+      );
+
+      // Get company subscription for MRR/ARR
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: {
+          subscriptionPlan: true,
+        },
+      });
+
+      // Get plan details for MRR/ARR calculation
+      let monthlyRecurringRevenue = 0;
+      let annualRecurringRevenue = 0;
+
+      if (company && company.subscriptionPlan !== "trial") {
+        const plan = await prisma.subscriptionPlan.findFirst({
+          where: { name: company.subscriptionPlan },
+          select: {
+            priceMonthly: true,
+            priceYearly: true,
+          },
+        });
+
+        if (plan) {
+          monthlyRecurringRevenue = Number(plan.priceMonthly);
+          annualRecurringRevenue = Number(plan.priceYearly);
+        }
+      }
+
+      const averageTransactionValue =
+        successfulPayments.length > 0
+          ? totalRevenue / successfulPayments.length
+          : 0;
+
+      logger.info(`Financial summary calculated for company ${companyId}`);
+
+      return {
+        totalRevenue: totalRevenue - totalRefunded,
+        totalTransactions: paymentIntents.data.length,
+        successfulTransactions: successfulPayments.length,
+        failedTransactions: failedPayments.length,
+        refundedTransactions: companyRefunds.length,
+        totalRefunded: totalRefunded,
+        averageTransactionValue: averageTransactionValue,
+        monthlyRecurringRevenue: monthlyRecurringRevenue,
+        annualRecurringRevenue: annualRecurringRevenue,
+        lastUpdatedAt: new Date(),
+      };
+    } catch (error) {
+      logger.error("Error getting financial summary:", error);
+      return {
+        totalRevenue: 0,
+        totalTransactions: 0,
+        successfulTransactions: 0,
+        failedTransactions: 0,
+        refundedTransactions: 0,
+        totalRefunded: 0,
+        averageTransactionValue: 0,
+        monthlyRecurringRevenue: 0,
+        annualRecurringRevenue: 0,
+        lastUpdatedAt: new Date(),
+      };
+    }
   }
 }
 
