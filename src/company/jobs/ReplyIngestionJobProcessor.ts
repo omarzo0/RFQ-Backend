@@ -1,5 +1,5 @@
-import { IMAPService } from '../services/IMAPService';
-import logger from '../utils/logger';
+import { IMAPService } from "../services/IMAPService";
+import logger from "../../utils/logger";
 
 export class ReplyIngestionJobProcessor {
   private imapService: IMAPService;
@@ -13,11 +13,11 @@ export class ReplyIngestionJobProcessor {
    */
   async processIMAPConfigurations(): Promise<void> {
     try {
-      logger.info('Starting IMAP configuration processing job');
+      logger.info("Starting IMAP configuration processing job");
       await this.imapService.processAllActiveConfigs();
-      logger.info('Completed IMAP configuration processing job');
+      logger.info("Completed IMAP configuration processing job");
     } catch (error) {
-      logger.error('Error in IMAP configuration processing job:', error);
+      logger.error("Error in IMAP configuration processing job:", error);
     }
   }
 
@@ -39,8 +39,8 @@ export class ReplyIngestionJobProcessor {
    */
   async cleanupOldEmailReplies(): Promise<void> {
     try {
-      logger.info('Starting cleanup of old email replies');
-      
+      logger.info("Starting cleanup of old email replies");
+
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - 90);
 
@@ -54,9 +54,9 @@ export class ReplyIngestionJobProcessor {
       //   }
       // });
 
-      logger.info('Completed cleanup of old email replies');
+      logger.info("Completed cleanup of old email replies");
     } catch (error) {
-      logger.error('Error cleaning up old email replies:', error);
+      logger.error("Error cleaning up old email replies:", error);
     }
   }
 
@@ -65,8 +65,8 @@ export class ReplyIngestionJobProcessor {
    */
   async retryFailedEmailReplies(): Promise<void> {
     try {
-      logger.info('Starting retry of failed email replies');
-      
+      logger.info("Starting retry of failed email replies");
+
       // This would be implemented with Prisma client
       // const failedReplies = await this.prisma.emailReply.findMany({
       //   where: {
@@ -84,9 +84,9 @@ export class ReplyIngestionJobProcessor {
       //   }
       // }
 
-      logger.info('Completed retry of failed email replies');
+      logger.info("Completed retry of failed email replies");
     } catch (error) {
-      logger.error('Error retrying failed email replies:', error);
+      logger.error("Error retrying failed email replies:", error);
     }
   }
 
@@ -95,14 +95,14 @@ export class ReplyIngestionJobProcessor {
    */
   async updateParsingLearningData(): Promise<void> {
     try {
-      logger.info('Starting parsing learning data update');
-      
+      logger.info("Starting parsing learning data update");
+
       // This would analyze validated parsing results and update learning models
       // Implementation would depend on the specific AI/ML approach used
-      
-      logger.info('Completed parsing learning data update');
+
+      logger.info("Completed parsing learning data update");
     } catch (error) {
-      logger.error('Error updating parsing learning data:', error);
+      logger.error("Error updating parsing learning data:", error);
     }
   }
 
@@ -111,21 +111,21 @@ export class ReplyIngestionJobProcessor {
    */
   async runAllJobs(): Promise<void> {
     try {
-      logger.info('Starting reply ingestion job processor');
+      logger.info("Starting reply ingestion job processor");
 
       // Run jobs in parallel where possible
       await Promise.allSettled([
         this.processIMAPConfigurations(),
         this.retryFailedEmailReplies(),
-        this.updateParsingLearningData()
+        this.updateParsingLearningData(),
       ]);
 
       // Run cleanup job separately (less frequent)
       await this.cleanupOldEmailReplies();
 
-      logger.info('Completed reply ingestion job processor');
+      logger.info("Completed reply ingestion job processor");
     } catch (error) {
-      logger.error('Error in reply ingestion job processor:', error);
+      logger.error("Error in reply ingestion job processor:", error);
     }
   }
 }

@@ -1,6 +1,6 @@
-import * as cron from 'node-cron';
-import { ReplyIngestionJobProcessor } from './ReplyIngestionJobProcessor';
-import logger from '../utils/logger';
+import * as cron from "node-cron";
+import { ReplyIngestionJobProcessor } from "./ReplyIngestionJobProcessor";
+import logger from "../../utils/logger";
 
 export class ReplyIngestionScheduler {
   private jobProcessor: ReplyIngestionJobProcessor;
@@ -14,36 +14,36 @@ export class ReplyIngestionScheduler {
    * Start all scheduled jobs
    */
   start(): void {
-    logger.info('Starting Reply Ingestion Scheduler');
+    logger.info("Starting Reply Ingestion Scheduler");
 
     // Process IMAP configurations every 5 minutes
-    this.scheduleTask('process-imap', '*/5 * * * *', () => {
+    this.scheduleTask("process-imap", "*/5 * * * *", () => {
       this.jobProcessor.processIMAPConfigurations();
     });
 
     // Retry failed email replies every 15 minutes
-    this.scheduleTask('retry-failed', '*/15 * * * *', () => {
+    this.scheduleTask("retry-failed", "*/15 * * * *", () => {
       this.jobProcessor.retryFailedEmailReplies();
     });
 
     // Update parsing learning data every hour
-    this.scheduleTask('update-learning', '0 * * * *', () => {
+    this.scheduleTask("update-learning", "0 * * * *", () => {
       this.jobProcessor.updateParsingLearningData();
     });
 
     // Cleanup old email replies daily at 2 AM
-    this.scheduleTask('cleanup-old', '0 2 * * *', () => {
+    this.scheduleTask("cleanup-old", "0 2 * * *", () => {
       this.jobProcessor.cleanupOldEmailReplies();
     });
 
-    logger.info('Reply Ingestion Scheduler started successfully');
+    logger.info("Reply Ingestion Scheduler started successfully");
   }
 
   /**
    * Stop all scheduled jobs
    */
   stop(): void {
-    logger.info('Stopping Reply Ingestion Scheduler');
+    logger.info("Stopping Reply Ingestion Scheduler");
 
     for (const [name, task] of this.tasks) {
       task.stop();
@@ -51,21 +51,24 @@ export class ReplyIngestionScheduler {
     }
 
     this.tasks.clear();
-    logger.info('Reply Ingestion Scheduler stopped');
+    logger.info("Reply Ingestion Scheduler stopped");
   }
 
   /**
    * Schedule a task
    */
-  private scheduleTask(name: string, cronExpression: string, task: () => void): void {
+  private scheduleTask(
+    name: string,
+    cronExpression: string,
+    task: () => void
+  ): void {
     if (this.tasks.has(name)) {
       logger.warn(`Task ${name} is already scheduled`);
       return;
     }
 
     const scheduledTask = cron.schedule(cronExpression, task, {
-      scheduled: false,
-      timezone: 'UTC'
+      timezone: "UTC",
     });
 
     this.tasks.set(name, scheduledTask);
@@ -78,12 +81,13 @@ export class ReplyIngestionScheduler {
    * Get status of all scheduled tasks
    */
   getStatus(): { [key: string]: { scheduled: boolean; running: boolean } } {
-    const status: { [key: string]: { scheduled: boolean; running: boolean } } = {};
+    const status: { [key: string]: { scheduled: boolean; running: boolean } } =
+      {};
 
     for (const [name, task] of this.tasks) {
       status[name] = {
-        scheduled: task.getStatus() === 'scheduled',
-        running: task.getStatus() === 'running'
+        scheduled: task.getStatus() === "scheduled",
+        running: task.getStatus() === "running",
       };
     }
 
@@ -95,19 +99,19 @@ export class ReplyIngestionScheduler {
    */
   async triggerJob(jobName: string): Promise<void> {
     switch (jobName) {
-      case 'process-imap':
+      case "process-imap":
         await this.jobProcessor.processIMAPConfigurations();
         break;
-      case 'retry-failed':
+      case "retry-failed":
         await this.jobProcessor.retryFailedEmailReplies();
         break;
-      case 'update-learning':
+      case "update-learning":
         await this.jobProcessor.updateParsingLearningData();
         break;
-      case 'cleanup-old':
+      case "cleanup-old":
         await this.jobProcessor.cleanupOldEmailReplies();
         break;
-      case 'all':
+      case "all":
         await this.jobProcessor.runAllJobs();
         break;
       default:

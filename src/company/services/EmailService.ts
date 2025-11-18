@@ -64,6 +64,19 @@ export interface EmailTrackingData {
 }
 
 export class EmailService {
+  sendTemplateEmail(arg0: {
+    to: string | string[];
+    subject: string;
+    template: string;
+    context: {
+      firstName: string;
+      lastName: string;
+      companyName: string;
+      loginUrl: string;
+    };
+  }) {
+    throw new Error("Method not implemented.");
+  }
   private readonly DEFAULT_RATE_LIMIT = 10; // emails per minute
   private readonly MAX_RETRIES = 3;
   private readonly RETRY_DELAYS = [5, 15, 60]; // minutes

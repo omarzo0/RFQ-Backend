@@ -74,7 +74,7 @@ export class EmailScheduler {
       return;
     }
 
-    cron.destroy();
+    // NodeCron does not support global destroy; you must stop each job individually if needed
     this.isRunning = false;
     console.log("Email scheduler stopped");
   }
@@ -123,4 +123,3 @@ export class EmailScheduler {
     await this.jobProcessor.runAllJobs();
   }
 }
-

@@ -1,12 +1,12 @@
-import { prisma } from "../app";
+import { prisma } from "../../app";
 import { JWTUtils } from "../middleware/auth";
-import { PasswordUtils } from "../utils/password";
+import { PasswordUtils } from "../../utils/password";
 import {
   AppError,
   ValidationError,
   AuthenticationError,
-} from "../utils/errors";
-import logger from "../utils/logger";
+} from "../../utils/errors";
+import logger from "../../utils/logger";
 
 export interface LoginCredentials {
   email: string;
@@ -126,7 +126,9 @@ export class AuthService {
 
     // Check if company subscription is active
     if (user.company.subscriptionStatus !== "ACTIVE") {
-      throw new AuthenticationError("Company subscription is not active");
+      throw new AuthenticationError(
+        "Account is locked until the subscription plan is paid"
+      );
     }
 
     // Verify password

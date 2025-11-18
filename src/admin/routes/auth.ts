@@ -6,7 +6,7 @@ import {
   registerCompanyValidation,
   refreshTokenValidation,
   changePasswordValidation,
-} from "../validators/authValidators";
+} from "../../validators/authValidators";
 
 const router = express.Router();
 const authController = new AuthController();
