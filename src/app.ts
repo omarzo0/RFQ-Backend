@@ -6,7 +6,15 @@ import compression from "compression";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import path from "path";
-import { config } from "dotenv";
+
+// Load environment variables FIRST - before ANY other imports
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
+// Debug: Check if environment variables are loaded
+console.log("DATABASE_URL loaded:", !!process.env.DATABASE_URL);
+console.log("NODE_ENV:", process.env.NODE_ENV);
+
+// NOW import other dependencies after environment variables are loaded
 import { PrismaClient } from "@prisma/client";
 import logger from "./utils/logger";
 
@@ -14,10 +22,7 @@ import logger from "./utils/logger";
 import "./jobs/trialNotificationCron";
 import { startCancelExpiredUpgradesCron } from "./company/jobs/cancelExpiredUpgrades";
 
-// Load environment variables
-dotenv.config();
-config({ path: path.resolve(__dirname, "../.env") });
-
+// Initialize Prisma AFTER environment variables are loaded
 export const prisma = new PrismaClient({
   log: [
     { emit: "event", level: "query" },
