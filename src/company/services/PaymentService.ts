@@ -45,7 +45,14 @@ export class PaymentService {
   private stripe: Stripe | null = null;
   private paymentEmailService: PaymentEmailService;
   private isStripeEnabled: boolean = false;
-
+  private getStripe(): Stripe {
+    if (!this.stripe) {
+      throw new Error(
+        "Stripe is not configured. Please check your STRIPE_SECRET_KEY environment variable."
+      );
+    }
+    return this.stripe;
+  }
   constructor() {
     // Check if Stripe is configured
     if (process.env.STRIPE_SECRET_KEY) {
@@ -83,7 +90,7 @@ export class PaymentService {
       if (company.stripeCustomerId) {
         try {
           // Try to retrieve existing customer
-          const customer = await this.stripe.customers.retrieve(
+          const customer = await this.getStripe().customers.retrieve(
             company.stripeCustomerId
           );
 
@@ -108,7 +115,7 @@ export class PaymentService {
       }
 
       // Create new customer
-      const customer = await this.stripe.customers.create({
+      const customer = await this.getStripe().customers.create({
         name: company.name,
         email: company.email,
         metadata: {
@@ -141,7 +148,7 @@ export class PaymentService {
     try {
       const customer = await this.getOrCreateCustomer(data.companyId);
 
-      const paymentIntent = await this.stripe.paymentIntents.create({
+      const paymentIntent = await this.getStripe().paymentIntents.create({
         amount: Math.round(data.amount * 100), // Convert to cents
         currency: data.currency,
         customer: customer.id,
@@ -423,7 +430,7 @@ export class PaymentService {
     immediately: boolean = false
   ): Promise<Stripe.Subscription> {
     try {
-      const subscription = await this.stripe.subscriptions.update(
+      const subscription = await this.getStripe().subscriptions.update(
         subscriptionId,
         {
           cancel_at_period_end: !immediately,
@@ -446,7 +453,7 @@ export class PaymentService {
     try {
       const customer = await this.getOrCreateCustomer(companyId);
 
-      const paymentMethods = await this.stripe.paymentMethods.list({
+      const paymentMethods = await this.getStripe().paymentMethods.list({
         customer: customer.id,
         type: "card",
       });
@@ -481,7 +488,7 @@ export class PaymentService {
     try {
       const customer = await this.getOrCreateCustomer(companyId);
 
-      const setupIntent = await this.stripe.setupIntents.create({
+      const setupIntent = await this.getStripe().setupIntents.create({
         customer: customer.id,
         payment_method_types: ["card"],
         usage: "off_session",
@@ -502,7 +509,7 @@ export class PaymentService {
    */
   async getSubscription(subscriptionId: string): Promise<Stripe.Subscription> {
     try {
-      return await this.stripe.subscriptions.retrieve(subscriptionId, {
+      return await this.getStripe().subscriptions.retrieve(subscriptionId, {
         expand: ["latest_invoice", "default_payment_method"],
       });
     } catch (error) {
@@ -573,7 +580,7 @@ export class PaymentService {
         refundData.reason = reason as Stripe.RefundCreateParams.Reason;
       }
 
-      const refund = await this.stripe.refunds.create(refundData);
+      const refund = await this.getStripe().refunds.create(refundData);
 
       logger.info(
         `Processed refund for payment intent ${paymentIntentId}: ${refund.id}`
@@ -643,7 +650,7 @@ export class PaymentService {
       // Get subscription details if this is a subscription payment
       let planName: string | undefined;
       if (paymentIntent.metadata.subscriptionId) {
-        const subscription = await this.stripe.subscriptions.retrieve(
+        const subscription = await this.getStripe().subscriptions.retrieve(
           paymentIntent.metadata.subscriptionId
         );
         // You might want to get plan name from subscription items
@@ -676,7 +683,7 @@ export class PaymentService {
 
       // Get company ID from customer
       if (invoice.customer) {
-        const customer = await this.stripe.customers.retrieve(
+        const customer = await this.getStripe().customers.retrieve(
           invoice.customer as string
         );
         const companyId = (customer as any).metadata?.companyId;
@@ -1097,7 +1104,7 @@ export class PaymentService {
 
       // Create payment intent
       // Note: PaymentMethod will be automatically attached to customer when confirmed
-      const paymentIntent = await this.stripe.paymentIntents.create({
+      const paymentIntent = await this.getStripe().paymentIntents.create({
         amount: Math.round(invoice.billing.total * 100), // Convert to cents
         currency: invoice.billing.currency.toLowerCase(),
         customer: customer.id,
@@ -1166,7 +1173,7 @@ export class PaymentService {
       const customer = await this.getOrCreateCustomer(companyId);
 
       // Get payment intents for this customer
-      const paymentIntents = await this.stripe.paymentIntents.list({
+      const paymentIntents = await this.getStripe().paymentIntents.list({
         customer: customer.id,
         limit: limit,
       });
@@ -1201,7 +1208,7 @@ export class PaymentService {
       const customer = await this.getOrCreateCustomer(companyId);
 
       // Get all payment intents
-      const paymentIntents = await this.stripe.paymentIntents.list({
+      const paymentIntents = await this.getStripe().paymentIntents.list({
         customer: customer.id,
         limit: 100,
       });
@@ -1221,7 +1228,7 @@ export class PaymentService {
       );
 
       // Get refunds
-      const refunds = await this.stripe.refunds.list({
+      const refunds = await this.getStripe().refunds.list({
         limit: 100,
       });
       const companyRefunds = refunds.data.filter((refund) =>
