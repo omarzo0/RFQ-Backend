@@ -5,6 +5,8 @@ import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
+import path from "path";
+import { config } from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import logger from "./utils/logger";
 
@@ -14,8 +16,8 @@ import { startCancelExpiredUpgradesCron } from "./company/jobs/cancelExpiredUpgr
 
 // Load environment variables
 dotenv.config();
+config({ path: path.resolve(__dirname, "../.env") });
 
-// Initialize Prisma client
 export const prisma = new PrismaClient({
   log: [
     { emit: "event", level: "query" },
