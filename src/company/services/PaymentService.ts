@@ -42,17 +42,25 @@ export interface PaymentMethodData {
 }
 
 export class PaymentService {
-  private stripe: Stripe;
+  private stripe: Stripe | null = null;
   private paymentEmailService: PaymentEmailService;
+  private isStripeEnabled: boolean = false;
 
   constructor() {
-    if (!process.env.STRIPE_SECRET_KEY) {
-      throw new Error("STRIPE_SECRET_KEY environment variable is required");
+    // Check if Stripe is configured
+    if (process.env.STRIPE_SECRET_KEY) {
+      this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+        apiVersion: "2025-08-27.basil",
+      });
+      this.isStripeEnabled = true;
+      logger.info("Stripe payment service initialized");
+    } else {
+      logger.warn(
+        "STRIPE_SECRET_KEY not found. Payment features will be disabled."
+      );
+      this.isStripeEnabled = false;
     }
 
-    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2025-08-27.basil",
-    });
     this.paymentEmailService = new PaymentEmailService();
   }
 
@@ -78,7 +86,7 @@ export class PaymentService {
           const customer = await this.stripe.customers.retrieve(
             company.stripeCustomerId
           );
-          
+
           // Check if customer was deleted
           if (customer.deleted) {
             logger.warn(
@@ -1122,7 +1130,10 @@ export class PaymentService {
             invoice.billing.currency
           );
         } catch (emailError) {
-          logger.error("Failed to send upgrade confirmation email:", emailError);
+          logger.error(
+            "Failed to send upgrade confirmation email:",
+            emailError
+          );
         }
 
         logger.info(
@@ -1200,7 +1211,8 @@ export class PaymentService {
         (pi) => pi.status === "succeeded"
       );
       const failedPayments = paymentIntents.data.filter(
-        (pi) => pi.status === "canceled" || (pi as any).status === "payment_failed"
+        (pi) =>
+          pi.status === "canceled" || (pi as any).status === "payment_failed"
       );
 
       const totalRevenue = successfulPayments.reduce(
