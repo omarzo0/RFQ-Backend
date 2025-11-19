@@ -7,1042 +7,1075 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model admins {
-  id                                                    String                  @id
-  email                                                 String                  @unique
-  password_hash                                         String
-  first_name                                            String
-  last_name                                             String
-  role                                                  AdminRole               @default(ADMIN)
-  is_active                                             Boolean                 @default(true)
-  last_login_at                                         DateTime?
-  created_at                                            DateTime                @default(now())
-  updated_at                                            DateTime
-  company_warnings_company_warnings_issued_byToadmins   company_warnings[]      @relation("company_warnings_issued_byToadmins")
-  company_warnings_company_warnings_resolved_byToadmins company_warnings[]      @relation("company_warnings_resolved_byToadmins")
-  notifications                                         notifications[]
-  password_reset_tokens                                 password_reset_tokens[]
-  refresh_tokens                                        refresh_tokens[]
-  support_tickets                                       support_tickets[]
+model Admin {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  passwordHash   String          @map("password_hash")
+  firstName      String          @map("first_name")
+  lastName       String          @map("last_name")
+  role           AdminRole       @default(ADMIN)
+  isActive       Boolean         @default(true) @map("is_active")
+  lastLoginAt    DateTime?       @map("last_login_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  supportTickets      SupportTicket[]  @relation("AssignedTickets")
+  notifications       Notification[]
+  issuedWarnings      CompanyWarning[]
+  resolvedWarnings    CompanyWarning[] @relation("WarningResolver")
+
+  @@map("admins")
 }
 
-model ai_processing_logs {
-  id               String           @id
-  company_id       String
-  email_reply_id   String?
-  processing_type  ProcessingType
-  input_data       Json
-  output_data      Json?
-  confidence_score Decimal?         @db.Decimal(3, 2)
-  processing_time  Int?
-  status           ProcessingStatus @default(PENDING)
-  error_message    String?
-  model_version    String?
-  cost             Decimal?         @db.Decimal(10, 4)
-  tokens_used      Int?
-  created_at       DateTime         @default(now())
-  companies        companies        @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  email_replies    email_replies?   @relation(fields: [email_reply_id], references: [id])
+model Company {
+  id                  String                     @id @default(uuid())
+  name                String
+  email               String                     @unique
+  domain              String?
+  phone               String?
+  address             String?
+  city                String?
+  country             String?
+  timezone            String                     @default("UTC")
+  subscriptionPlan    String                     @default("trial") @map("subscription_plan")
+  subscriptionStatus  SubscriptionStatus         @default(ACTIVE) @map("subscription_status")
+  stripeCustomerId    String?                    @map("stripe_customer_id")
+  stripeSubscriptionId String?                   @map("stripe_subscription_id")
+  trialEndsAt         DateTime?                  @map("trial_ends_at")
+  pendingPlanId       String?                    @map("pending_plan_id")
+  paymentDeadline     DateTime?                  @map("payment_deadline")
+  emailFooter         String?                    @map("email_footer")
+  defaultFollowUpDays Int                        @default(3) @map("default_follow_up_days")
+  autoFollowUpEnabled Boolean                    @default(true) @map("auto_follow_up_enabled")
+  isActive            Boolean                    @default(true) @map("is_active")
+  createdAt           DateTime                   @default(now()) @map("created_at")
+  updatedAt           DateTime                   @updatedAt @map("updated_at")
+  apiKeys             APIKey[]
+  carrierMetrics      CarrierPerformanceMetric[]
+  users               CompanyUser[]
+  contacts            Contact[]
+  emailLogs           EmailLog[]
+  emailTemplates      EmailTemplate[]
+  followUpRules       FollowUpRule[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  transactions        Transaction[]
+  financialDetails    FinancialDetails?
+  rfqTemplates        RFQTemplate[]
+  rfqs                RFQ[]
+  routeMetrics        RoutePerformanceMetric[]
+  shippingLines       ShippingLine[]
+  supportTickets      SupportTicket[]
+  usageMetrics        UsageMetric[]
+  webhookEndpoints    WebhookEndpoint[]
+  bulkEmails          BulkEmail[]
+  emailCampaigns      EmailCampaign[]
+  emailUnsubscribes   EmailUnsubscribe[]
+  emailReplies        EmailReply[]
+  imapConfigurations  IMAPConfiguration[]
+  emailWebhooks       EmailWebhook[]
+  aiProcessingLogs    AIProcessingLog[]
+  parsingLearningData ParsingLearningData[]
+  companyFeatures     CompanyFeature[]
+  notifications       Notification[]
+  warnings            CompanyWarning[]
+
+  @@map("companies")
 }
 
-model api_keys {
-  id                  String        @id
-  company_id          String
-  key_name            String
-  api_key             String        @unique
-  scopes              String[]
-  rate_limit_per_hour Int           @default(1000)
-  is_active           Boolean       @default(true)
-  last_used_at        DateTime?
-  expires_at          DateTime?
-  created_by          String
-  created_at          DateTime      @default(now())
-  companies           companies     @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users       company_users @relation(fields: [created_by], references: [id])
+model CompanyUser {
+  id                    String            @id @default(uuid())
+  companyId             String            @map("company_id")
+  email                 String
+  passwordHash          String            @map("password_hash")
+  firstName             String            @map("first_name")
+  lastName              String            @map("last_name")
+  role                  UserRole          @default(EMPLOYEE)
+  isActive              Boolean           @default(true) @map("is_active")
+  lastLoginAt           DateTime?         @map("last_login_at")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  createdAPIKeys        APIKey[]
+  company               Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdContacts       Contact[]
+  createdEmailTemplates EmailTemplate[]
+  createdFollowUpRules  FollowUpRule[]
+  awardedQuotes         Quote[]           @relation("QuoteAwarder")
+  createdQuotes         Quote[]
+  verifiedQuotes        Quote[]           @relation("QuoteVerifier")
+  refreshTokens         RefreshToken[]
+  passwordResetTokens   PasswordResetToken[]
+  createdTemplates      RFQTemplate[]
+  assignedRFQs          RFQ[]             @relation("RFQAssignee")
+  createdRFQs           RFQ[]             @relation("RFQCreator")
+  createdShippingLines  ShippingLine[]
+  createdWebhooks       WebhookEndpoint[]
+  createdBulkEmails     BulkEmail[]
+  createdEmailCampaigns EmailCampaign[]
+  createdIMAPConfigs    IMAPConfiguration[]
+  createdEmailWebhooks  EmailWebhook[]
+  reviewedEmailReplies  EmailReply[]
+  validatedParsingResults EmailParsingResult[]
+  correctedLearningData ParsingLearningData[]
+
+  @@unique([companyId, email])
+  @@map("company_users")
 }
 
-model bulk_emails {
-  id                    String           @id
-  company_id            String
+model RefreshToken {
+  id            String       @id @default(uuid())
+  tokenHash     String       @map("token_hash")
+  adminUserId   String?      @map("admin_user_id")
+  companyUserId String?      @map("company_user_id")
+  userType      UserType     @map("user_type")
+  companyId     String?      @map("company_id")
+  expiresAt     DateTime     @map("expires_at")
+  isRevoked     Boolean      @default(false) @map("is_revoked")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  admin         Admin?       @relation(fields: [adminUserId], references: [id])
+  company       Company?     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyUser   CompanyUser? @relation(fields: [companyUserId], references: [id])
+
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id            String       @id @default(uuid())
+  tokenHash     String       @unique @map("token_hash")
+  adminUserId   String?      @map("admin_user_id")
+  companyUserId String?      @map("company_user_id")
+  userType      UserType     @map("user_type")
+  companyId     String?      @map("company_id")
+  email         String
+  expiresAt     DateTime     @map("expires_at")
+  isUsed        Boolean      @default(false) @map("is_used")
+  usedAt        DateTime?    @map("used_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  admin         Admin?       @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  company       Company?     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyUser   CompanyUser? @relation(fields: [companyUserId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}
+
+model Transaction {
+  id                String            @id @default(uuid())
+  companyId         String            @map("company_id")
+  subscriptionPlanId String?          @map("subscription_plan_id")
+  transactionType   TransactionType   @map("transaction_type")
+  amount            Decimal           @db.Decimal(12, 2)
+  currency          String            @default("USD")
+  status            TransactionStatus @default(PENDING)
+  paymentMethod     PaymentMethod?    @map("payment_method")
+  paymentProvider   String?           @map("payment_provider")
+  externalId        String?           @map("external_id")
+  description       String?
+  metadata          Json?
+  processedAt       DateTime?         @map("processed_at")
+  failedAt          DateTime?         @map("failed_at")
+  failureReason     String?           @map("failure_reason")
+  refundedAt        DateTime?         @map("refunded_at")
+  refundAmount      Decimal?          @map("refund_amount") @db.Decimal(12, 2)
+  refundReason      String?           @map("refund_reason")
+  invoiceNumber     String?           @map("invoice_number")
+  invoiceUrl        String?           @map("invoice_url")
+  receiptUrl        String?           @map("receipt_url")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  company           Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  subscriptionPlan  SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+
+  @@map("transactions")
+}
+
+model FinancialDetails {
+  id                    String   @id @default(uuid())
+  companyId             String   @map("company_id")
+  totalRevenue          Decimal  @default(0) @map("total_revenue") @db.Decimal(12, 2)
+  totalTransactions     Int      @default(0) @map("total_transactions")
+  successfulTransactions Int     @default(0) @map("successful_transactions")
+  failedTransactions    Int      @default(0) @map("failed_transactions")
+  refundedTransactions  Int      @default(0) @map("refunded_transactions")
+  averageTransactionValue Decimal @default(0) @map("average_transaction_value") @db.Decimal(12, 2)
+  monthlyRecurringRevenue Decimal @default(0) @map("monthly_recurring_revenue") @db.Decimal(12, 2)
+  annualRecurringRevenue Decimal @default(0) @map("annual_recurring_revenue") @db.Decimal(12, 2)
+  churnRate             Decimal  @default(0) @map("churn_rate") @db.Decimal(5, 2)
+  customerLifetimeValue Decimal @default(0) @map("customer_lifetime_value") @db.Decimal(12, 2)
+  lastUpdatedAt         DateTime @default(now()) @map("last_updated_at")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  company               Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId])
+  @@map("financial_details")
+}
+
+model ShippingLine {
+  id                   String                     @id @default(uuid())
+  companyId            String                     @map("company_id")
+  name                 String
+  code                 String?
+  email                String?
+  category             String?
+  website              String?
+  headquartersLocation String?                    @map("headquarters_location")
+  description          String?
+  isActive             Boolean                    @default(true) @map("is_active")
+  isArchived           Boolean                    @default(false) @map("is_archived")
+  createdBy            String                     @map("created_by")
+  createdAt            DateTime                   @default(now()) @map("created_at")
+  updatedAt            DateTime                   @updatedAt @map("updated_at")
+  headquartersCountry  String?                    @map("headquarters_country")
+  isCustom             Boolean                    @default(false) @map("is_custom")
+  notes                String?
+  reliability          Int?
+  scacCode             String?                    @map("scac_code")
+  serviceQuality       Int?
+  services             String[]
+  specialization       String?
+  tags                 String[]
+  tradeLanes           String[]                   @map("trade_lanes")
+  carrierMetrics       CarrierPerformanceMetric[]
+  contacts             Contact[]
+  quotes               Quote[]
+  rfqRecipients        RFQRecipient[]
+  routeMetrics         RoutePerformanceMetric[]
+  company              Company                    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator              CompanyUser                @relation(fields: [createdBy], references: [id])
+  emailReplies         EmailReply[]
+
+  @@unique([companyId, name])
+  @@map("shipping_lines")
+}
+
+model Contact {
+  id                   String              @id @default(uuid())
+  companyId            String              @map("company_id")
+  shippingLineId       String              @map("shipping_line_id")
+  firstName            String              @map("first_name")
+  lastName             String              @map("last_name")
+  email                String
+  phone                String?
+  companyName          String?             @map("company_name")
+  jobTitle             String?             @map("job_title")
+  department           String?
+  tags                 String[]
+  notes                String?
+  performanceScore     Int                 @default(0) @map("performance_score")
+  doNotContact         Boolean             @default(false) @map("do_not_contact")
+  isPrimary            Boolean             @default(false) @map("is_primary")
+  isActive             Boolean             @default(true) @map("is_active")
+  isArchived           Boolean             @default(false) @map("is_archived")
+  createdBy            String              @map("created_by")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+  avgResponseTime      Int?                @map("avg_response_time")
+  communicationHistory String?             @map("communication_history")
+  lastResponseAt       DateTime?           @map("last_response_at")
+  preferences          String?
+  quoteQuality         Int?                @map("quote_quality")
+  reliability          Int?
+  responseRate         Float?              @map("response_rate")
+  seniority            String?
+  specialization       String?
+  totalResponses       Int                 @default(0) @map("total_responses")
+  totalRFQsSent        Int                 @default(0) @map("total_rfqs_sent")
+  company              Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator              CompanyUser         @relation(fields: [createdBy], references: [id])
+  shippingLine         ShippingLine        @relation(fields: [shippingLineId], references: [id], onDelete: Cascade)
+  emailLogs            EmailLog[]
+  quotes               Quote[]
+  rfqRecipients        RFQRecipient[]
+  scheduledFollowUps   ScheduledFollowUp[]
+  emailReplies         EmailReply[]
+
+  @@unique([companyId, shippingLineId, email])
+  @@map("contacts")
+}
+
+model RFQTemplate {
+  id                  String        @id @default(uuid())
+  companyId           String        @map("company_id")
+  name                String
+  description         String?
+  subjectTemplate     String        @map("subject_template")
+  bodyTemplate        String        @map("body_template")
+  originPort          String?       @map("origin_port")
+  destinationPort     String?       @map("destination_port")
+  commodity           String?
+  containerType       String?       @map("container_type")
+  containerQuantity   Int?          @map("container_quantity")
+  cargoWeight         Decimal?      @map("cargo_weight") @db.Decimal(10, 2)
+  cargoVolume         Decimal?      @map("cargo_volume") @db.Decimal(10, 2)
+  incoterm            String?
+  specialRequirements String?       @map("special_requirements")
+  requiredServices    String[]      @map("required_services")
+  isDefault           Boolean       @default(false) @map("is_default")
+  createdBy           String        @map("created_by")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+  category            String?
+  dynamicFields       Json?         @map("dynamic_fields")
+  isActive            Boolean       @default(true) @map("is_active")
+  isPublic            Boolean       @default(false) @map("is_public")
+  language            String        @default("en")
+  lastUsedAt          DateTime?     @map("last_used_at")
+  parentTemplateId    String?       @map("parent_template_id")
+  tags                String[]
+  templateVariables   String[]      @map("template_variables")
+  tradeLane           String?       @map("trade_lane")
+  usageCount          Int           @default(0) @map("usage_count")
+  version             Int           @default(1)
+  company             Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator             CompanyUser   @relation(fields: [createdBy], references: [id])
+  parentTemplate      RFQTemplate?  @relation("TemplateInheritance", fields: [parentTemplateId], references: [id])
+  childTemplates      RFQTemplate[] @relation("TemplateInheritance")
+
+  @@map("rfq_templates")
+}
+
+model RFQ {
+  id                  String              @id @default(uuid())
+  companyId           String              @map("company_id")
+  rfqNumber           String              @map("rfq_number")
+  title               String
+  description         String?
+  originPort          String              @map("origin_port")
+  destinationPort     String              @map("destination_port")
+  commodity           String?
+  containerType       String?             @map("container_type")
+  containerQuantity   Int                 @default(1) @map("container_quantity")
+  cargoWeight         Decimal?            @map("cargo_weight") @db.Decimal(10, 2)
+  cargoVolume         Decimal?            @map("cargo_volume") @db.Decimal(10, 2)
+  incoterm            String              @default("FOB")
+  cargoReadyDate      DateTime?           @map("cargo_ready_date")
+  quoteDeadline       DateTime?           @map("quote_deadline")
+  shipmentUrgency     Urgency             @default(NORMAL) @map("shipment_urgency")
+  specialRequirements String?             @map("special_requirements")
+  requiredServices    String[]            @map("required_services")
+  preferredCarriers   String[]            @map("preferred_carriers")
+  emailSubject        String?             @map("email_subject")
+  emailBody           String?             @map("email_body")
+  status              RFQStatus           @default(DRAFT)
+  sentAt              DateTime?           @map("sent_at")
+  closedAt            DateTime?           @map("closed_at")
+  totalContactsSent   Int                 @default(0) @map("total_contacts_sent")
+  totalQuotesReceived Int                 @default(0) @map("total_quotes_received")
+  bestQuoteAmount     Decimal?            @map("best_quote_amount") @db.Decimal(12, 2)
+  averageQuoteAmount  Decimal?            @map("average_quote_amount") @db.Decimal(12, 2)
+  createdBy           String              @map("created_by")
+  assignedTo          String?             @map("assigned_to")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  currency            String              @default("USD")
+  estimatedValue      Decimal?            @map("estimated_value") @db.Decimal(12, 2)
+  notes               String?
+  priority            Priority            @default(MEDIUM)
+  responseRate        Float?              @map("response_rate")
+  tags                String[]
+  tradeLane           String?             @map("trade_lane")
+  emailLogs           EmailLog[]
+  quotes              Quote[]
+  recipients          RFQRecipient[]
+  assignedToUser      CompanyUser?        @relation("RFQAssignee", fields: [assignedTo], references: [id])
+  company             Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdByUser       CompanyUser         @relation("RFQCreator", fields: [createdBy], references: [id])
+  scheduledFollowUps  ScheduledFollowUp[]
+  emailReplies        EmailReply[]
+
+  @@unique([companyId, rfqNumber])
+  @@map("rfqs")
+}
+
+model RFQRecipient {
+  id                  String       @id @default(uuid())
+  rfqId               String       @map("rfq_id")
+  contactId           String       @map("contact_id")
+  shippingLineId      String       @map("shipping_line_id")
+  emailSentAt         DateTime     @map("email_sent_at")
+  emailDeliveredAt    DateTime?    @map("email_delivered_at")
+  emailOpenedAt       DateTime?    @map("email_opened_at")
+  emailClickedAt      DateTime?    @map("email_clicked_at")
+  lastEmailActivityAt DateTime?    @map("last_email_activity_at")
+  hasResponded        Boolean      @default(false) @map("has_responded")
+  responseReceivedAt  DateTime?    @map("response_received_at")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  contact             Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  rfq                 RFQ          @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  shippingLine        ShippingLine @relation(fields: [shippingLineId], references: [id], onDelete: Cascade)
+
+  @@unique([rfqId, contactId])
+  @@map("rfq_recipients")
+}
+
+model Quote {
+  id                    String       @id @default(uuid())
+  rfqId                 String       @map("rfq_id")
+  contactId             String       @map("contact_id")
+  shippingLineId        String       @map("shipping_line_id")
+  quoteReference        String?      @map("quote_reference")
+  oceanFreight          Decimal?     @map("ocean_freight") @db.Decimal(12, 2)
+  currency              String       @default("USD")
+  baf                   Decimal?     @db.Decimal(12, 2)
+  caf                   Decimal?     @db.Decimal(12, 2)
+  securityFee           Decimal?     @map("security_fee") @db.Decimal(12, 2)
+  documentationFee      Decimal?     @map("documentation_fee") @db.Decimal(12, 2)
+  handlingCharges       Decimal?     @map("handling_charges") @db.Decimal(12, 2)
+  otherCharges          Json?        @map("other_charges")
+  totalAmount           Decimal      @map("total_amount") @db.Decimal(12, 2)
+  validityDate          DateTime     @map("validity_date")
+  paymentTerms          String?      @map("payment_terms")
+  transitTime           String?      @map("transit_time")
+  freeTimeAtOrigin      Int?         @map("free_time_at_origin")
+  freeTimeAtDestination Int?         @map("free_time_at_destination")
+  termsAndConditions    String?      @map("terms_and_conditions")
+  specialNotes          String?      @map("special_notes")
+  source                QuoteSource  @default(EMAIL)
+  isParsedByAi          Boolean      @default(false) @map("is_parsed_by_ai")
+  confidenceScore       Decimal?     @map("confidence_score") @db.Decimal(3, 2)
+  rawEmailContent       String?      @map("raw_email_content")
+  status                QuoteStatus  @default(ACTIVE)
+  isWinner              Boolean      @default(false) @map("is_winner")
+  createdBy             String?      @map("created_by")
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+  attachments           String[]
+  awardedBy             String?      @map("awarded_by")
+  awardedDate           DateTime?    @map("awarded_date")
+  carrierBenchmark      Json?        @map("carrier_benchmark")
+  communicationScore    Int?         @map("communication_score")
+  comparisonRank        Int?         @map("comparison_rank")
+  expirationDate        DateTime?    @map("expiration_date")
+  historicalComparison  Json?        @map("historical_comparison")
+  isAwarded             Boolean      @default(false) @map("is_awarded")
+  isExpired             Boolean      @default(false) @map("is_expired")
+  isVerified            Boolean      @default(false) @map("is_verified")
+  marketPosition        String?      @map("market_position")
+  marketTrends          Json?        @map("market_trends")
+  notes                 String?
+  overallScore          Decimal?     @map("overall_score") @db.Decimal(3, 2)
+  priceCompetitiveness  Decimal?     @map("price_competitiveness") @db.Decimal(3, 2)
+  quoteNumber           String?      @map("quote_number")
+  rateOptimization      Json?        @map("rate_optimization")
+  receivedDate          DateTime?    @map("received_date")
+  rejectionReason       String?      @map("rejection_reason")
+  reliability           Int?         @map("reliability")
+  responseTime          Int?         @map("response_time")
+  serviceQuality        Int?         @map("service_quality")
+  tags                  String[]
+  verifiedAt            DateTime?    @map("verified_at")
+  verifiedBy            String?      @map("verified_by")
+  awarder               CompanyUser? @relation("QuoteAwarder", fields: [awardedBy], references: [id])
+  contact               Contact      @relation(fields: [contactId], references: [id])
+  creator               CompanyUser? @relation(fields: [createdBy], references: [id])
+  rfq                   RFQ          @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  shippingLine          ShippingLine @relation(fields: [shippingLineId], references: [id])
+  verifier              CompanyUser? @relation("QuoteVerifier", fields: [verifiedBy], references: [id])
+  emailReplies          EmailReply[]
+
+  @@map("quotes")
+}
+
+model EmailTemplate {
+  id              String         @id @default(uuid())
+  companyId       String         @map("company_id")
+  name            String
+  templateType    String         @map("template_type")
+  subject         String
+  bodyHtml        String         @map("body_html")
+  bodyText        String?        @map("body_text")
+  supportedTokens String[]       @map("supported_tokens")
+  language        String         @default("en")
+  isDefault       Boolean        @default(false) @map("is_default")
+  isActive        Boolean        @default(true) @map("is_active")
+  createdBy       String         @map("created_by")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  emailLogs       EmailLog[]
+  company         Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator         CompanyUser    @relation(fields: [createdBy], references: [id])
+  followUpRules   FollowUpRule[]
+  bulkEmails      BulkEmail[]
+
+  @@unique([companyId, name])
+  @@map("email_templates")
+}
+
+model EmailLog {
+  id                    String         @id @default(uuid())
+  companyId             String         @map("company_id")
+  toEmail               String         @map("to_email")
+  fromEmail             String         @map("from_email")
+  subject               String
+  bodyHtml              String?        @map("body_html")
+  bodyText              String?        @map("body_text")
+  messageId             String?        @map("message_id")
+  status                EmailStatus    @default(QUEUED)
+  rfqId                 String?        @map("rfq_id")
+  contactId             String?        @map("contact_id")
+  templateId            String?        @map("template_id")
+  followUpRuleId        String?        @map("follow_up_rule_id")
+  scheduledFollowUpId   String?        @map("scheduled_follow_up_id")
+  emailType             EmailType      @default(RFQ) @map("email_type")
+  priority              EmailPriority  @default(NORMAL) @map("priority")
+  queuedAt              DateTime       @default(now()) @map("queued_at")
+  sentAt                DateTime?      @map("sent_at")
+  deliveredAt           DateTime?      @map("delivered_at")
+  openedAt              DateTime?      @map("opened_at")
+  clickedAt             DateTime?      @map("clicked_at")
+  bouncedAt             DateTime?      @map("bounced_at")
+  failedAt              DateTime?      @map("failed_at")
+  errorMessage          String?        @map("error_message")
+  retryCount            Int            @default(0) @map("retry_count")
+  maxRetries            Int            @default(3) @map("max_retries")
+  nextRetryAt           DateTime?      @map("next_retry_at")
+  personalizationData   Json?          @map("personalization_data")
+  trackingPixelId       String?        @map("tracking_pixel_id")
+  unsubscribeToken      String?        @map("unsubscribe_token")
+  language              String         @default("en")
+  timezone              String?        @map("timezone")
+  scheduledFor          DateTime?      @map("scheduled_for")
+  isBulkEmail           Boolean        @default(false) @map("is_bulk_email")
+  bulkEmailId           String?        @map("bulk_email_id")
+  campaignId            String?        @map("campaign_id")
+  createdAt             DateTime       @default(now()) @map("created_at")
+  company               Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contact               Contact?       @relation(fields: [contactId], references: [id])
+  rfq                   RFQ?           @relation(fields: [rfqId], references: [id])
+  template              EmailTemplate? @relation(fields: [templateId], references: [id])
+  followUpRule          FollowUpRule?  @relation(fields: [followUpRuleId], references: [id])
+  scheduledFollowUp     ScheduledFollowUp? @relation(fields: [scheduledFollowUpId], references: [id])
+  bulkEmail             BulkEmail?     @relation(fields: [bulkEmailId], references: [id])
+  emailCampaign         EmailCampaign? @relation(fields: [campaignId], references: [id])
+  emailEngagements      EmailEngagement[]
+  emailBounces          EmailBounce[]
+
+  @@map("email_logs")
+}
+
+model FollowUpRule {
+  id                 String              @id @default(uuid())
+  companyId          String              @map("company_id")
+  name               String
+  description        String?
+  daysAfterSend      Int                 @default(3) @map("days_after_send")
+  onlyIfNotOpened    Boolean             @default(false) @map("only_if_not_opened")
+  onlyIfNotReplied   Boolean             @default(true) @map("only_if_not_replied")
+  maxFollowUps       Int                 @default(2) @map("max_follow_ups")
+  emailTemplateId    String?             @map("email_template_id")
+  isActive           Boolean             @default(true) @map("is_active")
+  
+  // Enhanced conditional follow-up features
+  onlyIfOpened       Boolean             @default(false) @map("only_if_opened")
+  onlyIfClicked      Boolean             @default(false) @map("only_if_clicked")
+  onlyIfDelivered    Boolean             @default(false) @map("only_if_delivered")
+  minTimeSinceOpen   Int?                @map("min_time_since_open") // hours
+  maxTimeSinceOpen   Int?                @map("max_time_since_open") // hours
+  
+  // Advanced scheduling features
+  scheduleType       ScheduleType        @default(IMMEDIATE) @map("schedule_type")
+  specificTime       String?             @map("specific_time") // HH:MM format
+  timezone           String?             @default("UTC")
+  businessDaysOnly   Boolean             @default(false) @map("business_days_only")
+  excludeWeekends    Boolean             @default(false) @map("exclude_weekends")
+  excludeHolidays    Boolean             @default(false) @map("exclude_holidays")
+  
+  // Follow-up sequence configuration
+  followUpIntervals  Json?               @map("follow_up_intervals") // Array of days for each follow-up
+  customSchedule     Json?               @map("custom_schedule") // Custom scheduling rules
+  
+  createdBy          String              @map("created_by")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator            CompanyUser         @relation(fields: [createdBy], references: [id])
+  emailTemplate      EmailTemplate?      @relation(fields: [emailTemplateId], references: [id])
+  scheduledFollowUps ScheduledFollowUp[]
+  emailLogs          EmailLog[]
+
+  @@map("follow_up_rules")
+}
+
+model ScheduledFollowUp {
+  id               String         @id @default(uuid())
+  rfqId            String         @map("rfq_id")
+  contactId        String         @map("contact_id")
+  followUpRuleId   String         @map("follow_up_rule_id")
+  scheduledAt      DateTime       @map("scheduled_at")
+  sentAt           DateTime?      @map("sent_at")
+  status           FollowUpStatus @default(SCHEDULED)
+  skipReason       String?        @map("skip_reason")
+  followUpSequence Int            @default(1) @map("follow_up_sequence")
+  
+  // Enhanced scheduling and condition tracking
+  originalScheduledAt DateTime?   @map("original_scheduled_at")
+  rescheduledAt       DateTime?   @map("rescheduled_at")
+  rescheduleReason    String?     @map("reschedule_reason")
+  conditionMetAt      DateTime?   @map("condition_met_at")
+  conditionType       String?     @map("condition_type") // 'opened', 'clicked', 'delivered', etc.
+  
+  // Timezone and business hours tracking
+  timezone           String?      @default("UTC")
+  isBusinessHours    Boolean      @default(false) @map("is_business_hours")
+  
+  createdAt        DateTime       @default(now()) @map("created_at")
+  contact          Contact        @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  followUpRule     FollowUpRule   @relation(fields: [followUpRuleId], references: [id])
+  rfq              RFQ            @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  emailLogs        EmailLog[]
+
+  @@map("scheduled_follow_ups")
+}
+
+model BulkEmail {
+  id                String         @id @default(uuid())
+  companyId         String         @map("company_id")
+  name              String
+  description       String?
+  subject           String
+  bodyHtml          String         @map("body_html")
+  bodyText          String?        @map("body_text")
+  templateId        String?        @map("template_id")
+  contactIds        String[]       @map("contact_ids")
+  totalRecipients   Int            @default(0) @map("total_recipients")
+  sentCount         Int            @default(0) @map("sent_count")
+  deliveredCount    Int            @default(0) @map("delivered_count")
+  openedCount       Int            @default(0) @map("opened_count")
+  clickedCount      Int            @default(0) @map("clicked_count")
+  bouncedCount      Int            @default(0) @map("bounced_count")
+  failedCount       Int            @default(0) @map("failed_count")
+  status            BulkEmailStatus @default(DRAFT)
+  scheduledFor      DateTime?      @map("scheduled_for")
+  startedAt         DateTime?      @map("started_at")
+  completedAt       DateTime?      @map("completed_at")
+  rateLimitPerMinute Int           @default(10) @map("rate_limit_per_minute")
+  personalizationData Json?        @map("personalization_data")
+  language          String         @default("en")
+  timezone          String?        @map("timezone")
+  createdBy         String         @map("created_by")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  company           Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  template          EmailTemplate? @relation(fields: [templateId], references: [id])
+  creator           CompanyUser    @relation(fields: [createdBy], references: [id])
+  emailLogs         EmailLog[]
+
+  @@map("bulk_emails")
+}
+
+model EmailCampaign {
+  id                String         @id @default(uuid())
+  companyId         String         @map("company_id")
+  name              String
+  description       String?
+  campaignType      CampaignType   @default(RFQ_BLAST) @map("campaign_type")
+  status            CampaignStatus @default(DRAFT)
+  startDate         DateTime?      @map("start_date")
+  endDate           DateTime?      @map("end_date")
+  totalEmails       Int            @default(0) @map("total_emails")
+  sentEmails        Int            @default(0) @map("sent_emails")
+  deliveredEmails   Int            @default(0) @map("delivered_emails")
+  openedEmails      Int            @default(0) @map("opened_emails")
+  clickedEmails     Int            @default(0) @map("clicked_emails")
+  bouncedEmails     Int            @default(0) @map("bounced_emails")
+  failedEmails      Int            @default(0) @map("failed_emails")
+  responseRate      Float?         @map("response_rate")
+  openRate          Float?         @map("open_rate")
+  clickRate         Float?         @map("click_rate")
+  createdBy         String         @map("created_by")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  company           Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator           CompanyUser    @relation(fields: [createdBy], references: [id])
+  emailLogs         EmailLog[]
+
+  @@map("email_campaigns")
+}
+
+model EmailEngagement {
+  id                String         @id @default(uuid())
+  emailLogId        String         @map("email_log_id")
+  engagementType    EngagementType @map("engagement_type")
+  timestamp         DateTime       @default(now())
+  userAgent         String?        @map("user_agent")
+  ipAddress         String?        @map("ip_address")
+  location          String?
+  device            String?
+  browser           String?
+  os                String?
+  linkUrl           String?        @map("link_url")
+  linkText          String?        @map("link_text")
+  emailLog          EmailLog       @relation(fields: [emailLogId], references: [id], onDelete: Cascade)
+
+  @@map("email_engagements")
+}
+
+model EmailBounce {
+  id                String         @id @default(uuid())
+  emailLogId        String         @map("email_log_id")
+  bounceType        BounceType     @map("bounce_type")
+  bounceReason      String?        @map("bounce_reason")
+  bounceCode        String?        @map("bounce_code")
+  bouncedAt         DateTime       @default(now()) @map("bounced_at")
+  isPermanent       Boolean        @default(false) @map("is_permanent")
+  emailLog          EmailLog       @relation(fields: [emailLogId], references: [id], onDelete: Cascade)
+
+  @@map("email_bounces")
+}
+
+model EmailUnsubscribe {
+  id                String         @id @default(uuid())
+  companyId         String         @map("company_id")
+  email             String
+  unsubscribeToken  String         @unique @map("unsubscribe_token")
+  reason            String?
+  unsubscribedAt    DateTime       @default(now()) @map("unsubscribed_at")
+  company           Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, email])
+  @@map("email_unsubscribes")
+}
+
+model EmailReply {
+  id                String         @id @default(uuid())
+  companyId         String         @map("company_id")
+  messageId         String         @unique @map("message_id")
+  inReplyTo         String?        @map("in_reply_to")
+  references        String[]       @map("references")
+  threadId          String?        @map("thread_id")
+  fromEmail         String         @map("from_email")
+  fromName          String?        @map("from_name")
+  toEmail           String         @map("to_email")
+  subject           String
+  bodyHtml          String?        @map("body_html")
+  bodyText          String?        @map("body_text")
+  receivedAt        DateTime       @map("received_at")
+  processedAt       DateTime?      @map("processed_at")
+  status            ReplyStatus    @default(RECEIVED)
+  source            ReplySource    @default(IMAP)
+  rawContent        String?        @map("raw_content")
+  headers           Json?          @map("headers")
+  rfqId             String?        @map("rfq_id")
+  contactId         String?        @map("contact_id")
+  shippingLineId    String?        @map("shipping_line_id")
+  quoteId           String?        @map("quote_id")
+  confidenceScore   Decimal?       @map("confidence_score") @db.Decimal(3, 2)
+  requiresReview    Boolean        @default(false) @map("requires_review")
+  reviewNotes       String?        @map("review_notes")
+  reviewedBy        String?        @map("reviewed_by")
+  reviewedAt        DateTime?      @map("reviewed_at")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  company           Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  rfq               RFQ?           @relation(fields: [rfqId], references: [id])
+  contact           Contact?       @relation(fields: [contactId], references: [id])
+  shippingLine      ShippingLine?  @relation(fields: [shippingLineId], references: [id])
+  quote             Quote?         @relation(fields: [quoteId], references: [id])
+  reviewer          CompanyUser?   @relation(fields: [reviewedBy], references: [id])
+  parsingResults    EmailParsingResult[]
+  attachments       EmailAttachment[]
+  aiProcessingLogs  AIProcessingLog[]
+
+  @@map("email_replies")
+}
+
+model EmailAttachment {
+  id                String         @id @default(uuid())
+  emailReplyId      String         @map("email_reply_id")
+  filename          String
+  originalFilename  String         @map("original_filename")
+  mimeType          String         @map("mime_type")
+  size              Int
+  content           String         @map("content") // Base64 encoded
+  filePath          String?        @map("file_path")
+  isProcessed       Boolean        @default(false) @map("is_processed")
+  processingStatus  String?        @map("processing_status")
+  extractedText     String?        @map("extracted_text")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  emailReply        EmailReply     @relation(fields: [emailReplyId], references: [id], onDelete: Cascade)
+
+  @@map("email_attachments")
+}
+
+model EmailParsingResult {
+  id                String         @id @default(uuid())
+  emailReplyId      String         @map("email_reply_id")
+  parsingType       ParsingType    @map("parsing_type")
+  extractedData     Json           @map("extracted_data")
+  confidenceScore   Decimal        @map("confidence_score") @db.Decimal(3, 2)
+  rawText           String?        @map("raw_text")
+  processedText     String?        @map("processed_text")
+  validationStatus  ValidationStatus @default(PENDING) @map("validation_status")
+  validationNotes   String?        @map("validation_notes")
+  isValidated       Boolean        @default(false) @map("is_validated")
+  validatedBy       String?        @map("validated_by")
+  validatedAt       DateTime?      @map("validated_at")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  emailReply        EmailReply     @relation(fields: [emailReplyId], references: [id], onDelete: Cascade)
+  validator         CompanyUser?   @relation(fields: [validatedBy], references: [id])
+
+  @@map("email_parsing_results")
+}
+
+model IMAPConfiguration {
+  id                String         @id @default(uuid())
+  companyId         String         @map("company_id")
+  name              String
+  host              String
+  port              Int
+  secure            Boolean        @default(true)
+  username          String
+  password          String         @map("password") // Encrypted
+  folder            String         @default("INBOX")
+  isActive          Boolean        @default(true) @map("is_active")
+  lastCheckedAt     DateTime?      @map("last_checked_at")
+  lastErrorAt       DateTime?      @map("last_error_at")
+  lastErrorMessage  String?        @map("last_error_message")
+  checkInterval     Int            @default(300) @map("check_interval") // seconds
+  maxEmailsPerCheck Int            @default(50) @map("max_emails_per_check")
+  createdBy         String         @map("created_by")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  company           Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator           CompanyUser    @relation(fields: [createdBy], references: [id])
+
+  @@map("imap_configurations")
+}
+
+model EmailWebhook {
+  id                String         @id @default(uuid())
+  companyId         String         @map("company_id")
+  name              String
+  provider          String
+  webhookUrl        String         @map("webhook_url")
+  secret            String?        @map("secret")
+  isActive          Boolean        @default(true) @map("is_active")
+  lastReceivedAt    DateTime?      @map("last_received_at")
+  lastErrorAt       DateTime?      @map("last_error_at")
+  lastErrorMessage  String?        @map("last_error_message")
+  totalReceived     Int            @default(0) @map("total_received")
+  totalProcessed    Int            @default(0) @map("total_processed")
+  totalFailed       Int            @default(0) @map("total_failed")
+  createdBy         String         @map("created_by")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  company           Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator           CompanyUser    @relation(fields: [createdBy], references: [id])
+
+  @@map("email_webhooks")
+}
+
+model AIProcessingLog {
+  id                String         @id @default(uuid())
+  companyId         String         @map("company_id")
+  emailReplyId      String?        @map("email_reply_id")
+  processingType    ProcessingType @map("processing_type")
+  inputData         Json           @map("input_data")
+  outputData        Json?          @map("output_data")
+  confidenceScore   Decimal?       @map("confidence_score") @db.Decimal(3, 2)
+  processingTime    Int?           @map("processing_time") // milliseconds
+  status            ProcessingStatus @default(PENDING)
+  errorMessage      String?        @map("error_message")
+  modelVersion      String?        @map("model_version")
+  cost              Decimal?       @db.Decimal(10, 4)
+  tokensUsed        Int?           @map("tokens_used")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  company           Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  emailReply        EmailReply?    @relation(fields: [emailReplyId], references: [id])
+
+  @@map("ai_processing_logs")
+}
+
+model ParsingLearningData {
+  id                String         @id @default(uuid())
+  companyId         String         @map("company_id")
+  originalText      String         @map("original_text")
+  extractedData     Json           @map("extracted_data")
+  correctedData     Json?          @map("corrected_data")
+  confidenceScore   Decimal        @map("confidence_score") @db.Decimal(3, 2)
+  isCorrected       Boolean        @default(false) @map("is_corrected")
+  correctionNotes   String?        @map("correction_notes")
+  correctedBy       String?        @map("corrected_by")
+  correctedAt       DateTime?      @map("corrected_at")
+  parsingType       ParsingType    @map("parsing_type")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  company           Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  corrector         CompanyUser?   @relation(fields: [correctedBy], references: [id])
+
+  @@map("parsing_learning_data")
+}
+
+model CarrierPerformanceMetric {
+  id                       String       @id @default(uuid())
+  companyId                String       @map("company_id")
+  shippingLineId           String       @map("shipping_line_id")
+  periodStart              DateTime     @map("period_start")
+  periodEnd                DateTime     @map("period_end")
+  periodType               String       @map("period_type")
+  rfqsReceived             Int          @default(0) @map("rfqs_received")
+  quotesSubmitted          Int          @default(0) @map("quotes_submitted")
+  responseRate             Decimal      @default(0) @map("response_rate") @db.Decimal(5, 2)
+  averageResponseTimeHours Decimal?     @map("average_response_time_hours") @db.Decimal(8, 2)
+  quotesWon                Int          @default(0) @map("quotes_won")
+  winRate                  Decimal      @default(0) @map("win_rate") @db.Decimal(5, 2)
+  averageQuoteAmount       Decimal?     @map("average_quote_amount") @db.Decimal(12, 2)
+  calculatedAt             DateTime     @default(now()) @map("calculated_at")
+  company                  Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  shippingLine             ShippingLine @relation(fields: [shippingLineId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, shippingLineId, periodStart, periodEnd, periodType])
+  @@map("carrier_performance_metrics")
+}
+
+model RoutePerformanceMetric {
+  id                       String        @id @default(uuid())
+  companyId                String        @map("company_id")
+  originPort               String        @map("origin_port")
+  destinationPort          String        @map("destination_port")
+  periodStart              DateTime      @map("period_start")
+  periodEnd                DateTime      @map("period_end")
+  periodType               String        @map("period_type")
+  totalRFQs                Int           @default(0) @map("total_rfqs")
+  totalQuotes              Int           @default(0) @map("total_quotes")
+  averageQuoteAmount       Decimal?      @map("average_quote_amount") @db.Decimal(12, 2)
+  lowestQuoteAmount        Decimal?      @map("lowest_quote_amount") @db.Decimal(12, 2)
+  highestQuoteAmount       Decimal?      @map("highest_quote_amount") @db.Decimal(12, 2)
+  mostCompetitiveCarrierId String?       @map("most_competitive_carrier_id")
+  calculatedAt             DateTime      @default(now()) @map("calculated_at")
+  company                  Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  mostCompetitiveCarrier   ShippingLine? @relation(fields: [mostCompetitiveCarrierId], references: [id])
+
+  @@unique([companyId, originPort, destinationPort, periodStart, periodEnd, periodType])
+  @@map("route_performance_metrics")
+}
+
+model SystemFeature {
+  id           String      @id @default(uuid())
+  name         String      @unique
+  description  String?
+  featureKey   String      @unique @map("feature_key")
+  featureType  FeatureType @map("feature_type")
+  category     String?
+  isActive     Boolean     @default(true) @map("is_active")
+  isPremium    Boolean     @default(false) @map("is_premium")
+  requiredRole String?     @map("required_role")
+  icon         String?
+  route        String?
+  permissions  String[]
+  createdAt    DateTime    @default(now()) @map("created_at")
+  companyFeatures CompanyFeature[]
+
+  @@map("system_features")
+}
+
+model CompanyFeature {
+  id              String        @id @default(uuid())
+  companyId       String        @map("company_id")
+  systemFeatureId String        @map("system_feature_id")
+  isEnabled       Boolean       @default(false) @map("is_enabled")
+  customSettings  Json?         @map("custom_settings")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  systemFeature   SystemFeature @relation(fields: [systemFeatureId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, systemFeatureId])
+  @@map("company_features")
+}
+
+model SubscriptionPlan {
+  id                    String   @id @default(uuid())
   name                  String
   description           String?
-  subject               String
-  body_html             String
-  body_text             String?
-  template_id           String?
-  contact_ids           String[]
-  total_recipients      Int              @default(0)
-  sent_count            Int              @default(0)
-  delivered_count       Int              @default(0)
-  opened_count          Int              @default(0)
-  clicked_count         Int              @default(0)
-  bounced_count         Int              @default(0)
-  failed_count          Int              @default(0)
-  status                BulkEmailStatus  @default(DRAFT)
-  scheduled_for         DateTime?
-  started_at            DateTime?
-  completed_at          DateTime?
-  rate_limit_per_minute Int              @default(10)
-  personalization_data  Json?
-  language              String           @default("en")
-  timezone              String?
-  created_by            String
-  created_at            DateTime         @default(now())
-  updated_at            DateTime
-  companies             companies        @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users         company_users    @relation(fields: [created_by], references: [id])
-  email_templates       email_templates? @relation(fields: [template_id], references: [id])
-  email_logs            email_logs[]
+  priceMonthly          Decimal? @map("price_monthly") @db.Decimal(10, 2)
+  priceYearly           Decimal? @map("price_yearly") @db.Decimal(10, 2)
+  maxUsers              Int?     @map("max_users")
+  maxRFQsPerMonth       Int?     @map("max_rfqs_per_month")
+  maxContacts           Int?     @map("max_contacts")
+  maxEmailSendsPerMonth Int?     @map("max_email_sends_per_month")
+  features              Json?
+  isActive              Boolean  @default(true) @map("is_active")
+  createdAt             DateTime @default(now()) @map("created_at")
+  transactions          Transaction[]
+
+  @@map("subscription_plans")
 }
 
-model carrier_performance_metrics {
-  id                          String         @id
-  company_id                  String
-  shipping_line_id            String
-  period_start                DateTime
-  period_end                  DateTime
-  period_type                 String
-  rfqs_received               Int            @default(0)
-  quotes_submitted            Int            @default(0)
-  response_rate               Decimal        @default(0) @db.Decimal(5, 2)
-  average_response_time_hours Decimal?       @db.Decimal(8, 2)
-  quotes_won                  Int            @default(0)
-  win_rate                    Decimal        @default(0) @db.Decimal(5, 2)
-  average_quote_amount        Decimal?       @db.Decimal(12, 2)
-  calculated_at               DateTime       @default(now())
-  companies                   companies      @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  shipping_lines              shipping_lines @relation(fields: [shipping_line_id], references: [id], onDelete: Cascade)
+model UsageMetric {
+  id                String   @id @default(uuid())
+  companyId         String   @map("company_id")
+  periodMonth       Int      @map("period_month")
+  periodYear        Int      @map("period_year")
+  rfqsCreated       Int      @default(0) @map("rfqs_created")
+  emailsSent        Int      @default(0) @map("emails_sent")
+  aiParsingRequests Int      @default(0) @map("ai_parsing_requests")
+  apiCalls          Int      @default(0) @map("api_calls")
+  fileStorageMb     Decimal  @default(0) @map("file_storage_mb") @db.Decimal(10, 2)
+  lastUpdatedAt     DateTime @default(now()) @map("last_updated_at")
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  @@unique([company_id, shipping_line_id, period_start, period_end, period_type])
+  @@unique([companyId, periodMonth, periodYear])
+  @@map("usage_metrics")
 }
 
-model companies {
-  id                          String                        @id
-  name                        String
-  email                       String                        @unique
-  domain                      String?
-  phone                       String?
-  address                     String?
-  city                        String?
-  country                     String?
-  timezone                    String                        @default("UTC")
-  subscription_plan           String                        @default("trial")
-  subscription_status         SubscriptionStatus            @default(ACTIVE)
-  stripe_customer_id          String?
-  trial_ends_at               DateTime?
-  email_footer                String?
-  default_follow_up_days      Int                           @default(3)
-  auto_follow_up_enabled      Boolean                       @default(true)
-  is_active                   Boolean                       @default(true)
-  created_at                  DateTime                      @default(now())
-  updated_at                  DateTime
-  stripe_subscription_id      String?
-  payment_deadline            DateTime?
-  pending_plan_id             String?
-  ai_processing_logs          ai_processing_logs[]
-  api_keys                    api_keys[]
-  bulk_emails                 bulk_emails[]
-  carrier_performance_metrics carrier_performance_metrics[]
-  company_features            company_features[]
-  company_users               company_users[]
-  company_warnings            company_warnings[]
-  contacts                    contacts[]
-  email_campaigns             email_campaigns[]
-  email_logs                  email_logs[]
-  email_replies               email_replies[]
-  email_templates             email_templates[]
-  email_unsubscribes          email_unsubscribes[]
-  email_webhooks              email_webhooks[]
-  financial_details           financial_details?
-  follow_up_rules             follow_up_rules[]
-  imap_configurations         imap_configurations[]
-  notifications               notifications[]
-  parsing_learning_data       parsing_learning_data[]
-  password_reset_tokens       password_reset_tokens[]
-  refresh_tokens              refresh_tokens[]
-  rfq_templates               rfq_templates[]
-  rfqs                        rfqs[]
-  route_performance_metrics   route_performance_metrics[]
-  shipping_lines              shipping_lines[]
-  support_tickets             support_tickets[]
-  transactions                transactions[]
-  usage_metrics               usage_metrics[]
-  webhook_endpoints           webhook_endpoints[]
+model WebhookEndpoint {
+  id            String      @id @default(uuid())
+  companyId     String      @map("company_id")
+  name          String
+  url           String
+  secret        String?
+  events        String[]
+  isActive      Boolean     @default(true) @map("is_active")
+  lastSuccessAt DateTime?   @map("last_success_at")
+  lastFailureAt DateTime?   @map("last_failure_at")
+  failureCount  Int         @default(0) @map("failure_count")
+  createdBy     String      @map("created_by")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  company       Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator       CompanyUser @relation(fields: [createdBy], references: [id])
+
+  @@map("webhook_endpoints")
 }
 
-model company_features {
-  id                String          @id
-  company_id        String
-  system_feature_id String
-  is_enabled        Boolean         @default(false)
-  custom_settings   Json?
-  created_at        DateTime        @default(now())
-  updated_at        DateTime
-  companies         companies       @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  system_features   system_features @relation(fields: [system_feature_id], references: [id], onDelete: Cascade)
+model APIKey {
+  id               String      @id @default(uuid())
+  companyId        String      @map("company_id")
+  keyName          String      @map("key_name")
+  apiKey           String      @unique @map("api_key")
+  scopes           String[]
+  rateLimitPerHour Int         @default(1000) @map("rate_limit_per_hour")
+  isActive         Boolean     @default(true) @map("is_active")
+  lastUsedAt       DateTime?   @map("last_used_at")
+  expiresAt        DateTime?   @map("expires_at")
+  createdBy        String      @map("created_by")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  company          Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator          CompanyUser @relation(fields: [createdBy], references: [id])
 
-  @@unique([company_id, system_feature_id])
+  @@map("api_keys")
 }
 
-model company_users {
-  id                                       String                  @id
-  company_id                               String
-  email                                    String
-  password_hash                            String
-  first_name                               String
-  last_name                                String
-  role                                     UserRole                @default(EMPLOYEE)
-  is_active                                Boolean                 @default(true)
-  last_login_at                            DateTime?
-  created_at                               DateTime                @default(now())
-  updated_at                               DateTime
-  api_keys                                 api_keys[]
-  bulk_emails                              bulk_emails[]
-  companies                                companies               @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  contacts                                 contacts[]
-  email_campaigns                          email_campaigns[]
-  email_parsing_results                    email_parsing_results[]
-  email_replies                            email_replies[]
-  email_templates                          email_templates[]
-  email_webhooks                           email_webhooks[]
-  follow_up_rules                          follow_up_rules[]
-  imap_configurations                      imap_configurations[]
-  parsing_learning_data                    parsing_learning_data[]
-  password_reset_tokens                    password_reset_tokens[]
-  quotes_quotes_awarded_byTocompany_users  quotes[]                @relation("quotes_awarded_byTocompany_users")
-  quotes_quotes_created_byTocompany_users  quotes[]                @relation("quotes_created_byTocompany_users")
-  quotes_quotes_verified_byTocompany_users quotes[]                @relation("quotes_verified_byTocompany_users")
-  refresh_tokens                           refresh_tokens[]
-  rfq_templates                            rfq_templates[]
-  rfqs_rfqs_assigned_toTocompany_users     rfqs[]                  @relation("rfqs_assigned_toTocompany_users")
-  rfqs_rfqs_created_byTocompany_users      rfqs[]                  @relation("rfqs_created_byTocompany_users")
-  shipping_lines                           shipping_lines[]
-  webhook_endpoints                        webhook_endpoints[]
+model SupportTicket {
+  id            String         @id @default(uuid())
+  companyId     String?        @map("company_id")
+  userId        String?        @map("user_id")
+  userType      UserType?      @map("user_type")
+  title         String
+  description   String
+  priority      TicketPriority @default(NORMAL)
+  category      String?
+  status        TicketStatus   @default(OPEN)
+  assignedTo    String?        @map("assigned_to")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  resolvedAt    DateTime?      @map("resolved_at")
+  closedAt      DateTime?      @map("closed_at")
+  assignedAdmin Admin?         @relation("AssignedTickets", fields: [assignedTo], references: [id])
+  company       Company?       @relation(fields: [companyId], references: [id])
 
-  @@unique([company_id, email])
-}
-
-model company_warnings {
-  id                                          String          @id
-  company_id                                  String
-  title                                       String
-  reason                                      String
-  severity                                    WarningSeverity @default(MODERATE)
-  category                                    WarningCategory @default(GENERAL)
-  issued_by                                   String
-  issued_at                                   DateTime        @default(now())
-  expires_at                                  DateTime?
-  is_resolved                                 Boolean         @default(false)
-  resolved_at                                 DateTime?
-  resolved_by                                 String?
-  action_required                             String?
-  notes                                       String?
-  companies                                   companies       @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  admins_company_warnings_issued_byToadmins   admins          @relation("company_warnings_issued_byToadmins", fields: [issued_by], references: [id])
-  admins_company_warnings_resolved_byToadmins admins?         @relation("company_warnings_resolved_byToadmins", fields: [resolved_by], references: [id])
-
-  @@index([company_id, is_resolved])
-  @@index([severity, is_resolved])
-}
-
-model contacts {
-  id                    String                 @id
-  company_id            String
-  shipping_line_id      String
-  first_name            String
-  last_name             String
-  email                 String
-  phone                 String?
-  job_title             String?
-  department            String?
-  tags                  String[]
-  notes                 String?
-  performance_score     Int                    @default(0)
-  do_not_contact        Boolean                @default(false)
-  is_primary            Boolean                @default(false)
-  is_active             Boolean                @default(true)
-  is_archived           Boolean                @default(false)
-  created_by            String
-  created_at            DateTime               @default(now())
-  updated_at            DateTime
-  avg_response_time     Int?
-  communication_history String?
-  last_response_at      DateTime?
-  preferences           String?
-  quote_quality         Int?
-  reliability           Int?
-  response_rate         Float?
-  seniority             String?
-  specialization        String?
-  total_responses       Int                    @default(0)
-  total_rfqs_sent       Int                    @default(0)
-  company_name          String?
-  companies             companies              @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users         company_users          @relation(fields: [created_by], references: [id])
-  shipping_lines        shipping_lines         @relation(fields: [shipping_line_id], references: [id], onDelete: Cascade)
-  email_logs            email_logs[]
-  email_replies         email_replies[]
-  quotes                quotes[]
-  rfq_recipients        rfq_recipients[]
-  scheduled_follow_ups  scheduled_follow_ups[]
-
-  @@unique([company_id, shipping_line_id, email])
-}
-
-model email_attachments {
-  id                String        @id
-  email_reply_id    String
-  filename          String
-  original_filename String
-  mime_type         String
-  size              Int
-  content           String
-  file_path         String?
-  is_processed      Boolean       @default(false)
-  processing_status String?
-  extracted_text    String?
-  created_at        DateTime      @default(now())
-  email_replies     email_replies @relation(fields: [email_reply_id], references: [id], onDelete: Cascade)
-}
-
-model email_bounces {
-  id            String     @id
-  email_log_id  String
-  bounce_type   BounceType
-  bounce_reason String?
-  bounce_code   String?
-  bounced_at    DateTime   @default(now())
-  is_permanent  Boolean    @default(false)
-  email_logs    email_logs @relation(fields: [email_log_id], references: [id], onDelete: Cascade)
-}
-
-model email_campaigns {
-  id               String         @id
-  company_id       String
-  name             String
-  description      String?
-  campaign_type    CampaignType   @default(RFQ_BLAST)
-  status           CampaignStatus @default(DRAFT)
-  start_date       DateTime?
-  end_date         DateTime?
-  total_emails     Int            @default(0)
-  sent_emails      Int            @default(0)
-  delivered_emails Int            @default(0)
-  opened_emails    Int            @default(0)
-  clicked_emails   Int            @default(0)
-  bounced_emails   Int            @default(0)
-  failed_emails    Int            @default(0)
-  response_rate    Float?
-  open_rate        Float?
-  click_rate       Float?
-  created_by       String
-  created_at       DateTime       @default(now())
-  updated_at       DateTime
-  companies        companies      @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users    company_users  @relation(fields: [created_by], references: [id])
-  email_logs       email_logs[]
-}
-
-model email_engagements {
-  id              String         @id
-  email_log_id    String
-  engagement_type EngagementType
-  timestamp       DateTime       @default(now())
-  user_agent      String?
-  ip_address      String?
-  location        String?
-  device          String?
-  browser         String?
-  os              String?
-  link_url        String?
-  link_text       String?
-  email_logs      email_logs     @relation(fields: [email_log_id], references: [id], onDelete: Cascade)
-}
-
-model email_logs {
-  id                     String                @id
-  company_id             String
-  to_email               String
-  from_email             String
-  subject                String
-  body_html              String?
-  body_text              String?
-  message_id             String?
-  status                 EmailStatus           @default(QUEUED)
-  rfq_id                 String?
-  contact_id             String?
-  template_id            String?
-  queued_at              DateTime              @default(now())
-  sent_at                DateTime?
-  delivered_at           DateTime?
-  opened_at              DateTime?
-  clicked_at             DateTime?
-  bounced_at             DateTime?
-  failed_at              DateTime?
-  error_message          String?
-  retry_count            Int                   @default(0)
-  created_at             DateTime              @default(now())
-  bulk_email_id          String?
-  campaign_id            String?
-  email_type             EmailType             @default(RFQ)
-  follow_up_rule_id      String?
-  is_bulk_email          Boolean               @default(false)
-  language               String                @default("en")
-  max_retries            Int                   @default(3)
-  next_retry_at          DateTime?
-  personalization_data   Json?
-  priority               EmailPriority         @default(NORMAL)
-  scheduled_follow_up_id String?
-  scheduled_for          DateTime?
-  timezone               String?
-  tracking_pixel_id      String?
-  unsubscribe_token      String?
-  email_bounces          email_bounces[]
-  email_engagements      email_engagements[]
-  bulk_emails            bulk_emails?          @relation(fields: [bulk_email_id], references: [id])
-  email_campaigns        email_campaigns?      @relation(fields: [campaign_id], references: [id])
-  companies              companies             @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  contacts               contacts?             @relation(fields: [contact_id], references: [id])
-  follow_up_rules        follow_up_rules?      @relation(fields: [follow_up_rule_id], references: [id])
-  rfqs                   rfqs?                 @relation(fields: [rfq_id], references: [id])
-  scheduled_follow_ups   scheduled_follow_ups? @relation(fields: [scheduled_follow_up_id], references: [id])
-  email_templates        email_templates?      @relation(fields: [template_id], references: [id])
-}
-
-model email_parsing_results {
-  id                String           @id
-  email_reply_id    String
-  parsing_type      ParsingType
-  extracted_data    Json
-  confidence_score  Decimal          @db.Decimal(3, 2)
-  raw_text          String?
-  processed_text    String?
-  validation_status ValidationStatus @default(PENDING)
-  validation_notes  String?
-  is_validated      Boolean          @default(false)
-  validated_by      String?
-  validated_at      DateTime?
-  created_at        DateTime         @default(now())
-  updated_at        DateTime
-  email_replies     email_replies    @relation(fields: [email_reply_id], references: [id], onDelete: Cascade)
-  company_users     company_users?   @relation(fields: [validated_by], references: [id])
-}
-
-model email_replies {
-  id                    String                  @id
-  company_id            String
-  message_id            String                  @unique
-  in_reply_to           String?
-  references            String[]
-  thread_id             String?
-  from_email            String
-  from_name             String?
-  to_email              String
-  subject               String
-  body_html             String?
-  body_text             String?
-  received_at           DateTime
-  processed_at          DateTime?
-  status                ReplyStatus             @default(RECEIVED)
-  source                ReplySource             @default(IMAP)
-  raw_content           String?
-  headers               Json?
-  rfq_id                String?
-  contact_id            String?
-  shipping_line_id      String?
-  quote_id              String?
-  confidence_score      Decimal?                @db.Decimal(3, 2)
-  requires_review       Boolean                 @default(false)
-  review_notes          String?
-  reviewed_by           String?
-  reviewed_at           DateTime?
-  created_at            DateTime                @default(now())
-  updated_at            DateTime
-  ai_processing_logs    ai_processing_logs[]
-  email_attachments     email_attachments[]
-  email_parsing_results email_parsing_results[]
-  companies             companies               @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  contacts              contacts?               @relation(fields: [contact_id], references: [id])
-  quotes                quotes?                 @relation(fields: [quote_id], references: [id])
-  company_users         company_users?          @relation(fields: [reviewed_by], references: [id])
-  rfqs                  rfqs?                   @relation(fields: [rfq_id], references: [id])
-  shipping_lines        shipping_lines?         @relation(fields: [shipping_line_id], references: [id])
-}
-
-model email_templates {
-  id               String            @id
-  company_id       String
-  name             String
-  template_type    String
-  subject          String
-  body_html        String
-  body_text        String?
-  supported_tokens String[]
-  language         String            @default("en")
-  is_default       Boolean           @default(false)
-  is_active        Boolean           @default(true)
-  created_by       String
-  created_at       DateTime          @default(now())
-  updated_at       DateTime
-  bulk_emails      bulk_emails[]
-  email_logs       email_logs[]
-  companies        companies         @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users    company_users     @relation(fields: [created_by], references: [id])
-  follow_up_rules  follow_up_rules[]
-
-  @@unique([company_id, name])
-}
-
-model email_unsubscribes {
-  id                String    @id
-  company_id        String
-  email             String
-  unsubscribe_token String    @unique
-  reason            String?
-  unsubscribed_at   DateTime  @default(now())
-  companies         companies @relation(fields: [company_id], references: [id], onDelete: Cascade)
-
-  @@unique([company_id, email])
-}
-
-model email_webhooks {
-  id                 String        @id
-  company_id         String
-  name               String
-  provider           String
-  webhook_url        String
-  secret             String?
-  is_active          Boolean       @default(true)
-  last_received_at   DateTime?
-  last_error_at      DateTime?
-  last_error_message String?
-  total_received     Int           @default(0)
-  total_processed    Int           @default(0)
-  total_failed       Int           @default(0)
-  created_by         String
-  created_at         DateTime      @default(now())
-  updated_at         DateTime
-  companies          companies     @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users      company_users @relation(fields: [created_by], references: [id])
-}
-
-model financial_details {
-  id                        String    @id
-  company_id                String    @unique
-  total_revenue             Decimal   @default(0) @db.Decimal(12, 2)
-  total_transactions        Int       @default(0)
-  successful_transactions   Int       @default(0)
-  failed_transactions       Int       @default(0)
-  refunded_transactions     Int       @default(0)
-  average_transaction_value Decimal   @default(0) @db.Decimal(12, 2)
-  monthly_recurring_revenue Decimal   @default(0) @db.Decimal(12, 2)
-  annual_recurring_revenue  Decimal   @default(0) @db.Decimal(12, 2)
-  churn_rate                Decimal   @default(0) @db.Decimal(5, 2)
-  customer_lifetime_value   Decimal   @default(0) @db.Decimal(12, 2)
-  last_updated_at           DateTime  @default(now())
-  created_at                DateTime  @default(now())
-  updated_at                DateTime
-  companies                 companies @relation(fields: [company_id], references: [id], onDelete: Cascade)
-}
-
-model follow_up_rules {
-  id                   String                 @id
-  company_id           String
-  name                 String
-  description          String?
-  days_after_send      Int                    @default(3)
-  only_if_not_opened   Boolean                @default(false)
-  only_if_not_replied  Boolean                @default(true)
-  max_follow_ups       Int                    @default(2)
-  email_template_id    String?
-  is_active            Boolean                @default(true)
-  created_by           String
-  created_at           DateTime               @default(now())
-  updated_at           DateTime
-  business_days_only   Boolean                @default(false)
-  custom_schedule      Json?
-  exclude_holidays     Boolean                @default(false)
-  exclude_weekends     Boolean                @default(false)
-  follow_up_intervals  Json?
-  max_time_since_open  Int?
-  min_time_since_open  Int?
-  only_if_clicked      Boolean                @default(false)
-  only_if_delivered    Boolean                @default(false)
-  only_if_opened       Boolean                @default(false)
-  schedule_type        ScheduleType           @default(IMMEDIATE)
-  specific_time        String?
-  timezone             String?                @default("UTC")
-  email_logs           email_logs[]
-  companies            companies              @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users        company_users          @relation(fields: [created_by], references: [id])
-  email_templates      email_templates?       @relation(fields: [email_template_id], references: [id])
-  scheduled_follow_ups scheduled_follow_ups[]
-}
-
-model imap_configurations {
-  id                   String        @id
-  company_id           String
-  name                 String
-  host                 String
-  port                 Int
-  secure               Boolean       @default(true)
-  username             String
-  password             String
-  folder               String        @default("INBOX")
-  is_active            Boolean       @default(true)
-  last_checked_at      DateTime?
-  last_error_at        DateTime?
-  last_error_message   String?
-  check_interval       Int           @default(300)
-  max_emails_per_check Int           @default(50)
-  created_by           String
-  created_at           DateTime      @default(now())
-  updated_at           DateTime
-  companies            companies     @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users        company_users @relation(fields: [created_by], references: [id])
-}
-
-model notifications {
-  id           String               @id
-  title        String
-  message      String
-  type         NotificationType     @default(INFO)
-  priority     NotificationPriority @default(NORMAL)
-  company_id   String?
-  is_global    Boolean              @default(false)
-  is_read      Boolean              @default(false)
-  created_by   String
-  created_at   DateTime             @default(now())
-  read_at      DateTime?
-  expires_at   DateTime?
-  action_url   String?
-  action_label String?
-  companies    companies?           @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  admins       admins               @relation(fields: [created_by], references: [id])
-
-  @@index([company_id, is_read])
-  @@index([is_global, created_at])
-}
-
-model parsing_learning_data {
-  id               String         @id
-  company_id       String
-  original_text    String
-  extracted_data   Json
-  corrected_data   Json?
-  confidence_score Decimal        @db.Decimal(3, 2)
-  is_corrected     Boolean        @default(false)
-  correction_notes String?
-  corrected_by     String?
-  corrected_at     DateTime?
-  parsing_type     ParsingType
-  created_at       DateTime       @default(now())
-  companies        companies      @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users    company_users? @relation(fields: [corrected_by], references: [id])
-}
-
-model password_reset_tokens {
-  id              String         @id
-  token_hash      String         @unique
-  admin_user_id   String?
-  company_user_id String?
-  user_type       UserType
-  company_id      String?
-  email           String
-  expires_at      DateTime
-  is_used         Boolean        @default(false)
-  used_at         DateTime?
-  created_at      DateTime       @default(now())
-  admins          admins?        @relation(fields: [admin_user_id], references: [id], onDelete: Cascade)
-  companies       companies?     @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users   company_users? @relation(fields: [company_user_id], references: [id], onDelete: Cascade)
-}
-
-model quotes {
-  id                                              String          @id
-  rfq_id                                          String
-  contact_id                                      String
-  shipping_line_id                                String
-  quote_reference                                 String?
-  ocean_freight                                   Decimal?        @db.Decimal(12, 2)
-  currency                                        String          @default("USD")
-  baf                                             Decimal?        @db.Decimal(12, 2)
-  caf                                             Decimal?        @db.Decimal(12, 2)
-  security_fee                                    Decimal?        @db.Decimal(12, 2)
-  documentation_fee                               Decimal?        @db.Decimal(12, 2)
-  handling_charges                                Decimal?        @db.Decimal(12, 2)
-  other_charges                                   Json?
-  total_amount                                    Decimal         @db.Decimal(12, 2)
-  validity_date                                   DateTime
-  payment_terms                                   String?
-  transit_time                                    String?
-  free_time_at_origin                             Int?
-  free_time_at_destination                        Int?
-  terms_and_conditions                            String?
-  special_notes                                   String?
-  source                                          QuoteSource     @default(EMAIL)
-  is_parsed_by_ai                                 Boolean         @default(false)
-  confidence_score                                Decimal?        @db.Decimal(3, 2)
-  raw_email_content                               String?
-  status                                          QuoteStatus     @default(ACTIVE)
-  is_winner                                       Boolean         @default(false)
-  created_by                                      String?
-  created_at                                      DateTime        @default(now())
-  updated_at                                      DateTime
-  attachments                                     String[]
-  awarded_by                                      String?
-  awarded_date                                    DateTime?
-  carrier_benchmark                               Json?
-  communication_score                             Int?
-  comparison_rank                                 Int?
-  expiration_date                                 DateTime?
-  historical_comparison                           Json?
-  is_awarded                                      Boolean         @default(false)
-  is_expired                                      Boolean         @default(false)
-  is_verified                                     Boolean         @default(false)
-  market_position                                 String?
-  market_trends                                   Json?
-  notes                                           String?
-  overall_score                                   Decimal?        @db.Decimal(3, 2)
-  price_competitiveness                           Decimal?        @db.Decimal(3, 2)
-  quote_number                                    String?
-  rate_optimization                               Json?
-  received_date                                   DateTime?
-  rejection_reason                                String?
-  reliability                                     Int?
-  response_time                                   Int?
-  service_quality                                 Int?
-  tags                                            String[]
-  verified_at                                     DateTime?
-  verified_by                                     String?
-  email_replies                                   email_replies[]
-  company_users_quotes_awarded_byTocompany_users  company_users?  @relation("quotes_awarded_byTocompany_users", fields: [awarded_by], references: [id])
-  contacts                                        contacts        @relation(fields: [contact_id], references: [id])
-  company_users_quotes_created_byTocompany_users  company_users?  @relation("quotes_created_byTocompany_users", fields: [created_by], references: [id])
-  rfqs                                            rfqs            @relation(fields: [rfq_id], references: [id], onDelete: Cascade)
-  shipping_lines                                  shipping_lines  @relation(fields: [shipping_line_id], references: [id])
-  company_users_quotes_verified_byTocompany_users company_users?  @relation("quotes_verified_byTocompany_users", fields: [verified_by], references: [id])
-}
-
-model refresh_tokens {
-  id              String         @id
-  token_hash      String
-  admin_user_id   String?
-  company_user_id String?
-  user_type       UserType
-  company_id      String?
-  expires_at      DateTime
-  is_revoked      Boolean        @default(false)
-  created_at      DateTime       @default(now())
-  admins          admins?        @relation(fields: [admin_user_id], references: [id])
-  companies       companies?     @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users   company_users? @relation(fields: [company_user_id], references: [id])
-}
-
-model rfq_recipients {
-  id                     String         @id
-  rfq_id                 String
-  contact_id             String
-  shipping_line_id       String
-  email_sent_at          DateTime
-  email_delivered_at     DateTime?
-  email_opened_at        DateTime?
-  email_clicked_at       DateTime?
-  last_email_activity_at DateTime?
-  has_responded          Boolean        @default(false)
-  response_received_at   DateTime?
-  created_at             DateTime       @default(now())
-  contacts               contacts       @relation(fields: [contact_id], references: [id], onDelete: Cascade)
-  rfqs                   rfqs           @relation(fields: [rfq_id], references: [id], onDelete: Cascade)
-  shipping_lines         shipping_lines @relation(fields: [shipping_line_id], references: [id], onDelete: Cascade)
-
-  @@unique([rfq_id, contact_id])
-}
-
-model rfq_templates {
-  id                   String          @id
-  company_id           String
-  name                 String
-  description          String?
-  subject_template     String
-  body_template        String
-  origin_port          String?
-  destination_port     String?
-  commodity            String?
-  container_type       String?
-  container_quantity   Int?
-  cargo_weight         Decimal?        @db.Decimal(10, 2)
-  cargo_volume         Decimal?        @db.Decimal(10, 2)
-  incoterm             String?
-  special_requirements String?
-  required_services    String[]
-  is_default           Boolean         @default(false)
-  created_by           String
-  created_at           DateTime        @default(now())
-  updated_at           DateTime
-  category             String?
-  dynamic_fields       Json?
-  is_active            Boolean         @default(true)
-  is_public            Boolean         @default(false)
-  language             String          @default("en")
-  last_used_at         DateTime?
-  parent_template_id   String?
-  tags                 String[]
-  template_variables   String[]
-  trade_lane           String?
-  usage_count          Int             @default(0)
-  version              Int             @default(1)
-  companies            companies       @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users        company_users   @relation(fields: [created_by], references: [id])
-  rfq_templates        rfq_templates?  @relation("rfq_templatesTorfq_templates", fields: [parent_template_id], references: [id])
-  other_rfq_templates  rfq_templates[] @relation("rfq_templatesTorfq_templates")
-}
-
-model rfqs {
-  id                                            String                 @id
-  company_id                                    String
-  rfq_number                                    String
-  title                                         String
-  description                                   String?
-  origin_port                                   String
-  destination_port                              String
-  commodity                                     String?
-  container_type                                String?
-  container_quantity                            Int                    @default(1)
-  cargo_weight                                  Decimal?               @db.Decimal(10, 2)
-  cargo_volume                                  Decimal?               @db.Decimal(10, 2)
-  incoterm                                      String                 @default("FOB")
-  cargo_ready_date                              DateTime?
-  quote_deadline                                DateTime?
-  shipment_urgency                              Urgency                @default(NORMAL)
-  special_requirements                          String?
-  required_services                             String[]
-  preferred_carriers                            String[]
-  email_subject                                 String?
-  email_body                                    String?
-  status                                        RFQStatus              @default(DRAFT)
-  sent_at                                       DateTime?
-  closed_at                                     DateTime?
-  total_contacts_sent                           Int                    @default(0)
-  total_quotes_received                         Int                    @default(0)
-  best_quote_amount                             Decimal?               @db.Decimal(12, 2)
-  average_quote_amount                          Decimal?               @db.Decimal(12, 2)
-  created_by                                    String
-  assigned_to                                   String?
-  created_at                                    DateTime               @default(now())
-  updated_at                                    DateTime
-  currency                                      String                 @default("USD")
-  estimated_value                               Decimal?               @db.Decimal(12, 2)
-  notes                                         String?
-  priority                                      Priority               @default(MEDIUM)
-  response_rate                                 Float?
-  tags                                          String[]
-  trade_lane                                    String?
-  email_logs                                    email_logs[]
-  email_replies                                 email_replies[]
-  quotes                                        quotes[]
-  rfq_recipients                                rfq_recipients[]
-  company_users_rfqs_assigned_toTocompany_users company_users?         @relation("rfqs_assigned_toTocompany_users", fields: [assigned_to], references: [id])
-  companies                                     companies              @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users_rfqs_created_byTocompany_users  company_users          @relation("rfqs_created_byTocompany_users", fields: [created_by], references: [id])
-  scheduled_follow_ups                          scheduled_follow_ups[]
-
-  @@unique([company_id, rfq_number])
-}
-
-model route_performance_metrics {
-  id                          String          @id
-  company_id                  String
-  origin_port                 String
-  destination_port            String
-  period_start                DateTime
-  period_end                  DateTime
-  period_type                 String
-  total_rfqs                  Int             @default(0)
-  total_quotes                Int             @default(0)
-  average_quote_amount        Decimal?        @db.Decimal(12, 2)
-  lowest_quote_amount         Decimal?        @db.Decimal(12, 2)
-  highest_quote_amount        Decimal?        @db.Decimal(12, 2)
-  most_competitive_carrier_id String?
-  calculated_at               DateTime        @default(now())
-  companies                   companies       @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  shipping_lines              shipping_lines? @relation(fields: [most_competitive_carrier_id], references: [id])
-
-  @@unique([company_id, origin_port, destination_port, period_start, period_end, period_type])
-}
-
-model scheduled_follow_ups {
-  id                    String          @id
-  rfq_id                String
-  contact_id            String
-  follow_up_rule_id     String
-  scheduled_at          DateTime
-  sent_at               DateTime?
-  status                FollowUpStatus  @default(SCHEDULED)
-  skip_reason           String?
-  follow_up_sequence    Int             @default(1)
-  created_at            DateTime        @default(now())
-  condition_met_at      DateTime?
-  condition_type        String?
-  is_business_hours     Boolean         @default(false)
-  original_scheduled_at DateTime?
-  reschedule_reason     String?
-  rescheduled_at        DateTime?
-  timezone              String?         @default("UTC")
-  email_logs            email_logs[]
-  contacts              contacts        @relation(fields: [contact_id], references: [id], onDelete: Cascade)
-  follow_up_rules       follow_up_rules @relation(fields: [follow_up_rule_id], references: [id])
-  rfqs                  rfqs            @relation(fields: [rfq_id], references: [id], onDelete: Cascade)
-}
-
-model shipping_lines {
-  id                          String                        @id
-  company_id                  String
-  name                        String
-  code                        String?
-  website                     String?
-  headquarters_location       String?
-  description                 String?
-  is_active                   Boolean                       @default(true)
-  is_archived                 Boolean                       @default(false)
-  created_by                  String
-  created_at                  DateTime                      @default(now())
-  updated_at                  DateTime
-  headquarters_country        String?
-  is_custom                   Boolean                       @default(false)
-  notes                       String?
-  reliability                 Int?
-  scac_code                   String?
-  serviceQuality              Int?
-  services                    String[]
-  specialization              String?
-  tags                        String[]
-  trade_lanes                 String[]
-  category                    String?
-  email                       String?
-  carrier_performance_metrics carrier_performance_metrics[]
-  contacts                    contacts[]
-  email_replies               email_replies[]
-  quotes                      quotes[]
-  rfq_recipients              rfq_recipients[]
-  route_performance_metrics   route_performance_metrics[]
-  companies                   companies                     @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users               company_users                 @relation(fields: [created_by], references: [id])
-
-  @@unique([company_id, name])
-}
-
-model subscription_plans {
-  id                        String         @id
-  name                      String
-  description               String?
-  price_monthly             Decimal?       @db.Decimal(10, 2)
-  price_yearly              Decimal?       @db.Decimal(10, 2)
-  max_users                 Int?
-  max_rfqs_per_month        Int?
-  max_contacts              Int?
-  max_email_sends_per_month Int?
-  features                  Json?
-  is_active                 Boolean        @default(true)
-  created_at                DateTime       @default(now())
-  transactions              transactions[]
-}
-
-model support_tickets {
-  id          String         @id
-  company_id  String?
-  user_id     String?
-  user_type   UserType?
-  title       String
-  description String
-  priority    TicketPriority @default(NORMAL)
-  category    String?
-  status      TicketStatus   @default(OPEN)
-  assigned_to String?
-  created_at  DateTime       @default(now())
-  resolved_at DateTime?
-  closed_at   DateTime?
-  admins      admins?        @relation(fields: [assigned_to], references: [id])
-  companies   companies?     @relation(fields: [company_id], references: [id])
-}
-
-model system_features {
-  id               String             @id
-  name             String             @unique
-  description      String?
-  feature_key      String             @unique
-  feature_type     FeatureType
-  is_active        Boolean            @default(true)
-  created_at       DateTime           @default(now())
-  category         String?
-  icon             String?
-  is_premium       Boolean            @default(false)
-  permissions      String[]
-  required_role    String?
-  route            String?
-  company_features company_features[]
-}
-
-model transactions {
-  id                   String              @id
-  company_id           String
-  subscription_plan_id String?
-  transaction_type     TransactionType
-  amount               Decimal             @db.Decimal(12, 2)
-  currency             String              @default("USD")
-  status               TransactionStatus   @default(PENDING)
-  payment_method       PaymentMethod?
-  payment_provider     String?
-  external_id          String?
-  description          String?
-  metadata             Json?
-  processed_at         DateTime?
-  failed_at            DateTime?
-  failure_reason       String?
-  refunded_at          DateTime?
-  refund_amount        Decimal?            @db.Decimal(12, 2)
-  refund_reason        String?
-  invoice_number       String?
-  invoice_url          String?
-  receipt_url          String?
-  created_at           DateTime            @default(now())
-  updated_at           DateTime
-  companies            companies           @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  subscription_plans   subscription_plans? @relation(fields: [subscription_plan_id], references: [id])
-}
-
-model usage_metrics {
-  id                  String    @id
-  company_id          String
-  period_month        Int
-  period_year         Int
-  rfqs_created        Int       @default(0)
-  emails_sent         Int       @default(0)
-  ai_parsing_requests Int       @default(0)
-  api_calls           Int       @default(0)
-  file_storage_mb     Decimal   @default(0) @db.Decimal(10, 2)
-  last_updated_at     DateTime  @default(now())
-  companies           companies @relation(fields: [company_id], references: [id], onDelete: Cascade)
-
-  @@unique([company_id, period_month, period_year])
-}
-
-model webhook_endpoints {
-  id              String        @id
-  company_id      String
-  name            String
-  url             String
-  secret          String?
-  events          String[]
-  is_active       Boolean       @default(true)
-  last_success_at DateTime?
-  last_failure_at DateTime?
-  failure_count   Int           @default(0)
-  created_by      String
-  created_at      DateTime      @default(now())
-  updated_at      DateTime
-  companies       companies     @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  company_users   company_users @relation(fields: [created_by], references: [id])
+  @@map("support_tickets")
 }
 
 enum AdminRole {
@@ -1050,45 +1083,57 @@ enum AdminRole {
   SUPER_ADMIN
 }
 
-enum BounceType {
-  HARD
-  SOFT
-  SPAM
-  BLOCKED
-  INVALID
+enum UserRole {
+  ADMIN
+  MANAGER
+  EMPLOYEE
 }
 
-enum BulkEmailStatus {
+enum UserType {
+  ADMIN
+  COMPANY_USER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  CANCELED
+}
+
+enum RFQStatus {
   DRAFT
-  SCHEDULED
-  SENDING
   SENT
-  FAILED
-  CANCELLED
+  CLOSED
+  AWARDED
+  EXPIRED
 }
 
-enum CampaignStatus {
-  DRAFT
-  SCHEDULED
-  RUNNING
-  COMPLETED
-  PAUSED
-  CANCELLED
-}
-
-enum CampaignType {
-  RFQ_BLAST
-  FOLLOW_UP_CAMPAIGN
-  MARKETING
-  ANNOUNCEMENT
-  NEWSLETTER
-}
-
-enum EmailPriority {
-  LOW
-  NORMAL
-  HIGH
+enum Urgency {
   URGENT
+  NORMAL
+  FLEXIBLE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum QuoteSource {
+  EMAIL
+  MANUAL
+  PHONE
+  WHATSAPP
+}
+
+enum QuoteStatus {
+  ACTIVE
+  EXPIRED
+  WITHDRAWN
+  AWARDED
 }
 
 enum EmailStatus {
@@ -1114,6 +1159,39 @@ enum EmailType {
   PAYMENT_RECEIPT
 }
 
+enum EmailPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum BulkEmailStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum CampaignType {
+  RFQ_BLAST
+  FOLLOW_UP_CAMPAIGN
+  MARKETING
+  ANNOUNCEMENT
+  NEWSLETTER
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  RUNNING
+  COMPLETED
+  PAUSED
+  CANCELLED
+}
+
 enum EngagementType {
   OPEN
   CLICK
@@ -1122,10 +1200,12 @@ enum EngagementType {
   UNSUBSCRIBE
 }
 
-enum FeatureType {
-  BOOLEAN
-  LIMIT
-  ADDON
+enum BounceType {
+  HARD
+  SOFT
+  SPAM
+  BLOCKED
+  INVALID
 }
 
 enum FollowUpStatus {
@@ -1135,120 +1215,10 @@ enum FollowUpStatus {
   FAILED
 }
 
-enum NotificationPriority {
-  LOW
-  NORMAL
-  HIGH
-  URGENT
-}
-
-enum NotificationType {
-  INFO
-  SUCCESS
-  WARNING
-  ERROR
-  ANNOUNCEMENT
-  SYSTEM
-  BILLING
-  FEATURE
-  MAINTENANCE
-}
-
-enum ParsingType {
-  PRICE_EXTRACTION
-  CURRENCY_DETECTION
-  TERMS_EXTRACTION
-  CONTACT_EXTRACTION
-  QUOTE_SUMMARY
-  ATTACHMENT_PARSING
-}
-
-enum PaymentMethod {
-  CREDIT_CARD
-  DEBIT_CARD
-  BANK_TRANSFER
-  PAYPAL
-  STRIPE
-  WIRE_TRANSFER
-  CHECK
-  CASH
-  CRYPTOCURRENCY
-  OTHER
-}
-
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
-enum ProcessingStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-  RETRYING
-}
-
-enum ProcessingType {
-  EMAIL_PARSING
-  PRICE_EXTRACTION
-  CURRENCY_CONVERSION
-  TERMS_ANALYSIS
-  CONTACT_MATCHING
-  THREAD_MATCHING
-}
-
-enum QuoteSource {
-  EMAIL
-  MANUAL
-  PHONE
-  WHATSAPP
-}
-
-enum QuoteStatus {
-  ACTIVE
-  EXPIRED
-  WITHDRAWN
-  AWARDED
-}
-
-enum RFQStatus {
-  DRAFT
-  SENT
-  CLOSED
-  AWARDED
-  EXPIRED
-}
-
-enum ReplySource {
-  IMAP
-  WEBHOOK
-  MANUAL
-  API
-}
-
-enum ReplyStatus {
-  RECEIVED
-  PROCESSING
-  PROCESSED
-  FAILED
-  REVIEWED
-}
-
-enum ScheduleType {
-  IMMEDIATE
-  SPECIFIC_TIME
-  BUSINESS_HOURS
-  CUSTOM
-}
-
-enum SubscriptionStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-  CANCELED
+enum FeatureType {
+  BOOLEAN
+  LIMIT
+  ADDON
 }
 
 enum TicketPriority {
@@ -1265,15 +1235,59 @@ enum TicketStatus {
   CLOSED
 }
 
-enum TransactionStatus {
+enum ReplyStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  FAILED
+  REVIEWED
+}
+
+enum ReplySource {
+  IMAP
+  WEBHOOK
+  MANUAL
+  API
+}
+
+enum ParsingType {
+  PRICE_EXTRACTION
+  CURRENCY_DETECTION
+  TERMS_EXTRACTION
+  CONTACT_EXTRACTION
+  QUOTE_SUMMARY
+  ATTACHMENT_PARSING
+}
+
+enum ValidationStatus {
+  PENDING
+  VALIDATED
+  REJECTED
+  FLAGGED
+}
+
+enum ProcessingType {
+  EMAIL_PARSING
+  PRICE_EXTRACTION
+  CURRENCY_CONVERSION
+  TERMS_ANALYSIS
+  CONTACT_MATCHING
+  THREAD_MATCHING
+}
+
+enum ProcessingStatus {
   PENDING
   PROCESSING
   COMPLETED
   FAILED
-  CANCELLED
-  REFUNDED
-  PARTIALLY_REFUNDED
-  CHARGEBACK
+  RETRYING
+}
+
+enum ScheduleType {
+  IMMEDIATE
+  SPECIFIC_TIME
+  BUSINESS_HOURS
+  CUSTOM
 }
 
 enum TransactionType {
@@ -1288,28 +1302,101 @@ enum TransactionType {
   DEBIT
 }
 
-enum Urgency {
-  URGENT
-  NORMAL
-  FLEXIBLE
-}
-
-enum UserRole {
-  ADMIN
-  MANAGER
-  EMPLOYEE
-}
-
-enum UserType {
-  ADMIN
-  COMPANY_USER
-}
-
-enum ValidationStatus {
+enum TransactionStatus {
   PENDING
-  VALIDATED
-  REJECTED
-  FLAGGED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  CHARGEBACK
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  PAYPAL
+  STRIPE
+  WIRE_TRANSFER
+  CHECK
+  CASH
+  CRYPTOCURRENCY
+  OTHER
+}
+
+model Notification {
+  id          String               @id @default(uuid())
+  title       String
+  message     String               @db.Text
+  type        NotificationType     @default(INFO)
+  priority    NotificationPriority @default(NORMAL)
+  companyId   String?              @map("company_id")
+  isGlobal    Boolean              @default(false) @map("is_global")
+  isRead      Boolean              @default(false) @map("is_read")
+  createdBy   String               @map("created_by")
+  createdAt   DateTime             @default(now()) @map("created_at")
+  readAt      DateTime?            @map("read_at")
+  expiresAt   DateTime?            @map("expires_at")
+  actionUrl   String?              @map("action_url")
+  actionLabel String?              @map("action_label")
+  company     Company?             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  admin       Admin                @relation(fields: [createdBy], references: [id])
+
+  @@index([companyId, isRead])
+  @@index([isGlobal, createdAt])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  ANNOUNCEMENT
+  SYSTEM
+  BILLING
+  FEATURE
+  MAINTENANCE
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model CompanyWarning {
+  id          String               @id @default(uuid())
+  companyId   String               @map("company_id")
+  title       String
+  reason      String               @db.Text
+  severity    WarningSeverity      @default(MODERATE)
+  category    WarningCategory      @default(GENERAL)
+  issuedBy    String               @map("issued_by")
+  issuedAt    DateTime             @default(now()) @map("issued_at")
+  expiresAt   DateTime?            @map("expires_at")
+  isResolved  Boolean              @default(false) @map("is_resolved")
+  resolvedAt  DateTime?            @map("resolved_at")
+  resolvedBy  String?              @map("resolved_by")
+  actionRequired String?           @map("action_required") @db.Text
+  notes       String?              @db.Text
+  company     Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  admin       Admin                @relation(fields: [issuedBy], references: [id])
+  resolver    Admin?               @relation("WarningResolver", fields: [resolvedBy], references: [id])
+
+  @@index([companyId, isResolved])
+  @@index([severity, isResolved])
+  @@map("company_warnings")
+}
+
+enum WarningSeverity {
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
 }
 
 enum WarningCategory {
@@ -1321,11 +1408,4 @@ enum WarningCategory {
   COMPLIANCE
   ABUSE
   OTHER
-}
-
-enum WarningSeverity {
-  LOW
-  MODERATE
-  HIGH
-  CRITICAL
 }
