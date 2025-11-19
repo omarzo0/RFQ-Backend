@@ -19,6 +19,9 @@ COPY . .
 # Note: In production, use docker-compose environment variables instead
 COPY .env .env
 
+# Create necessary directories
+RUN mkdir -p uploads logs
+
 # Build the app
 RUN npm run build
 

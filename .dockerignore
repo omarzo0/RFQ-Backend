@@ -3,13 +3,8 @@ dist
 npm-debug.log
 .git
 .gitignore
-README.md
 .vscode
 .idea
-*.md
-logs/*.log
-uploads/*
-!uploads/.gitkeep
 .env.local
 .env.*.local
 coverage
@@ -17,3 +12,6 @@ coverage
 *.test.ts
 *.spec.ts
 tests/
+logs/*.log
+uploads/*
+!uploads/.gitkeep
