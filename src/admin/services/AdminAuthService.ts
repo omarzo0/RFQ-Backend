@@ -108,58 +108,6 @@ export class AdminAuthService {
   }
 
   /**
-   * Change admin password
-   */
-  async changePassword(
-    adminId: string,
-    currentPassword: string,
-    newPassword: string
-  ): Promise<void> {
-    // Validate new password
-    const passwordValidation = PasswordUtils.validate(newPassword);
-    if (!passwordValidation.isValid) {
-      throw new ValidationError("Invalid password", passwordValidation.errors);
-    }
-
-    // Get current admin
-    const admin = await prisma.admin.findUnique({
-      where: { id: adminId },
-      select: { passwordHash: true },
-    });
-
-    if (!admin) {
-      throw new AppError("Admin not found", 404);
-    }
-
-    // Verify current password
-    const isValidCurrentPassword = await PasswordUtils.compare(
-      currentPassword,
-      admin.passwordHash
-    );
-    if (!isValidCurrentPassword) {
-      throw new AuthenticationError(
-        "Current password is incorrect. If you recently changed your password, please use the new password as your current password."
-      );
-    }
-
-    // Hash new password
-    const newPasswordHash = await PasswordUtils.hash(newPassword);
-
-    // Update password
-    await prisma.admin.update({
-      where: { id: adminId },
-      data: { passwordHash: newPasswordHash },
-    });
-
-    // Revoke all existing tokens to force re-login
-    await JWTUtils.revokeAllTokens(adminId, "ADMIN");
-
-    logger.info(
-      `Password changed for admin: ${adminId}. All sessions have been revoked for security.`
-    );
-  }
-
-  /**
    * Refresh access token
    */
   async refreshToken(

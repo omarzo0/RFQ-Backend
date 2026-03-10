@@ -8,7 +8,7 @@ This directory contains comprehensive API documentation for all admin endpoints 
 
 ### Authentication & Management
 
-- **[AdminAuthController.md](./AdminAuthController.md)** - Admin authentication, login, profile management
+- **[AdminAuthController.md](./AdminAuthController.md)** - Admin authentication, login, profile management, and password reset
 - **[AdminManagementController.md](./AdminManagementController.md)** - Admin user management and operations
 
 ### Company Management
@@ -21,17 +21,14 @@ This directory contains comprehensive API documentation for all admin endpoints 
 - **[AdminSubscriptionController.md](./AdminSubscriptionController.md)** - Subscription management and monitoring
 - **[AdminSubscriptionPlanController.md](./AdminSubscriptionPlanController.md)** - Subscription plan CRUD operations
 
-### Analytics & Reporting
+### Dashboard, Analytics & Reporting
 
-- **[AdminAnalyticsController.md](./AdminAnalyticsController.md)** - System-wide analytics and reporting
-- **[AdminDashboardController.md](./AdminDashboardController.md)** - Admin dashboard data and statistics
-- **[AdminComprehensiveDashboardController.md](./AdminComprehensiveDashboardController.md)** - Advanced dashboard with detailed metrics
+- **[AdminDashboardController.md](./AdminDashboardController.md)** - Admin dashboard data, comprehensive metrics, and analytics (consolidated from Dashboard, Comprehensive Dashboard, and Analytics controllers)
 
 ### Support & Operations
 
 - **[AdminTicketController.md](./AdminTicketController.md)** - Support ticket management
 - **[AdminTransactionController.md](./AdminTransactionController.md)** - Transaction management and reporting
-- **[AdminPasswordResetController.md](./AdminPasswordResetController.md)** - Password reset operations
 
 ## Base URL
 

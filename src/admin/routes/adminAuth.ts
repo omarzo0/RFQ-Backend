@@ -1,36 +1,25 @@
 import { Router } from "express";
 import { AdminAuthController } from "../controllers/AdminAuthController";
-import { AdminPasswordResetController } from "../controllers/AdminPasswordResetController";
 import { authenticateAdmin } from "../middleware/adminAuth";
 import { body } from "express-validator";
 
 const router = Router();
-const adminAuthController = new AdminAuthController();
-const adminPasswordResetController = new AdminPasswordResetController();
+const controller = new AdminAuthController();
 
-// Public routes
-router.post("/login", adminAuthController.login);
-router.post("/refresh-token", adminAuthController.refreshToken);
+// ─── Public Routes ─────────────────────────────────────────────────────
+router.post("/login", controller.login);
+router.post("/refresh-token", controller.refreshToken);
 
-// Password reset routes (public)
+// ─── Password Reset (Public) ───────────────────────────────────────────
 router.post(
   "/forgot-password",
   [body("email").isEmail().normalizeEmail()],
-  adminPasswordResetController.requestPasswordReset
-);
-router.post(
-  "/verify-otp",
-  [
-    body("otp")
-      .isLength({ min: 6, max: 6 })
-      .withMessage("OTP must be 6 digits"),
-  ],
-  authenticateAdmin, // Require authentication to get email from token
-  adminPasswordResetController.verifyOTP
+  controller.requestPasswordReset
 );
 router.post(
   "/reset-password",
   [
+    body("email").isEmail().normalizeEmail(),
     body("otp")
       .isLength({ min: 6, max: 6 })
       .withMessage("OTP must be 6 digits"),
@@ -38,17 +27,11 @@ router.post(
       .isLength({ min: 8 })
       .withMessage("Password must be at least 8 characters long"),
   ],
-  authenticateAdmin, // Require authentication to get email from token
-  adminPasswordResetController.resetPassword
+  controller.resetPassword
 );
 
-// Protected routes
-router.get("/profile", authenticateAdmin, adminAuthController.getProfile);
-router.post(
-  "/change-password",
-  authenticateAdmin,
-  adminAuthController.changePassword
-);
-router.post("/logout", authenticateAdmin, adminAuthController.logout);
+// ─── Protected Routes ──────────────────────────────────────────────────
+router.get("/profile", authenticateAdmin, controller.getProfile);
+router.post("/logout", authenticateAdmin, controller.logout);
 
 export default router;

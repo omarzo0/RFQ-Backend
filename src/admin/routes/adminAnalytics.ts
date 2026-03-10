@@ -1,24 +1,21 @@
 import { Router } from "express";
-import { AdminAnalyticsController } from "../controllers/AdminAnalyticsController";
-import {
-  authenticateAdmin,
-  requireAdminOrSuperAdmin,
-} from "../middleware/adminAuth";
+import { AdminDashboardController } from "../controllers/AdminDashboardController";
+import { authenticateAdmin } from "../middleware/adminAuth";
 
 const router = Router();
-const adminAnalyticsController = new AdminAnalyticsController();
+const controller = new AdminDashboardController();
 
 // All routes require admin authentication
 router.use(authenticateAdmin);
 
-// Analytics routes
-router.get("/company-growth", adminAnalyticsController.getCompanyGrowth);
-router.get("/revenue", adminAnalyticsController.getRevenue);
-router.get("/user-activity", adminAnalyticsController.getUserActivity);
-router.get("/email-performance", adminAnalyticsController.getEmailPerformance);
-router.get("/rfq-performance", adminAnalyticsController.getRFQPerformance);
-router.get("/quote-performance", adminAnalyticsController.getQuotePerformance);
-router.get("/top-companies", adminAnalyticsController.getTopCompanies);
-router.get("/system-health", adminAnalyticsController.getSystemHealth);
+// ─── Detailed Analytics ────────────────────────────────────────────────
+router.get("/company-growth", controller.getCompanyGrowth);
+router.get("/revenue", controller.getRevenue);
+router.get("/user-activity", controller.getUserActivity);
+router.get("/email-performance", controller.getEmailPerformance);
+router.get("/rfq-performance", controller.getRFQPerformance);
+router.get("/quote-performance", controller.getQuotePerformance);
+router.get("/top-companies", controller.getTopCompanies);
+router.get("/system-health", controller.getSystemHealth);
 
 export default router;

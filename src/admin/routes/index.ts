@@ -6,7 +6,6 @@ import adminAnalyticsRoutes from "./adminAnalytics";
 import adminSubscriptionRoutes from "./adminSubscription";
 import adminManagementRoutes from "./adminManagement";
 import adminTicketsRoutes from "./adminTickets";
-import adminComprehensiveDashboardRoutes from "./adminComprehensiveDashboard";
 import adminSubscriptionPlanRoutes from "./adminSubscriptionPlan";
 import adminTransactionRoutes from "./adminTransaction";
 import adminFinancialRoutes from "./adminFinancial";
@@ -20,9 +19,6 @@ router.use("/auth", adminAuthRoutes);
 
 // Admin dashboard routes
 router.use("/dashboard", adminDashboardRoutes);
-
-// Comprehensive admin dashboard routes
-router.use("/dashboard", adminComprehensiveDashboardRoutes);
 
 // Admin analytics routes
 router.use("/analytics", adminAnalyticsRoutes);

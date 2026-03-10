@@ -6,54 +6,41 @@ import {
 } from "../middleware/adminAuth";
 
 const router = Router();
-const adminDashboardController = new AdminDashboardController();
+const controller = new AdminDashboardController();
 
 // All routes require admin authentication
 router.use(authenticateAdmin);
 
-// Dashboard overview
-router.get("/", adminDashboardController.getDashboard);
+// ─── Dashboard Overview ────────────────────────────────────────────────
+router.get("/", controller.getDashboard);
+router.get("/comprehensive", controller.getComprehensiveDashboard);
 
-// Company details
-router.get(
-  "/companies/:companyId/details",
-  adminDashboardController.getCompanyDetails
-);
+// ─── Company & Data Management ─────────────────────────────────────────
+router.get("/companies/:companyId/details", controller.getCompanyDetails);
+router.get("/rfqs", requireAdminOrSuperAdmin, controller.getAllRFQs);
+router.get("/quotes", requireAdminOrSuperAdmin, controller.getAllQuotes);
+router.get("/contacts", requireAdminOrSuperAdmin, controller.getAllContacts);
+router.get("/shipping-lines", requireAdminOrSuperAdmin, controller.getAllShippingLines);
+router.get("/emails", requireAdminOrSuperAdmin, controller.getAllEmailLogs);
 
-// Data management routes
-router.get(
-  "/rfqs",
-  requireAdminOrSuperAdmin,
-  adminDashboardController.getAllRFQs
-);
-router.get(
-  "/quotes",
-  requireAdminOrSuperAdmin,
-  adminDashboardController.getAllQuotes
-);
-router.get(
-  "/contacts",
-  requireAdminOrSuperAdmin,
-  adminDashboardController.getAllContacts
-);
-router.get(
-  "/shipping-lines",
-  requireAdminOrSuperAdmin,
-  adminDashboardController.getAllShippingLines
-);
-router.get(
-  "/emails",
-  requireAdminOrSuperAdmin,
-  adminDashboardController.getAllEmailLogs
-);
+// ─── Management Overviews ──────────────────────────────────────────────
+router.get("/admin-management", requireAdminOrSuperAdmin, controller.getAdminManagementOverview);
+router.get("/company-management", controller.getCompanyManagementOverview);
+router.get("/ticket-management", controller.getTicketManagementOverview);
+router.get("/system-features", controller.getSystemFeaturesOverview);
 
-// Analytics routes
-router.get(
-  "/analytics/subscriptions",
-  adminDashboardController.getSubscriptionAnalytics
-);
-router.get("/analytics/emails", adminDashboardController.getEmailAnalytics);
-router.get("/analytics/rfqs", adminDashboardController.getRFQAnalytics);
-router.get("/analytics/quotes", adminDashboardController.getQuoteAnalytics);
+// ─── Subscriptions ─────────────────────────────────────────────────────
+router.get("/subscriptions", controller.getSubscriptionOverview);
+
+// ─── Dashboard Analytics ───────────────────────────────────────────────
+router.get("/analytics", controller.getAnalyticsOverview);
+router.get("/analytics/subscriptions", controller.getSubscriptionAnalytics);
+router.get("/analytics/emails", controller.getEmailAnalytics);
+router.get("/analytics/rfqs", controller.getRFQAnalytics);
+router.get("/analytics/quotes", controller.getQuoteAnalytics);
+
+// ─── System Health & Activity ──────────────────────────────────────────
+router.get("/recent-activity", controller.getRecentActivity);
+router.get("/system-health", controller.getSystemHealth);
 
 export default router;

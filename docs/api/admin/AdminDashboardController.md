@@ -2,15 +2,24 @@
 
 ## Overview
 
-Handles admin dashboard data and statistics including comprehensive metrics, company details, and system overview.
+Unified controller that handles all admin dashboard data, comprehensive metrics, analytics, and reporting. This controller consolidates the dashboard, comprehensive dashboard, and analytics functionality into a single controller.
 
-## Endpoints
+**Controller:** `AdminDashboardController`
+**Route Files:** `adminDashboard.ts` (`/api/v1/admin/dashboard/*`) and `adminAnalytics.ts` (`/api/v1/admin/analytics/*`)
+
+---
+
+## Dashboard Routes (`/api/v1/admin/dashboard`)
+
+All dashboard routes require admin authentication.
+
+---
 
 ### 1. Get Dashboard Data
 
 **GET** `/api/v1/admin/dashboard`
 
-**Description:** Get comprehensive dashboard data with key metrics
+**Description:** Get main dashboard data with key metrics and overview
 
 **Headers:**
 
@@ -41,12 +50,6 @@ Authorization: Bearer <admin_jwt_token>
         "message": "New company 'Tech Corp' registered",
         "timestamp": "2024-01-01T10:30:00.000Z",
         "companyId": "company_123"
-      },
-      {
-        "type": "subscription_upgraded",
-        "message": "Company 'ABC Ltd' upgraded to premium plan",
-        "timestamp": "2024-01-01T09:15:00.000Z",
-        "companyId": "company_456"
       }
     ],
     "metrics": {
@@ -69,41 +72,87 @@ Authorization: Bearer <admin_jwt_token>
     },
     "charts": {
       "revenueTrend": [
-        {
-          "month": "2024-01",
-          "revenue": 35000
-        },
-        {
-          "month": "2024-02",
-          "revenue": 42000
-        }
+        { "month": "2024-01", "revenue": 35000 },
+        { "month": "2024-02", "revenue": 42000 }
       ],
       "companyGrowth": [
-        {
-          "month": "2024-01",
-          "newCompanies": 15
-        },
-        {
-          "month": "2024-02",
-          "newCompanies": 20
-        }
+        { "month": "2024-01", "newCompanies": 15 },
+        { "month": "2024-02", "newCompanies": 20 }
       ]
     }
   }
 }
 ```
 
-**Status Codes:**
-
-- `200` - Data retrieved successfully
-- `401` - Unauthorized
-- `500` - Internal server error
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
 
 ---
 
-### 2. Get Company Details
+### 2. Get Comprehensive Dashboard
 
-**GET** `/api/v1/admin/companies/:id/details`
+**GET** `/api/v1/admin/dashboard/comprehensive`
+
+**Description:** Get comprehensive dashboard data with all system metrics, admin stats, system health, and alerts
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Comprehensive dashboard data retrieved successfully",
+  "data": {
+    "overview": {
+      "totalCompanies": 150,
+      "activeCompanies": 140,
+      "trialCompanies": 30,
+      "totalUsers": 500,
+      "activeUsers": 450,
+      "totalRFQs": 2500,
+      "totalQuotes": 5000,
+      "totalRevenue": 500000
+    },
+    "adminStats": {
+      "totalAdmins": 10,
+      "activeAdmins": 9,
+      "superAdmins": 2,
+      "regularAdmins": 7,
+      "supportAdmins": 1
+    },
+    "systemHealth": {
+      "uptime": 86400,
+      "status": "healthy",
+      "responseTime": 150,
+      "errorRate": 0.1,
+      "memoryUsage": 75.5,
+      "cpuUsage": 45.2
+    },
+    "recentActivity": [],
+    "metrics": {},
+    "charts": {},
+    "alerts": [
+      {
+        "type": "warning",
+        "message": "High error rate detected",
+        "timestamp": "2024-01-01T10:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 3. Get Company Details
+
+**GET** `/api/v1/admin/dashboard/companies/:companyId/details`
 
 **Description:** Get detailed information about a specific company
 
@@ -115,7 +164,9 @@ Authorization: Bearer <admin_jwt_token>
 
 **Path Parameters:**
 
-- `id`: Company ID
+| Parameter   | Type   | Description |
+| ----------- | ------ | ----------- |
+| `companyId` | string | Company ID  |
 
 **Response:**
 
@@ -128,29 +179,12 @@ Authorization: Bearer <admin_jwt_token>
       "id": "company_123",
       "name": "Tech Corp",
       "email": "contact@techcorp.com",
-      "phone": "+1234567890",
-      "address": "123 Tech St, City, State",
-      "website": "https://techcorp.com",
-      "industry": "Technology",
-      "size": "50-100",
       "subscriptionPlan": "premium",
       "subscriptionStatus": "ACTIVE",
-      "trialEndsAt": null,
       "isActive": true,
-      "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": "2024-01-01T00:00:00.000Z"
+      "createdAt": "2024-01-01T00:00:00.000Z"
     },
-    "users": [
-      {
-        "id": "user_123",
-        "email": "admin@techcorp.com",
-        "firstName": "John",
-        "lastName": "Doe",
-        "role": "admin",
-        "isActive": true,
-        "lastLogin": "2024-01-01T10:30:00.000Z"
-      }
-    ],
+    "users": [],
     "statistics": {
       "totalRFQs": 25,
       "activeRFQs": 5,
@@ -161,38 +195,176 @@ Authorization: Bearer <admin_jwt_token>
       "totalRevenue": 15000,
       "lastActivity": "2024-01-01T10:30:00.000Z"
     },
-    "recentActivity": [
-      {
-        "type": "rfq_created",
-        "message": "New RFQ created",
-        "timestamp": "2024-01-01T10:30:00.000Z",
-        "rfqId": "rfq_123"
-      },
-      {
-        "type": "quote_sent",
-        "message": "Quote sent to customer",
-        "timestamp": "2024-01-01T09:15:00.000Z",
-        "quoteId": "quote_456"
-      }
-    ]
+    "recentActivity": []
   }
 }
 ```
 
-**Status Codes:**
-
-- `200` - Company details retrieved successfully
-- `401` - Unauthorized
-- `404` - Company not found
-- `500` - Internal server error
+**Status Codes:** `200` Success · `401` Unauthorized · `404` Company Not Found · `500` Internal Server Error
 
 ---
 
-### 3. Get System Statistics
+### 4. Get All RFQs
 
-**GET** `/api/v1/admin/dashboard/statistics`
+**GET** `/api/v1/admin/dashboard/rfqs`
 
-**Description:** Get comprehensive system statistics
+**Description:** Get all RFQs across the platform
+
+**Authorization:** Requires `admin` or `super_admin` role
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `403` Forbidden · `500` Internal Server Error
+
+---
+
+### 5. Get All Quotes
+
+**GET** `/api/v1/admin/dashboard/quotes`
+
+**Description:** Get all quotes across the platform
+
+**Authorization:** Requires `admin` or `super_admin` role
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `403` Forbidden · `500` Internal Server Error
+
+---
+
+### 6. Get All Contacts
+
+**GET** `/api/v1/admin/dashboard/contacts`
+
+**Description:** Get all contacts across the platform
+
+**Authorization:** Requires `admin` or `super_admin` role
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `403` Forbidden · `500` Internal Server Error
+
+---
+
+### 7. Get All Shipping Lines
+
+**GET** `/api/v1/admin/dashboard/shipping-lines`
+
+**Description:** Get all shipping lines across the platform
+
+**Authorization:** Requires `admin` or `super_admin` role
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `403` Forbidden · `500` Internal Server Error
+
+---
+
+### 8. Get All Email Logs
+
+**GET** `/api/v1/admin/dashboard/emails`
+
+**Description:** Get all email logs across the platform
+
+**Authorization:** Requires `admin` or `super_admin` role
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `403` Forbidden · `500` Internal Server Error
+
+---
+
+### 9. Get Admin Management Overview
+
+**GET** `/api/v1/admin/dashboard/admin-management`
+
+**Description:** Get admin management overview and statistics
+
+**Authorization:** Requires `admin` or `super_admin` role
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `403` Forbidden · `500` Internal Server Error
+
+---
+
+### 10. Get Company Management Overview
+
+**GET** `/api/v1/admin/dashboard/company-management`
+
+**Description:** Get company management overview and statistics
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 11. Get Ticket Management Overview
+
+**GET** `/api/v1/admin/dashboard/ticket-management`
+
+**Description:** Get support ticket management overview
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 12. Get System Features Overview
+
+**GET** `/api/v1/admin/dashboard/system-features`
+
+**Description:** Get system features overview and status
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 13. Get Subscription Overview
+
+**GET** `/api/v1/admin/dashboard/subscriptions`
+
+**Description:** Get subscription overview and metrics
 
 **Headers:**
 
@@ -205,64 +377,105 @@ Authorization: Bearer <admin_jwt_token>
 ```json
 {
   "success": true,
-  "message": "System statistics retrieved successfully",
+  "message": "Subscription overview retrieved successfully",
   "data": {
-    "companies": {
-      "total": 150,
-      "active": 140,
-      "trial": 30,
-      "premium": 80,
-      "basic": 30,
-      "inactive": 10
-    },
-    "users": {
-      "total": 500,
-      "active": 450,
-      "inactive": 50,
-      "admin": 50,
-      "regular": 450
-    },
-    "rfqs": {
-      "total": 2500,
-      "active": 150,
-      "completed": 2200,
-      "cancelled": 150,
-      "thisMonth": 200
-    },
-    "quotes": {
-      "total": 5000,
-      "sent": 4500,
-      "accepted": 900,
-      "rejected": 3600,
-      "thisMonth": 400
-    },
-    "revenue": {
-      "total": 500000,
-      "monthly": 45000,
-      "currency": "USD",
-      "growth": 25.8
-    },
-    "subscriptions": {
-      "total": 300,
-      "active": 250,
-      "trial": 50,
-      "churnRate": 5.2
-    }
+    "totalSubscriptions": 300,
+    "activeSubscriptions": 250,
+    "trialSubscriptions": 50,
+    "trialConversionRate": 83.3,
+    "churnRate": 5.2,
+    "monthlyRecurringRevenue": 65000
   }
 }
 ```
 
-**Status Codes:**
-
-- `200` - Statistics retrieved successfully
-- `401` - Unauthorized
-- `500` - Internal server error
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
 
 ---
 
-### 4. Get Recent Activity
+### 14. Get Dashboard Analytics Overview
 
-**GET** `/api/v1/admin/dashboard/activity`
+**GET** `/api/v1/admin/dashboard/analytics`
+
+**Description:** Get analytics overview from the dashboard
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 15. Get Dashboard Subscription Analytics
+
+**GET** `/api/v1/admin/dashboard/analytics/subscriptions`
+
+**Description:** Get subscription analytics from the dashboard
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 16. Get Dashboard Email Analytics
+
+**GET** `/api/v1/admin/dashboard/analytics/emails`
+
+**Description:** Get email analytics from the dashboard
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 17. Get Dashboard RFQ Analytics
+
+**GET** `/api/v1/admin/dashboard/analytics/rfqs`
+
+**Description:** Get RFQ analytics from the dashboard
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 18. Get Dashboard Quote Analytics
+
+**GET** `/api/v1/admin/dashboard/analytics/quotes`
+
+**Description:** Get quote analytics from the dashboard
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 19. Get Recent Activity
+
+**GET** `/api/v1/admin/dashboard/recent-activity`
 
 **Description:** Get recent system activity
 
@@ -274,8 +487,10 @@ Authorization: Bearer <admin_jwt_token>
 
 **Query Parameters:**
 
-- `limit` (optional): Number of activities to return (default: 50)
-- `type` (optional): Filter by activity type
+| Parameter | Type   | Default | Description                    |
+| --------- | ------ | ------- | ------------------------------ |
+| `limit`   | number | 50      | Number of activities to return |
+| `type`    | string | —       | Filter by activity type        |
 
 **Response:**
 
@@ -291,23 +506,9 @@ Authorization: Bearer <admin_jwt_token>
         "message": "New company 'Tech Corp' registered",
         "timestamp": "2024-01-01T10:30:00.000Z",
         "companyId": "company_123",
-        "userId": "user_123",
         "metadata": {
           "companyName": "Tech Corp",
           "subscriptionPlan": "trial"
-        }
-      },
-      {
-        "id": "activity_124",
-        "type": "subscription_upgraded",
-        "message": "Company 'ABC Ltd' upgraded to premium plan",
-        "timestamp": "2024-01-01T09:15:00.000Z",
-        "companyId": "company_456",
-        "userId": "user_456",
-        "metadata": {
-          "fromPlan": "trial",
-          "toPlan": "premium",
-          "amount": 2999
         }
       }
     ],
@@ -320,19 +521,15 @@ Authorization: Bearer <admin_jwt_token>
 }
 ```
 
-**Status Codes:**
-
-- `200` - Activity retrieved successfully
-- `401` - Unauthorized
-- `500` - Internal server error
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
 
 ---
 
-### 5. Get Performance Metrics
+### 20. Get System Health
 
-**GET** `/api/v1/admin/dashboard/performance`
+**GET** `/api/v1/admin/dashboard/system-health`
 
-**Description:** Get system performance metrics
+**Description:** Get system health and performance metrics
 
 **Headers:**
 
@@ -345,7 +542,7 @@ Authorization: Bearer <admin_jwt_token>
 ```json
 {
   "success": true,
-  "message": "Performance metrics retrieved successfully",
+  "message": "System health retrieved successfully",
   "data": {
     "systemHealth": {
       "status": "healthy",
@@ -379,19 +576,21 @@ Authorization: Bearer <admin_jwt_token>
 }
 ```
 
-**Status Codes:**
-
-- `200` - Performance metrics retrieved successfully
-- `401` - Unauthorized
-- `500` - Internal server error
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
 
 ---
 
-### 6. Get Revenue Overview
+## Analytics Routes (`/api/v1/admin/analytics`)
 
-**GET** `/api/v1/admin/dashboard/revenue`
+All analytics routes require admin authentication. These provide detailed analytics with time-range filtering.
 
-**Description:** Get revenue overview and trends
+---
+
+### 21. Get Company Growth
+
+**GET** `/api/v1/admin/analytics/company-growth`
+
+**Description:** Get company growth analytics over time
 
 **Headers:**
 
@@ -401,14 +600,65 @@ Authorization: Bearer <admin_jwt_token>
 
 **Query Parameters:**
 
-- `period` (optional): Time period (7d, 30d, 90d, 1y)
+| Parameter | Type   | Default | Description                 |
+| --------- | ------ | ------- | --------------------------- |
+| `months`  | number | 12      | Number of months to analyze |
 
 **Response:**
 
 ```json
 {
   "success": true,
-  "message": "Revenue overview retrieved successfully",
+  "message": "Company growth data retrieved successfully",
+  "data": {
+    "totalCompanies": 150,
+    "newCompaniesThisMonth": 25,
+    "growthRate": 20.5,
+    "monthlyGrowth": [
+      {
+        "month": "2024-01",
+        "newCompanies": 15,
+        "totalCompanies": 120,
+        "growthRate": 14.3
+      }
+    ],
+    "averageMonthlyGrowth": 18.2,
+    "projectedGrowth": {
+      "nextMonth": 30,
+      "nextQuarter": 90
+    }
+  }
+}
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 22. Get Revenue
+
+**GET** `/api/v1/admin/analytics/revenue`
+
+**Description:** Get revenue analytics and trends
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Query Parameters:**
+
+| Parameter | Type   | Default | Description                 |
+| --------- | ------ | ------- | --------------------------- |
+| `months`  | number | 12      | Number of months to analyze |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Revenue data retrieved successfully",
   "data": {
     "totalRevenue": 500000,
     "monthlyRevenue": 45000,
@@ -418,24 +668,8 @@ Authorization: Bearer <admin_jwt_token>
       {
         "plan": "premium",
         "revenue": 300000,
-        "percentage": 60,
-        "subscribers": 100
-      },
-      {
-        "plan": "basic",
-        "revenue": 200000,
-        "percentage": 40,
-        "subscribers": 200
-      }
-    ],
-    "monthlyTrend": [
-      {
-        "month": "2024-01",
-        "revenue": 35000
-      },
-      {
-        "month": "2024-02",
-        "revenue": 42000
+        "subscribers": 100,
+        "percentage": 60
       }
     ],
     "projectedRevenue": {
@@ -446,11 +680,293 @@ Authorization: Bearer <admin_jwt_token>
 }
 ```
 
-**Status Codes:**
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
 
-- `200` - Revenue overview retrieved successfully
-- `401` - Unauthorized
-- `500` - Internal server error
+---
+
+### 23. Get User Activity
+
+**GET** `/api/v1/admin/analytics/user-activity`
+
+**Description:** Get user activity and engagement metrics
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Query Parameters:**
+
+| Parameter | Type   | Default | Description               |
+| --------- | ------ | ------- | ------------------------- |
+| `days`    | number | 30      | Number of days to analyze |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "User activity data retrieved successfully",
+  "data": {
+    "totalActiveUsers": 500,
+    "dailyActiveUsers": 350,
+    "weeklyActiveUsers": 450,
+    "monthlyActiveUsers": 500,
+    "userEngagement": {
+      "averageSessionDuration": 1800,
+      "averageSessionsPerUser": 5.2,
+      "bounceRate": 15.5,
+      "retentionRate": 85.2
+    },
+    "topFeatures": [
+      {
+        "feature": "RFQ Management",
+        "usage": 85.5,
+        "users": 425
+      }
+    ]
+  }
+}
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 24. Get Email Performance
+
+**GET** `/api/v1/admin/analytics/email-performance`
+
+**Description:** Get email campaign and delivery analytics
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Query Parameters:**
+
+| Parameter | Type   | Default | Description                 |
+| --------- | ------ | ------- | --------------------------- |
+| `months`  | number | 12      | Number of months to analyze |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Email analytics retrieved successfully",
+  "data": {
+    "totalEmails": 100000,
+    "deliveredEmails": 98500,
+    "bouncedEmails": 1500,
+    "deliveryRate": 98.5,
+    "openRate": 25.2,
+    "clickRate": 8.5,
+    "unsubscribeRate": 2.1,
+    "emailByType": [
+      {
+        "type": "RFQ_NOTIFICATION",
+        "sent": 50000,
+        "openRate": 30.5,
+        "clickRate": 12.2
+      }
+    ]
+  }
+}
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 25. Get RFQ Performance
+
+**GET** `/api/v1/admin/analytics/rfq-performance`
+
+**Description:** Get RFQ creation and processing analytics
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Query Parameters:**
+
+| Parameter | Type   | Default | Description                 |
+| --------- | ------ | ------- | --------------------------- |
+| `months`  | number | 12      | Number of months to analyze |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "RFQ analytics retrieved successfully",
+  "data": {
+    "totalRFQs": 2500,
+    "activeRFQs": 150,
+    "completedRFQs": 2200,
+    "cancelledRFQs": 150,
+    "averageProcessingTime": 72,
+    "rfqTrends": [
+      {
+        "month": "2024-01",
+        "created": 200,
+        "completed": 180,
+        "cancelled": 15
+      }
+    ],
+    "topCompanies": [
+      {
+        "companyId": "company_1",
+        "companyName": "Tech Corp",
+        "rfqCount": 150,
+        "completionRate": 95.5
+      }
+    ]
+  }
+}
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 26. Get Quote Performance
+
+**GET** `/api/v1/admin/analytics/quote-performance`
+
+**Description:** Get quote generation and acceptance analytics
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Query Parameters:**
+
+| Parameter | Type   | Default | Description                 |
+| --------- | ------ | ------- | --------------------------- |
+| `months`  | number | 12      | Number of months to analyze |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Quote analytics retrieved successfully",
+  "data": {
+    "totalQuotes": 5000,
+    "sentQuotes": 4500,
+    "acceptedQuotes": 900,
+    "rejectedQuotes": 3600,
+    "acceptanceRate": 20,
+    "averageQuoteValue": 2500,
+    "quoteTrends": [
+      {
+        "month": "2024-01",
+        "generated": 400,
+        "sent": 350,
+        "accepted": 70
+      }
+    ],
+    "averageResponseTime": 24
+  }
+}
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 27. Get Top Companies
+
+**GET** `/api/v1/admin/analytics/top-companies`
+
+**Description:** Get top-performing companies analytics
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Top companies retrieved successfully",
+  "data": {
+    "topCompanies": [
+      {
+        "companyId": "company_1",
+        "companyName": "Tech Corp",
+        "rfqCount": 150,
+        "quoteCount": 300,
+        "revenue": 50000,
+        "completionRate": 95.5
+      }
+    ]
+  }
+}
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
+
+---
+
+### 28. Get System Health (Analytics)
+
+**GET** `/api/v1/admin/analytics/system-health`
+
+**Description:** Get system health metrics from the analytics perspective
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "System health retrieved successfully",
+  "data": {
+    "systemHealth": {
+      "status": "healthy",
+      "uptime": 99.9,
+      "responseTime": 150,
+      "errorRate": 0.1
+    },
+    "databaseMetrics": {
+      "connectionPool": { "active": 5, "idle": 15, "total": 20 },
+      "queryPerformance": { "averageQueryTime": 25, "slowQueries": 2 }
+    },
+    "apiMetrics": {
+      "totalRequests": 50000,
+      "successfulRequests": 49500,
+      "failedRequests": 500,
+      "averageResponseTime": 200
+    },
+    "emailMetrics": {
+      "emailsSent": 10000,
+      "deliveryRate": 98.5,
+      "openRate": 25.2,
+      "clickRate": 8.5
+    }
+  }
+}
+```
+
+**Status Codes:** `200` Success · `401` Unauthorized · `500` Internal Server Error
 
 ---
 
@@ -482,3 +998,5 @@ Authorization: Bearer <admin_jwt_token>
 - Historical data is available for up to 2 years
 - Activity logs are retained for 90 days
 - Performance metrics are updated every minute
+- Time-based analytics queries support various periods (days, months, quarters)
+- Routes marked with `requireAdminOrSuperAdmin` require `admin` or `super_admin` role

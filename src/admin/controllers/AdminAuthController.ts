@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { AdminAuthService } from "../services/AdminAuthService";
+import { PasswordResetService } from "../../services/PasswordResetService";
 import { successResponse, errorResponse } from "../../utils/response";
-import { AppError } from "../../utils/errors";
+import { AppError, ValidationError } from "../../utils/errors";
 import logger from "../../utils/logger";
 import { AdminRequest } from "../middleware/adminAuth";
 import {
@@ -9,22 +10,27 @@ import {
   AdminLoginResponse,
   AdminProfile,
 } from "../types/auth";
+import { UserType } from "@prisma/client";
 
 export class AdminAuthController {
   private adminAuthService: AdminAuthService;
+  private passwordResetService: PasswordResetService;
 
   constructor() {
     this.adminAuthService = new AdminAuthService();
+    this.passwordResetService = new PasswordResetService();
   }
+
+  // ─── Login / Logout / Token ──────────────────────────────────────────
 
   /**
    * Login admin
+   * POST /api/v1/admin/auth/login
    */
   login = async (req: Request, res: Response): Promise<void> => {
     try {
       const credentials: AdminLoginCredentials = req.body;
 
-      // Validate required fields
       if (!credentials.email || !credentials.password) {
         errorResponse(res, "Email and password are required", 400);
         return;
@@ -47,79 +53,8 @@ export class AdminAuthController {
   };
 
   /**
-   * Get current admin profile
-   */
-  getProfile = async (req: AdminRequest, res: Response): Promise<void> => {
-    try {
-      const adminId = req.user?.id;
-
-      if (!adminId) {
-        errorResponse(res, "Unauthorized", 401);
-        return;
-      }
-
-      const profile: AdminProfile = await this.adminAuthService.getCurrentAdmin(
-        adminId
-      );
-
-      successResponse(res, profile, "Admin profile retrieved successfully");
-    } catch (error) {
-      logger.error("Get admin profile error:", error);
-
-      if (error instanceof AppError) {
-        errorResponse(res, error.message, error.statusCode);
-      } else {
-        errorResponse(res, "Internal server error", 500);
-      }
-    }
-  };
-
-  /**
-   * Change admin password
-   */
-  changePassword = async (req: AdminRequest, res: Response): Promise<void> => {
-    try {
-      const adminId = req.user?.id;
-      const { currentPassword, newPassword } = req.body;
-
-      if (!adminId) {
-        errorResponse(res, "Unauthorized", 401);
-        return;
-      }
-
-      if (!currentPassword || !newPassword) {
-        errorResponse(
-          res,
-          "Current password and new password are required",
-          400
-        );
-        return;
-      }
-
-      await this.adminAuthService.changePassword(
-        adminId,
-        currentPassword,
-        newPassword
-      );
-
-      successResponse(
-        res,
-        null,
-        "Password changed successfully. You will need to log in again with your new password."
-      );
-    } catch (error) {
-      logger.error("Change admin password error:", error);
-
-      if (error instanceof AppError) {
-        errorResponse(res, error.message, error.statusCode);
-      } else {
-        errorResponse(res, "Internal server error", 500);
-      }
-    }
-  };
-
-  /**
    * Refresh token
+   * POST /api/v1/admin/auth/refresh-token
    */
   refreshToken = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -146,6 +81,7 @@ export class AdminAuthController {
 
   /**
    * Logout admin
+   * POST /api/v1/admin/auth/logout
    */
   logout = async (req: AdminRequest, res: Response): Promise<void> => {
     try {
@@ -163,6 +99,101 @@ export class AdminAuthController {
       logger.error("Admin logout error:", error);
 
       if (error instanceof AppError) {
+        errorResponse(res, error.message, error.statusCode);
+      } else {
+        errorResponse(res, "Internal server error", 500);
+      }
+    }
+  };
+
+  // ─── Profile & Password ──────────────────────────────────────────────
+
+  /**
+   * Get current admin profile
+   * GET /api/v1/admin/auth/profile
+   */
+  getProfile = async (req: AdminRequest, res: Response): Promise<void> => {
+    try {
+      const adminId = req.user?.id;
+
+      if (!adminId) {
+        errorResponse(res, "Unauthorized", 401);
+        return;
+      }
+
+      const profile: AdminProfile = await this.adminAuthService.getCurrentAdmin(
+        adminId
+      );
+
+      successResponse(res, profile, "Admin profile retrieved successfully");
+    } catch (error) {
+      logger.error("Get admin profile error:", error);
+
+      if (error instanceof AppError) {
+        errorResponse(res, error.message, error.statusCode);
+      } else {
+        errorResponse(res, "Internal server error", 500);
+      }
+    }
+  };
+
+  // ─── Password Reset (Public) ─────────────────────────────────────────
+
+  /**
+   * Request password reset — sends OTP to email
+   * POST /api/v1/admin/auth/forgot-password
+   */
+  requestPasswordReset = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        errorResponse(res, "Email is required", 400);
+        return;
+      }
+
+      const result = await this.passwordResetService.requestPasswordReset({
+        email: email.toLowerCase(),
+        userType: UserType.ADMIN,
+      });
+
+      successResponse(res, result, result.message, 200);
+    } catch (error) {
+      logger.error("Admin password reset request error:", error);
+
+      if (error instanceof AppError || error instanceof ValidationError) {
+        errorResponse(res, error.message, error.statusCode);
+      } else {
+        errorResponse(res, "Internal server error", 500);
+      }
+    }
+  };
+
+  /**
+   * Verify OTP and reset password
+   * POST /api/v1/admin/auth/reset-password
+   */
+  resetPassword = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email, otp, newPassword } = req.body;
+
+      if (!email || !otp || !newPassword) {
+        errorResponse(res, "Email, OTP, and new password are required", 400);
+        return;
+      }
+
+      const result = await this.passwordResetService.verifyOTPAndResetPassword({
+        email: email.toLowerCase(),
+        otp,
+        newPassword,
+        userType: UserType.ADMIN,
+      });
+
+      successResponse(res, result, result.message, 200);
+    } catch (error) {
+      logger.error("Admin password reset error:", error);
+
+      if (error instanceof AppError || error instanceof ValidationError) {
         errorResponse(res, error.message, error.statusCode);
       } else {
         errorResponse(res, "Internal server error", 500);
