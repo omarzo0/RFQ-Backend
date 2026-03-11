@@ -195,13 +195,40 @@ export class AdminCompanyService {
       }
     }
 
+    // Only pick fields that exist on the Company model
+    const allowedFields = [
+      "name",
+      "email",
+      "domain",
+      "phone",
+      "address",
+      "city",
+      "country",
+      "timezone",
+      "subscriptionPlan",
+      "subscriptionStatus",
+      "trialEndsAt",
+      "emailFooter",
+      "defaultFollowUpDays",
+      "autoFollowUpEnabled",
+      "isActive",
+    ] as const;
+
+    const sanitizedData: Record<string, unknown> = {};
+    for (const key of allowedFields) {
+      if (key in updateData && (updateData as Record<string, unknown>)[key] !== undefined) {
+        sanitizedData[key] = (updateData as Record<string, unknown>)[key];
+      }
+    }
+
+    if (sanitizedData.email) {
+      sanitizedData.email = (sanitizedData.email as string).toLowerCase();
+    }
+
     // Update company
     const updatedCompany = await prisma.company.update({
       where: { id },
-      data: {
-        ...updateData,
-        email: updateData.email?.toLowerCase(),
-      },
+      data: sanitizedData,
     });
 
     logger.info(

@@ -53,10 +53,49 @@ export interface SubscriptionPlanUsageStats {
 }
 
 export class AdminSubscriptionPlanService {
+  static readonly DEFAULT_TRIAL_PLAN_NAME = "trial";
+
   /**
-   * Get all subscription plans with filtering and pagination
+   * Ensure the default trial plan exists in the database.
+   * Creates it if missing. Returns the trial plan record.
+   */
+  async ensureDefaultTrialPlan() {
+    const existing = await prisma.subscriptionPlan.findFirst({
+      where: { name: AdminSubscriptionPlanService.DEFAULT_TRIAL_PLAN_NAME },
+    });
+
+    if (existing) return existing;
+
+    const trialPlan = await prisma.subscriptionPlan.create({
+      data: {
+        name: AdminSubscriptionPlanService.DEFAULT_TRIAL_PLAN_NAME,
+        description: "Free 30-day trial with limited features",
+        priceMonthly: 0,
+        priceYearly: 0,
+        maxUsers: 3,
+        maxRFQsPerMonth: 50,
+        maxContacts: 100,
+        maxEmailSendsPerMonth: 200,
+        features: {
+          basicRFQ: true,
+          basicQuotes: true,
+          emailSupport: true,
+        },
+        isActive: true,
+      },
+    });
+
+    logger.info("Default trial subscription plan created automatically");
+    return trialPlan;
+  }
+  /**
+   * Get all subscription plans with filtering and pagination.
+   * The default trial plan is always ensured to exist.
    */
   async getSubscriptionPlans(filters: SubscriptionPlanFilters = {}) {
+    // Ensure trial plan always exists
+    await this.ensureDefaultTrialPlan();
+
     const { page = 1, limit = 20, isActive, search } = filters;
     const skip = (page - 1) * limit;
 
@@ -79,7 +118,6 @@ export class AdminSubscriptionPlanService {
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
-        // We'll calculate usage stats separately
       }),
       prisma.subscriptionPlan.count({ where }),
     ]);
@@ -90,6 +128,7 @@ export class AdminSubscriptionPlanService {
         const usageStats = await this.getPlanUsageStats(plan.id);
         return {
           ...plan,
+          isDefault: plan.name === AdminSubscriptionPlanService.DEFAULT_TRIAL_PLAN_NAME,
           usageStats,
         };
       })
@@ -121,6 +160,7 @@ export class AdminSubscriptionPlanService {
 
     return {
       ...subscriptionPlan,
+      isDefault: subscriptionPlan.name === AdminSubscriptionPlanService.DEFAULT_TRIAL_PLAN_NAME,
       usageStats,
     };
   }
@@ -248,6 +288,17 @@ export class AdminSubscriptionPlanService {
         );
       }
 
+      // Prevent renaming the default trial plan
+      if (
+        existingPlan.name === AdminSubscriptionPlanService.DEFAULT_TRIAL_PLAN_NAME &&
+        data.name &&
+        data.name.trim().toLowerCase() !== AdminSubscriptionPlanService.DEFAULT_TRIAL_PLAN_NAME
+      ) {
+        throw new ValidationError(
+          "Cannot rename the default trial plan. Its name must remain 'trial'."
+        );
+      }
+
       // Check if name is being changed and if it conflicts with existing plan
       if (data.name && data.name !== existingPlan.name) {
         const conflictingPlan = await prisma.subscriptionPlan.findFirst({
@@ -313,6 +364,13 @@ export class AdminSubscriptionPlanService {
         throw new AppError("Subscription plan not found", 404);
       }
 
+      // Prevent deletion of the default trial plan
+      if (existingPlan.name === AdminSubscriptionPlanService.DEFAULT_TRIAL_PLAN_NAME) {
+        throw new ValidationError(
+          "Cannot delete the default trial plan. It is required by the system."
+        );
+      }
+
       // Check if any companies are using this plan
       const companiesUsingPlan = await prisma.company.count({
         where: { subscriptionPlan: existingPlan.name },
@@ -349,6 +407,16 @@ export class AdminSubscriptionPlanService {
 
       if (!existingPlan) {
         throw new AppError("Subscription plan not found", 404);
+      }
+
+      // Prevent deactivation of the default trial plan
+      if (
+        existingPlan.name === AdminSubscriptionPlanService.DEFAULT_TRIAL_PLAN_NAME &&
+        existingPlan.isActive
+      ) {
+        throw new ValidationError(
+          "Cannot deactivate the default trial plan. It is required by the system."
+        );
       }
 
       const updatedPlan = await prisma.subscriptionPlan.update({
