@@ -1,6 +1,7 @@
 import express from "express";
 import { RFQController } from "../controllers/RFQController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
+import { enforceRFQLimit, enforceFeature } from "../middleware/subscriptionLimits";
 
 const router = express.Router();
 const rfqController = new RFQController();
@@ -10,7 +11,7 @@ router.use(authenticateCompanyUser);
 
 // RFQ Management - List and Create
 router.get("/", (req, res, next) => rfqController.getRFQs(req, res, next));
-router.post("/", (req, res, next) => rfqController.createRFQ(req, res, next));
+router.post("/", enforceRFQLimit, enforceFeature("basicRFQ"), (req, res, next) => rfqController.createRFQ(req, res, next));
 
 // RFQ Analytics (must come before /:id routes)
 router.get("/analytics", (req, res, next) =>

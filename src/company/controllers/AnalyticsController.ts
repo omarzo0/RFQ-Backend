@@ -471,6 +471,37 @@ export class AnalyticsController {
     }
   }
 
+  /**
+   * GET /api/v1/analytics/plan-features
+   * Returns subscription plan usage, feature availability, and quote analytics.
+   */
+  async getPlanFeatureAnalytics(
+    req: CompanyRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const companyId = req.user.companyId!;
+
+      const data = await this.analyticsService.getPlanFeatureAnalytics(
+        companyId
+      );
+
+      if (!data) {
+        res.status(404).json({ success: false, message: "Company not found" });
+        return;
+      }
+
+      successResponse(
+        res,
+        data,
+        "Plan feature analytics retrieved successfully"
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
   private getContentType(format: string): string {
     switch (format) {
       case "pdf":

@@ -1,6 +1,11 @@
 import { prisma } from "../../app";
 import { AppError, ValidationError } from "../../utils/errors";
 import logger from "../../utils/logger";
+import {
+  validateFeatureKeys,
+  getTrialDefaults,
+  FEATURE_REGISTRY,
+} from "../../config/featureRegistry";
 
 export interface SubscriptionPlanCreateData {
   name: string;
@@ -76,11 +81,7 @@ export class AdminSubscriptionPlanService {
         maxRFQsPerMonth: 50,
         maxContacts: 100,
         maxEmailSendsPerMonth: 200,
-        features: {
-          basicRFQ: true,
-          basicQuotes: true,
-          emailSupport: true,
-        },
+        features: getTrialDefaults(),
         isActive: true,
       },
     });
@@ -122,13 +123,24 @@ export class AdminSubscriptionPlanService {
       prisma.subscriptionPlan.count({ where }),
     ]);
 
-    // Get usage statistics for each plan
+    // Get usage statistics for each plan + resolve feature labels
     const plansWithUsage = await Promise.all(
       subscriptionPlans.map(async (plan) => {
         const usageStats = await this.getPlanUsageStats(plan.id);
+        const planFeatures = (plan.features as Record<string, boolean>) || {};
+
+        // Summarize: enabled count / total
+        const enabledCount = FEATURE_REGISTRY.filter((def) =>
+          planFeatures[def.key] !== undefined ? !!planFeatures[def.key] : def.defaultValue
+        ).length;
+
         return {
           ...plan,
           isDefault: plan.name === AdminSubscriptionPlanService.DEFAULT_TRIAL_PLAN_NAME,
+          featureSummary: {
+            enabledCount,
+            totalCount: FEATURE_REGISTRY.length,
+          },
           usageStats,
         };
       })
@@ -144,7 +156,7 @@ export class AdminSubscriptionPlanService {
   }
 
   /**
-   * Get subscription plan by ID
+   * Get subscription plan by ID – includes resolved feature details
    */
   async getSubscriptionPlanById(id: string) {
     const subscriptionPlan = await prisma.subscriptionPlan.findUnique({
@@ -158,9 +170,21 @@ export class AdminSubscriptionPlanService {
     // Get usage statistics
     const usageStats = await this.getPlanUsageStats(id);
 
+    // Resolve feature details from the registry
+    const planFeatures = (subscriptionPlan.features as Record<string, boolean>) || {};
+    const resolvedFeatures = FEATURE_REGISTRY.map((def) => ({
+      key: def.key,
+      label: def.label,
+      description: def.description,
+      category: def.category,
+      enabled: planFeatures[def.key] !== undefined ? !!planFeatures[def.key] : def.defaultValue,
+      explicitlySet: def.key in planFeatures,
+    }));
+
     return {
       ...subscriptionPlan,
       isDefault: subscriptionPlan.name === AdminSubscriptionPlanService.DEFAULT_TRIAL_PLAN_NAME,
+      resolvedFeatures,
       usageStats,
     };
   }
@@ -217,6 +241,18 @@ export class AdminSubscriptionPlanService {
         );
       }
 
+      // Validate feature keys against the feature registry
+      const features = data.features || {};
+      if (typeof features === "object" && !Array.isArray(features)) {
+        const invalidKeys = validateFeatureKeys(features as Record<string, unknown>);
+        if (invalidKeys.length > 0) {
+          throw new ValidationError(
+            `Unknown feature keys: ${invalidKeys.join(", ")}. ` +
+            `Valid keys are: ${FEATURE_REGISTRY.map((f) => f.key).join(", ")}`
+          );
+        }
+      }
+
       const subscriptionPlan = await prisma.subscriptionPlan.create({
         data: {
           name: data.name.trim(),
@@ -227,7 +263,7 @@ export class AdminSubscriptionPlanService {
           maxRFQsPerMonth: data.maxRFQsPerMonth,
           maxContacts: data.maxContacts,
           maxEmailSendsPerMonth: data.maxEmailSendsPerMonth,
-          features: data.features || {},
+          features,
           isActive: data.isActive !== undefined ? data.isActive : true,
         },
       });
@@ -311,6 +347,17 @@ export class AdminSubscriptionPlanService {
         if (conflictingPlan) {
           throw new ValidationError(
             "A subscription plan with this name already exists"
+          );
+        }
+      }
+
+      // Validate feature keys against the feature registry
+      if (data.features && typeof data.features === "object" && !Array.isArray(data.features)) {
+        const invalidKeys = validateFeatureKeys(data.features as Record<string, unknown>);
+        if (invalidKeys.length > 0) {
+          throw new ValidationError(
+            `Unknown feature keys: ${invalidKeys.join(", ")}. ` +
+            `Valid keys are: ${FEATURE_REGISTRY.map((f) => f.key).join(", ")}`
           );
         }
       }

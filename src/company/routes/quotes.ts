@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import { QuoteController } from "../controllers/QuoteController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
+import { enforceFeature } from "../middleware/subscriptionLimits";
 import { enforceTenantIsolation } from "../../middleware/tenantIsolation";
 import { CompanyRequest } from "../types/auth";
 
@@ -69,7 +70,7 @@ router.get("/", (req: Request, res: Response, next: NextFunction) =>
 router.get("/:id", (req: Request, res: Response, next: NextFunction) =>
   quoteController.getQuoteById(req as unknown as CompanyRequest, res, next)
 );
-router.post("/", (req: Request, res: Response, next: NextFunction) =>
+router.post("/", enforceFeature("basicQuotes"), (req: Request, res: Response, next: NextFunction) =>
   quoteController.createQuote(req as unknown as CompanyRequest, res, next)
 );
 router.put("/:id", (req: Request, res: Response, next: NextFunction) =>

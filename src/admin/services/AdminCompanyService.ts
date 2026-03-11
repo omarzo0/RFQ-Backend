@@ -166,7 +166,41 @@ export class AdminCompanyService {
       throw new AppError("Company not found", 404);
     }
 
-    return company;
+    // Get total quotes for this company (quotes belong to RFQs which belong to company)
+    const totalQuotes = await prisma.quote.count({
+      where: { rfq: { companyId } },
+    });
+
+    const awardedQuotes = await prisma.quote.count({
+      where: { rfq: { companyId }, isAwarded: true },
+    });
+
+    const activeQuotes = await prisma.quote.count({
+      where: { rfq: { companyId }, status: "ACTIVE" },
+    });
+
+    // Get plan features/limits for this company
+    const plan = await prisma.subscriptionPlan.findFirst({
+      where: { name: company.subscriptionPlan },
+      select: {
+        name: true,
+        maxUsers: true,
+        maxRFQsPerMonth: true,
+        maxContacts: true,
+        maxEmailSendsPerMonth: true,
+        features: true,
+      },
+    });
+
+    return {
+      ...company,
+      quoteStats: {
+        totalQuotes,
+        awardedQuotes,
+        activeQuotes,
+      },
+      planDetails: plan || null,
+    };
   }
 
   /**

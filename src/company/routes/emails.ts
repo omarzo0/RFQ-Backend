@@ -2,6 +2,7 @@
 import { Router } from "express";
 import { EmailController } from "../controllers/EmailController";
 import { authenticate } from "../middleware/companyAuth";
+import { enforceEmailLimit, enforceFeature } from "../middleware/subscriptionLimits";
 import { body, query, param } from "express-validator";
 
 const router = Router();
@@ -13,6 +14,8 @@ router.use(authenticate);
 // Email sending routes
 router.post(
   "/send",
+  enforceEmailLimit,
+  enforceFeature("emailSupport"),
   [
     body("toEmail").isEmail().normalizeEmail(),
     body("fromEmail").isEmail().normalizeEmail(),
@@ -24,6 +27,8 @@ router.post(
 
 router.post(
   "/bulk",
+  enforceEmailLimit,
+  enforceFeature("bulkEmail"),
   [
     body("name").notEmpty().trim(),
     body("subject").notEmpty().trim(),

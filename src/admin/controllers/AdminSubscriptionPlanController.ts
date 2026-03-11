@@ -3,6 +3,7 @@ import { AdminSubscriptionPlanService } from "../services/AdminSubscriptionPlanS
 import { successResponse, errorResponse } from "../../utils/response";
 import { AppError } from "../../utils/errors";
 import logger from "../../utils/logger";
+import { FEATURE_REGISTRY } from "../../config/featureRegistry";
 
 export class AdminSubscriptionPlanController {
   private adminSubscriptionPlanService: AdminSubscriptionPlanService;
@@ -10,6 +11,38 @@ export class AdminSubscriptionPlanController {
   constructor() {
     this.adminSubscriptionPlanService = new AdminSubscriptionPlanService();
   }
+
+  /**
+   * Get the feature registry – all features the system supports.
+   * GET /api/v1/admin/subscription-plans/feature-registry
+   *
+   * The admin UI should call this when building the plan creation form
+   * so it knows exactly which feature keys are valid and what they mean.
+   */
+  getFeatureRegistry = async (_req: Request, res: Response): Promise<void> => {
+    try {
+      // Group features by category for easier UI rendering
+      const grouped: Record<string, typeof FEATURE_REGISTRY> = {};
+      for (const feature of FEATURE_REGISTRY) {
+        if (!grouped[feature.category]) grouped[feature.category] = [];
+        grouped[feature.category].push(feature);
+      }
+
+      successResponse(
+        res,
+        {
+          features: FEATURE_REGISTRY,
+          grouped,
+          totalFeatures: FEATURE_REGISTRY.length,
+        },
+        "Feature registry retrieved successfully",
+        200
+      );
+    } catch (error) {
+      logger.error("Get feature registry error:", error);
+      errorResponse(res, "Internal server error", 500);
+    }
+  };
 
   /**
    * Get all subscription plans

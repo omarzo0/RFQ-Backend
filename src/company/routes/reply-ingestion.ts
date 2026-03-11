@@ -3,11 +3,15 @@ import express, { Request, Response, NextFunction } from "express";
 import { body, param, query } from "express-validator";
 import { ReplyIngestionController } from "../controllers/ReplyIngestionController";
 import { authenticateCompanyUser as authenticateToken } from "../middleware/companyAuth";
+import { enforceFeature } from "../middleware/subscriptionLimits";
 import { validateRequest } from "../../utils/validators";
 import { CompanyRequest } from "../types/auth";
 
 const router = express.Router();
 const controller = new ReplyIngestionController();
+
+// Gate entire reply-ingestion module behind AI parsing feature
+router.use(enforceFeature("aiParsing"));
 
 // Email Reply Management Routes
 

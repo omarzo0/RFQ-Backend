@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import { AnalyticsController } from "../controllers/AnalyticsController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
+import { enforceFeature } from "../middleware/subscriptionLimits";
 import { CompanyRequest } from "../types/auth";
 
 const router = express.Router();
@@ -45,6 +46,7 @@ router.get(
 // Carrier Performance
 router.get(
   "/carrier-performance",
+  enforceFeature("advancedAnalytics"),
   (req: Request, res: Response, next: NextFunction) =>
     analyticsController.getCarrierPerformance(
       req as unknown as CompanyRequest,
@@ -67,6 +69,7 @@ router.get(
 // Route Performance
 router.get(
   "/route-performance",
+  enforceFeature("advancedAnalytics"),
   (req: Request, res: Response, next: NextFunction) =>
     analyticsController.getRoutePerformance(
       req as unknown as CompanyRequest,
@@ -89,6 +92,7 @@ router.get(
 // Cost Analysis
 router.get(
   "/cost-analysis",
+  enforceFeature("advancedAnalytics"),
   (req: Request, res: Response, next: NextFunction) =>
     analyticsController.getCostAnalysis(
       req as unknown as CompanyRequest,
@@ -100,6 +104,7 @@ router.get(
 // Market Intelligence
 router.get(
   "/market-intelligence",
+  enforceFeature("advancedAnalytics"),
   (req: Request, res: Response, next: NextFunction) =>
     analyticsController.getMarketIntelligence(
       req as unknown as CompanyRequest,
@@ -120,6 +125,7 @@ router.get(
 );
 router.post(
   "/scheduled-reports",
+  enforceFeature("scheduledReports"),
   (req: Request, res: Response, next: NextFunction) =>
     analyticsController.createScheduledReport(
       req as unknown as CompanyRequest,
@@ -184,8 +190,21 @@ router.delete(
     )
 );
 
+// Plan Feature Analytics (usage vs limits + quote feature stats)
+router.get(
+  "/plan-features",
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.getPlanFeatureAnalytics(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
+);
+
 // Export Analytics
-router.post("/export", (req: Request, res: Response, next: NextFunction) =>
+router.post("/export",
+  enforceFeature("exportReports"),
+  (req: Request, res: Response, next: NextFunction) =>
   analyticsController.exportAnalytics(
     req as unknown as CompanyRequest,
     res,

@@ -3,6 +3,101 @@ import { Decimal } from "@prisma/client/runtime/library";
 
 export class AnalyticsService {
   /**
+   * Get subscription plan usage & feature analytics for the company.
+   * Shows current usage vs plan limits and quote-related feature stats.
+   */
+  async getPlanFeatureAnalytics(companyId: string) {
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: {
+        id: true,
+        subscriptionPlan: true,
+        subscriptionStatus: true,
+        trialEndsAt: true,
+      },
+    });
+
+    if (!company) return null;
+
+    const plan = await prisma.subscriptionPlan.findFirst({
+      where: { name: company.subscriptionPlan },
+    });
+
+    // Current month boundaries
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Gather actual usage counts
+    const [
+      totalUsers,
+      totalContacts,
+      rfqsThisMonth,
+      emailsThisMonth,
+      totalQuotes,
+      awardedQuotes,
+      activeQuotes,
+      expiredQuotes,
+      avgQuoteAmount,
+      quotesBySource,
+      quotesByStatus,
+    ] = await Promise.all([
+      prisma.companyUser.count({ where: { companyId } }),
+      prisma.contact.count({ where: { companyId } }),
+      prisma.rFQ.count({ where: { companyId, createdAt: { gte: monthStart } } }),
+      prisma.emailLog.count({ where: { companyId, createdAt: { gte: monthStart } } }),
+      prisma.quote.count({ where: { rfq: { companyId } } }),
+      prisma.quote.count({ where: { rfq: { companyId }, isAwarded: true } }),
+      prisma.quote.count({ where: { rfq: { companyId }, status: "ACTIVE" } }),
+      prisma.quote.count({ where: { rfq: { companyId }, isExpired: true } }),
+      prisma.quote.aggregate({
+        where: { rfq: { companyId } },
+        _avg: { totalAmount: true },
+      }),
+      prisma.quote.groupBy({
+        by: ["source"],
+        where: { rfq: { companyId } },
+        _count: { id: true },
+      }),
+      prisma.quote.groupBy({
+        by: ["status"],
+        where: { rfq: { companyId } },
+        _count: { id: true },
+      }),
+    ]);
+
+    const features = (plan?.features as Record<string, boolean>) || {};
+
+    return {
+      plan: {
+        name: plan?.name || company.subscriptionPlan,
+        description: plan?.description || null,
+        features,
+        isActive: plan?.isActive ?? true,
+      },
+      subscription: {
+        status: company.subscriptionStatus,
+        trialEndsAt: company.trialEndsAt,
+      },
+      usage: {
+        users: { current: totalUsers, limit: plan?.maxUsers ?? null, percentage: plan?.maxUsers ? Math.round((totalUsers / plan.maxUsers) * 100) : null },
+        contacts: { current: totalContacts, limit: plan?.maxContacts ?? null, percentage: plan?.maxContacts ? Math.round((totalContacts / plan.maxContacts) * 100) : null },
+        rfqsThisMonth: { current: rfqsThisMonth, limit: plan?.maxRFQsPerMonth ?? null, percentage: plan?.maxRFQsPerMonth ? Math.round((rfqsThisMonth / plan.maxRFQsPerMonth) * 100) : null },
+        emailsThisMonth: { current: emailsThisMonth, limit: plan?.maxEmailSendsPerMonth ?? null, percentage: plan?.maxEmailSendsPerMonth ? Math.round((emailsThisMonth / plan.maxEmailSendsPerMonth) * 100) : null },
+      },
+      quoteStats: {
+        totalQuotes,
+        activeQuotes,
+        awardedQuotes,
+        expiredQuotes,
+        awardRate: totalQuotes > 0 ? Number(((awardedQuotes / totalQuotes) * 100).toFixed(1)) : 0,
+        averageQuoteAmount: avgQuoteAmount._avg.totalAmount ? Number(avgQuoteAmount._avg.totalAmount) : 0,
+        bySource: quotesBySource.map((s) => ({ source: s.source, count: s._count.id })),
+        byStatus: quotesByStatus.map((s) => ({ status: s.status, count: s._count.id })),
+      },
+    };
+  }
+
+  /**
    * Get performance metrics for the company
    */
   async getPerformanceMetrics(

@@ -2,6 +2,7 @@
 import express from "express";
 import { TemplateController } from "../controllers/TemplateController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
+import { enforceFeature } from "../middleware/subscriptionLimits";
 
 const router = express.Router();
 const templateController = new TemplateController();
@@ -44,7 +45,7 @@ router.post("/bulk-import", (req, res, next) =>
 );
 
 // Template Management - CRUD operations
-router.post("/", (req, res, next) =>
+router.post("/", enforceFeature("templateManagement"), (req, res, next) =>
   templateController.createTemplate(req, res, next)
 );
 

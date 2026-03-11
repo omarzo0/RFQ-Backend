@@ -13,6 +13,13 @@ router.use(authenticateAdmin);
 
 // Subscription plan management routes
 router.get("/", adminSubscriptionPlanController.getSubscriptionPlans);
+
+// Feature registry – must come before /:id so it's not treated as an ID
+router.get(
+  "/feature-registry",
+  adminSubscriptionPlanController.getFeatureRegistry
+);
+
 router.get("/:id", adminSubscriptionPlanController.getSubscriptionPlan);
 router.get(
   "/:id/usage",

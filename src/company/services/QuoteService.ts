@@ -1,5 +1,7 @@
 import { prisma } from "../../app";
 import { ValidationError } from "../../utils/errors";
+import logger from "../../utils/logger";
+import nodemailer from "nodemailer";
 
 export class QuoteService {
   /**
@@ -592,7 +594,99 @@ export class QuoteService {
       },
     });
 
+    // Send email notification to company about the awarded quote
+    this.sendQuoteAwardedNotification(companyId, awardedQuote).catch((err) =>
+      logger.error("Failed to send quote awarded notification email:", err)
+    );
+
     return awardedQuote;
+  }
+
+  /**
+   * Send email notification to company admins when a quote is awarded
+   */
+  private async sendQuoteAwardedNotification(companyId: string, awardedQuote: any) {
+    try {
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: { name: true, email: true },
+      });
+
+      if (!company?.email) return;
+
+      // Get company admin users to notify
+      const admins = await prisma.companyUser.findMany({
+        where: { companyId, role: "ADMIN", isActive: true },
+        select: { email: true, firstName: true },
+      });
+
+      const recipients = [company.email, ...admins.map((a) => a.email)];
+      const uniqueRecipients = [...new Set(recipients)];
+
+      const carrierName = awardedQuote.shippingLine?.name || "N/A";
+      const contactName = awardedQuote.contact
+        ? `${awardedQuote.contact.firstName} ${awardedQuote.contact.lastName}`
+        : "N/A";
+      const rfqTitle = awardedQuote.rfq?.title || awardedQuote.rfq?.rfqNumber || "N/A";
+      const totalAmount = awardedQuote.totalAmount
+        ? `${awardedQuote.currency || "USD"} ${Number(awardedQuote.totalAmount).toLocaleString()}`
+        : "N/A";
+
+      const transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST || "smtp-relay.brevo.com",
+        port: parseInt(process.env.EMAIL_PORT || "587"),
+        secure: process.env.EMAIL_SECURE === "true",
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD,
+        },
+      });
+
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: #1a73e8; color: #fff; padding: 20px; border-radius: 8px 8px 0 0;">
+            <h2 style="margin: 0;">🏆 Quote Awarded</h2>
+          </div>
+          <div style="padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;">
+            <p>A quote has been awarded for <strong>${rfqTitle}</strong>.</p>
+            <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 8px 0; color: #666;">RFQ</td>
+                <td style="padding: 8px 0; font-weight: bold;">${rfqTitle}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 8px 0; color: #666;">Carrier</td>
+                <td style="padding: 8px 0; font-weight: bold;">${carrierName}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 8px 0; color: #666;">Contact</td>
+                <td style="padding: 8px 0; font-weight: bold;">${contactName}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 8px 0; color: #666;">Total Amount</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #1a73e8;">${totalAmount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Awarded At</td>
+                <td style="padding: 8px 0; font-weight: bold;">${new Date().toLocaleString()}</td>
+              </tr>
+            </table>
+            <p style="color: #666; font-size: 13px; margin-top: 24px;">This is an automated notification from your RFQ platform.</p>
+          </div>
+        </div>
+      `;
+
+      await transporter.sendMail({
+        from: process.env.EMAIL_FROM || "noreply@rfq-platform.com",
+        to: uniqueRecipients.join(", "),
+        subject: `🏆 Quote Awarded — ${rfqTitle} → ${carrierName}`,
+        html: htmlBody,
+      });
+
+      logger.info(`Quote awarded notification sent for quote ${awardedQuote.id} to ${uniqueRecipients.length} recipients`);
+    } catch (error) {
+      logger.error("Error sending quote awarded notification:", error);
+    }
   }
 
   /**

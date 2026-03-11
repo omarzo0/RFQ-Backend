@@ -1,6 +1,7 @@
 import express from "express";
 import { ContactController } from "../controllers/ContactController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
+import { enforceContactLimit, enforceFeature } from "../middleware/subscriptionLimits";
 import { CompanyRequest } from "../types/auth";
 
 const router = express.Router();
@@ -40,7 +41,7 @@ router.get("/", (req, res, next) =>
 router.get("/:id", (req, res, next) =>
   contactController.getContactById(req as unknown as CompanyRequest, res, next)
 );
-router.post("/", (req, res, next) =>
+router.post("/", enforceContactLimit, enforceFeature("contactManagement"), (req, res, next) =>
   contactController.createContact(req as unknown as CompanyRequest, res, next)
 );
 router.put("/:id", (req, res, next) =>
