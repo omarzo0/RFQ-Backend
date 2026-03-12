@@ -137,6 +137,98 @@ export class AdminAuthController {
     }
   };
 
+  /**
+   * Update current admin profile
+   * PUT /api/v1/admin/auth/profile
+   */
+  updateProfile = async (req: AdminRequest, res: Response): Promise<void> => {
+    try {
+      const adminId = req.user?.id;
+
+      if (!adminId) {
+        errorResponse(res, "Unauthorized", 401);
+        return;
+      }
+
+      const { firstName, lastName, email } = req.body;
+
+      if (!firstName && !lastName && !email) {
+        errorResponse(
+          res,
+          "At least one field (firstName, lastName, email) is required",
+          400
+        );
+        return;
+      }
+
+      const profile = await this.adminAuthService.updateProfile(adminId, {
+        firstName,
+        lastName,
+        email,
+      });
+
+      successResponse(res, profile, "Profile updated successfully");
+    } catch (error) {
+      logger.error("Update admin profile error:", error);
+
+      if (error instanceof AppError || error instanceof ValidationError) {
+        errorResponse(res, error.message, error.statusCode);
+      } else {
+        errorResponse(res, "Internal server error", 500);
+      }
+    }
+  };
+
+  /**
+   * Update current admin password
+   * PUT /api/v1/admin/auth/password
+   */
+  updatePassword = async (req: AdminRequest, res: Response): Promise<void> => {
+    try {
+      const adminId = req.user?.id;
+
+      if (!adminId) {
+        errorResponse(res, "Unauthorized", 401);
+        return;
+      }
+
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        errorResponse(
+          res,
+          "Current password and new password are required",
+          400
+        );
+        return;
+      }
+
+      if (newPassword.length < 8) {
+        errorResponse(
+          res,
+          "New password must be at least 8 characters long",
+          400
+        );
+        return;
+      }
+
+      await this.adminAuthService.updatePassword(adminId, {
+        currentPassword,
+        newPassword,
+      });
+
+      successResponse(res, null, "Password updated successfully. All sessions have been revoked — please log in again.");
+    } catch (error) {
+      logger.error("Update admin password error:", error);
+
+      if (error instanceof AppError || error instanceof ValidationError) {
+        errorResponse(res, error.message, error.statusCode);
+      } else {
+        errorResponse(res, "Internal server error", 500);
+      }
+    }
+  };
+
   // ─── Password Reset (Public) ─────────────────────────────────────────
 
   /**

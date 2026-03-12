@@ -117,6 +117,113 @@ export class AdminAuthService {
   }
 
   /**
+   * Update admin profile (name, email)
+   */
+  async updateProfile(
+    adminId: string,
+    data: { firstName?: string; lastName?: string; email?: string }
+  ): Promise<AdminProfile> {
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId, isActive: true },
+    });
+
+    if (!admin) {
+      throw new AppError("Admin not found", 404);
+    }
+
+    // If email is being changed, check for conflicts
+    if (data.email && data.email.toLowerCase() !== admin.email) {
+      const existing = await prisma.admin.findUnique({
+        where: { email: data.email.toLowerCase() },
+      });
+      if (existing) {
+        throw new ValidationError("Email is already in use by another admin");
+      }
+    }
+
+    const updateData: any = {};
+    if (data.firstName !== undefined) updateData.firstName = data.firstName.trim();
+    if (data.lastName !== undefined) updateData.lastName = data.lastName.trim();
+    if (data.email !== undefined) updateData.email = data.email.toLowerCase().trim();
+
+    if (Object.keys(updateData).length === 0) {
+      throw new ValidationError("No fields to update");
+    }
+
+    const updated = await prisma.admin.update({
+      where: { id: adminId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        isActive: true,
+        lastLoginAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    logger.info(`Admin profile updated: ${adminId}`);
+
+    return {
+      ...updated,
+      role: updated.role as AdminRole,
+      lastLoginAt: updated.lastLoginAt || undefined,
+    };
+  }
+
+  /**
+   * Update admin password (requires current password)
+   */
+  async updatePassword(
+    adminId: string,
+    data: { currentPassword: string; newPassword: string }
+  ): Promise<void> {
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId, isActive: true },
+    });
+
+    if (!admin) {
+      throw new AppError("Admin not found", 404);
+    }
+
+    // Verify current password
+    const isValid = await PasswordUtils.compare(
+      data.currentPassword,
+      admin.passwordHash
+    );
+    if (!isValid) {
+      throw new ValidationError("Current password is incorrect");
+    }
+
+    // Prevent reusing same password
+    const isSame = await PasswordUtils.compare(
+      data.newPassword,
+      admin.passwordHash
+    );
+    if (isSame) {
+      throw new ValidationError(
+        "New password must be different from the current password"
+      );
+    }
+
+    const newHash = await PasswordUtils.hash(data.newPassword);
+
+    await prisma.admin.update({
+      where: { id: adminId },
+      data: { passwordHash: newHash },
+    });
+
+    // Revoke all refresh tokens so other sessions are logged out
+    await JWTUtils.revokeAllTokens(adminId, "ADMIN");
+
+    logger.info(`Admin password updated: ${adminId}`);
+  }
+
+  /**
    * Logout admin (revoke refresh tokens)
    */
   async logout(adminId: string): Promise<void> {

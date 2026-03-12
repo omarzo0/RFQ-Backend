@@ -196,7 +196,138 @@ Authorization: Bearer <jwt_token>
 
 ---
 
-### 6. Logout Admin
+### 6. Update Admin Profile
+
+**PUT** `/api/v1/admin/auth/profile`
+
+**Description:** Update the currently logged-in admin's profile information. At least one field must be provided.
+
+**Headers:**
+
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Validation:**
+
+- `firstName` _(optional)_ — non-empty string, trimmed
+- `lastName` _(optional)_ — non-empty string, trimmed
+- `email` _(optional)_ — valid email, normalized
+
+**Request Body:**
+
+```json
+{
+  "firstName": "Updated",
+  "lastName": "Name",
+  "email": "newemail@example.com"
+}
+```
+
+> You can send any combination of the three fields. At least one is required.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Profile updated successfully",
+  "data": {
+    "id": "admin_id",
+    "email": "newemail@example.com",
+    "firstName": "Updated",
+    "lastName": "Name",
+    "role": "super_admin",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-03-11T12:00:00.000Z"
+  }
+}
+```
+
+**Error Examples:**
+
+```json
+{
+  "success": false,
+  "message": "At least one field (firstName, lastName, email) is required",
+  "statusCode": 400
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Email is already in use by another admin",
+  "statusCode": 409
+}
+```
+
+**Status Codes:** `200` Profile updated · `400` No fields provided or invalid input · `401` Unauthorized · `409` Email already in use · `500` Internal Server Error
+
+---
+
+### 7. Update Admin Password
+
+**PUT** `/api/v1/admin/auth/password`
+
+**Description:** Change the currently logged-in admin's password. Requires the current password for verification. On success, **all existing sessions (refresh tokens) are revoked** — the admin must log in again.
+
+**Headers:**
+
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Validation:**
+
+- `currentPassword` — required, non-empty
+- `newPassword` — required, minimum 8 characters
+
+**Request Body:**
+
+```json
+{
+  "currentPassword": "oldPassword123",
+  "newPassword": "newSecurePassword456"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Password updated successfully. All sessions have been revoked — please log in again.",
+  "data": null
+}
+```
+
+**Error Examples:**
+
+```json
+{
+  "success": false,
+  "message": "Current password is incorrect",
+  "statusCode": 401
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "New password must be different from the current password",
+  "statusCode": 400
+}
+```
+
+**Status Codes:** `200` Password updated · `400` Missing fields / password too short / same password · `401` Unauthorized or incorrect current password · `500` Internal Server Error
+
+> ⚠️ **Important:** After a successful password change, all refresh tokens are revoked. The frontend should redirect the user to the login page.
+
+---
+
+### 8. Logout Admin
 
 **POST** `/api/v1/admin/auth/logout`
 
