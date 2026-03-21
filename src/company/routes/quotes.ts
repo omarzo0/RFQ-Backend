@@ -4,6 +4,7 @@ import { authenticateCompanyUser } from "../middleware/companyAuth";
 import { enforceFeature } from "../middleware/subscriptionLimits";
 import { enforceTenantIsolation } from "../../middleware/tenantIsolation";
 import { CompanyRequest } from "../types/auth";
+import { standardRateLimit, mutationRateLimit, analyticsRateLimit } from "../../middleware/rateLimiter";
 
 const router = express.Router();
 const quoteController = new QuoteController();
@@ -11,6 +12,7 @@ const quoteController = new QuoteController();
 // Apply middleware
 router.use(authenticateCompanyUser);
 router.use(enforceTenantIsolation);
+router.use(standardRateLimit);
 
 // Quote Analytics & Intelligence (must come before parameterized routes)
 router.get("/analytics", (req: Request, res: Response, next: NextFunction) =>

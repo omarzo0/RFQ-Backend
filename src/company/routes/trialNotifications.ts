@@ -1,12 +1,14 @@
 import { Router } from "express";
 import TrialNotificationController from "../controllers/TrialNotificationController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
+import { standardRateLimit } from "../../middleware/rateLimiter";
 
 const router = Router();
 const trialNotificationController = new TrialNotificationController();
 
 // Apply authentication middleware to all routes
 router.use(authenticateCompanyUser);
+router.use(standardRateLimit);
 
 /**
  * @route GET /api/v1/company/trial-notifications/check-warnings

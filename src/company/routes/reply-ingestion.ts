@@ -6,12 +6,14 @@ import { authenticateCompanyUser as authenticateToken } from "../middleware/comp
 import { enforceFeature } from "../middleware/subscriptionLimits";
 import { validateRequest } from "../../utils/validators";
 import { CompanyRequest } from "../types/auth";
+import { standardRateLimit } from "../../middleware/rateLimiter";
 
 const router = express.Router();
 const controller = new ReplyIngestionController();
 
 // Gate entire reply-ingestion module behind AI parsing feature
 router.use(enforceFeature("aiParsing"));
+router.use(standardRateLimit);
 
 // Email Reply Management Routes
 

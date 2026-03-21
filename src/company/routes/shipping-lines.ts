@@ -2,12 +2,14 @@ import express from "express";
 import { ShippingLineController } from "../controllers/ShippingLineController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
 import { CompanyRequest } from "../types/auth";
+import { standardRateLimit, mutationRateLimit } from "../../middleware/rateLimiter";
 
 const router = express.Router();
 const shippingLineController = new ShippingLineController();
 
 // Apply authentication middleware to all routes
 router.use(authenticateCompanyUser);
+router.use(standardRateLimit);
 
 // Shipping Line Data (must come before /:id routes)
 router.get("/trade-lanes", (req, res, next) =>

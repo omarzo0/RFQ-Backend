@@ -4,6 +4,7 @@ import {
   authenticateAdmin,
   requireAdminOrSuperAdmin,
 } from "../middleware/adminAuth";
+import { standardRateLimit, mutationRateLimit } from "../../middleware/rateLimiter";
 
 const router = Router();
 const adminTicketController = new AdminTicketController();
@@ -11,14 +12,16 @@ const adminTicketController = new AdminTicketController();
 // All routes require admin authentication
 router.use(authenticateAdmin);
 
-// Ticket management routes (admins can only view and manage tickets, not create them)
-router.get("/", adminTicketController.getTickets);
-router.get("/statistics", adminTicketController.getTicketStatistics);
-router.get("/my-tickets", adminTicketController.getMyTickets);
-router.get("/recent", adminTicketController.getRecentTickets);
-router.get("/:id", adminTicketController.getTicketById);
-router.put("/:id", adminTicketController.updateTicket);
-router.post("/:id/assign", adminTicketController.assignTicket);
-router.post("/:id/close", adminTicketController.closeTicket);
+// Ticket read routes
+router.get("/", standardRateLimit, adminTicketController.getTickets);
+router.get("/statistics", standardRateLimit, adminTicketController.getTicketStatistics);
+router.get("/my-tickets", standardRateLimit, adminTicketController.getMyTickets);
+router.get("/recent", standardRateLimit, adminTicketController.getRecentTickets);
+router.get("/:id", standardRateLimit, adminTicketController.getTicketById);
+
+// Ticket mutation routes
+router.put("/:id", mutationRateLimit, adminTicketController.updateTicket);
+router.post("/:id/assign", mutationRateLimit, adminTicketController.assignTicket);
+router.post("/:id/close", mutationRateLimit, adminTicketController.closeTicket);
 
 export default router;

@@ -4,23 +4,26 @@ import { CompanyPasswordResetController } from "../controllers/CompanyPasswordRe
 import { authenticateCompanyUser } from "../middleware/companyAuth";
 import { CompanyRequest } from "../types/auth";
 import { body } from "express-validator";
+import { authRateLimit, standardRateLimit } from "../../middleware/rateLimiter";
 
 const router = Router();
 const companyAuthController = new CompanyAuthController();
 const companyPasswordResetController = new CompanyPasswordResetController();
 
-// Public routes
-router.post("/login", companyAuthController.login);
-router.post("/refresh-token", companyAuthController.refreshToken);
+// Public routes (strict auth rate limit)
+router.post("/login", authRateLimit, companyAuthController.login);
+router.post("/refresh-token", authRateLimit, companyAuthController.refreshToken);
 
-// Password reset routes (public)
+// Password reset routes (public, strict)
 router.post(
   "/forgot-password",
+  authRateLimit,
   [body("email").isEmail().normalizeEmail()],
   companyPasswordResetController.requestPasswordReset
 );
 router.post(
   "/verify-otp",
+  authRateLimit,
   [
     body("email").isEmail().normalizeEmail(),
     body("otp")
@@ -31,6 +34,7 @@ router.post(
 );
 router.post(
   "/reset-password",
+  authRateLimit,
   [
     body("email").isEmail().normalizeEmail(),
     body("otp")
@@ -44,16 +48,17 @@ router.post(
 );
 
 // Protected routes
-router.get("/profile", authenticateCompanyUser, (req: Request, res: Response) =>
+router.get("/profile", authenticateCompanyUser, standardRateLimit, (req: Request, res: Response) =>
   companyAuthController.getProfile(req as unknown as CompanyRequest, res)
 );
 router.post(
   "/change-password",
   authenticateCompanyUser,
+  standardRateLimit,
   (req: Request, res: Response) =>
     companyAuthController.changePassword(req as unknown as CompanyRequest, res)
 );
-router.post("/logout", authenticateCompanyUser, (req: Request, res: Response) =>
+router.post("/logout", authenticateCompanyUser, standardRateLimit, (req: Request, res: Response) =>
   companyAuthController.logout(req as unknown as CompanyRequest, res)
 );
 

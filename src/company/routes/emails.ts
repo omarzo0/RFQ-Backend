@@ -4,12 +4,14 @@ import { EmailController } from "../controllers/EmailController";
 import { authenticate } from "../middleware/companyAuth";
 import { enforceEmailLimit, enforceFeature } from "../middleware/subscriptionLimits";
 import { body, query, param } from "express-validator";
+import { standardRateLimit, mutationRateLimit, analyticsRateLimit } from "../../middleware/rateLimiter";
 
 const router = Router();
 const emailController = new EmailController();
 
 // Apply authentication middleware to all routes
 router.use(authenticate);
+router.use(standardRateLimit);
 
 // Email sending routes
 router.post(

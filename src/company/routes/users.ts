@@ -3,12 +3,14 @@ import { UserController } from "../controllers/UserController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
 import { enforceUserLimit, enforceFeature } from "../middleware/subscriptionLimits";
 import { CompanyRequest } from "../types/auth";
+import { standardRateLimit, mutationRateLimit } from "../../middleware/rateLimiter";
 
 const router = express.Router();
 const userController = new UserController();
 
 // Apply authentication middleware to all routes
 router.use(authenticateCompanyUser);
+router.use(standardRateLimit);
 
 // Current User Profile (must come before /:id routes)
 router.get("/me", (req: Request, res: Response, next: NextFunction) =>

@@ -4,6 +4,7 @@ import {
   authenticateAdmin,
   requireAdminOrSuperAdmin,
 } from "../middleware/adminAuth";
+import { standardRateLimit, mutationRateLimit } from "../../middleware/rateLimiter";
 
 const router = Router();
 const adminSubscriptionController = new AdminSubscriptionController();
@@ -11,39 +12,45 @@ const adminSubscriptionController = new AdminSubscriptionController();
 // All routes require admin authentication
 router.use(authenticateAdmin);
 
-// Subscription management routes
-router.get("/", adminSubscriptionController.getSubscriptions);
-router.get("/analytics", adminSubscriptionController.getSubscriptionAnalytics);
-router.get("/expiring-trials", adminSubscriptionController.getExpiringTrials);
-router.get("/:companyId", adminSubscriptionController.getSubscription);
+// Subscription read routes
+router.get("/", standardRateLimit, adminSubscriptionController.getSubscriptions);
+router.get("/analytics", standardRateLimit, adminSubscriptionController.getSubscriptionAnalytics);
+router.get("/expiring-trials", standardRateLimit, adminSubscriptionController.getExpiringTrials);
+router.get("/:companyId", standardRateLimit, adminSubscriptionController.getSubscription);
 router.get(
   "/:companyId/usage",
+  standardRateLimit,
   adminSubscriptionController.getSubscriptionUsage
 );
 
 // Subscription actions (require admin or super admin)
 router.put(
   "/:companyId",
+  mutationRateLimit,
   requireAdminOrSuperAdmin,
   adminSubscriptionController.updateSubscription
 );
 router.post(
   "/:companyId/suspend",
+  mutationRateLimit,
   requireAdminOrSuperAdmin,
   adminSubscriptionController.suspendSubscription
 );
 router.post(
   "/:companyId/reactivate",
+  mutationRateLimit,
   requireAdminOrSuperAdmin,
   adminSubscriptionController.reactivateSubscription
 );
 router.post(
   "/:companyId/cancel",
+  mutationRateLimit,
   requireAdminOrSuperAdmin,
   adminSubscriptionController.cancelSubscription
 );
 router.post(
   "/:companyId/extend-trial",
+  mutationRateLimit,
   requireAdminOrSuperAdmin,
   adminSubscriptionController.extendTrial
 );

@@ -5,12 +5,14 @@ import PaymentController, {
   getTransactionsValidation,
 } from "../controllers/PaymentController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
+import { standardRateLimit } from "../../middleware/rateLimiter";
 
 const router = Router();
 const paymentController = new PaymentController();
 
 // Apply authentication middleware to all routes
 router.use(authenticateCompanyUser);
+router.use(standardRateLimit);
 
 /**
  * @route GET /api/v1/company/payments/subscription
@@ -58,13 +60,19 @@ router.get("/status", paymentController.getSubscriptionStatus);
  */
 router.get("/pending-invoice", paymentController.getPendingPaymentInvoice);
 
+router.post(
+  "/process-payment",
+  processPendingPaymentValidation,
+  paymentController.processPendingPlanPayment
+);
+
 /**
- * @route POST /api/v1/company/payments/process-payment
- * @desc Process payment for pending plan upgrade
+ * @route POST /api/v1/company/payments/invoice/:id/process
+ * @desc Process payment for a specific pending plan upgrade invoice
  * @access Private (Company)
  */
 router.post(
-  "/process-payment",
+  "/invoice/:id/process",
   processPendingPaymentValidation,
   paymentController.processPendingPlanPayment
 );

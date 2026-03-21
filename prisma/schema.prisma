@@ -1341,12 +1341,19 @@ model Notification {
   expiresAt   DateTime?            @map("expires_at")
   actionUrl   String?              @map("action_url")
   actionLabel String?              @map("action_label")
+  audience    NotificationAudience @default(ALL)
   company     Company?             @relation(fields: [companyId], references: [id], onDelete: Cascade)
   admin       Admin                @relation(fields: [createdBy], references: [id])
 
   @@index([companyId, isRead])
   @@index([isGlobal, createdAt])
   @@map("notifications")
+}
+
+enum NotificationAudience {
+  ALL
+  ADMIN_ONLY
+  COMPANY_ONLY
 }
 
 enum NotificationType {

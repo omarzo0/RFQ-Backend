@@ -1,11 +1,16 @@
 import express, { Request, Response, NextFunction } from "express";
 import multer from "multer";
 import { CompanyController } from "../controllers/CompanyController";
+import { AnalyticsController } from "../controllers/AnalyticsController";
+import { QuoteController } from "../controllers/QuoteController";
 import { authenticate } from "../middleware/companyAuth";
 import { CompanyRequest } from "../types/auth";
+import { standardRateLimit, mutationRateLimit } from "../../middleware/rateLimiter";
 
 const router = express.Router();
 const companyController = new CompanyController();
+const analyticsController = new AnalyticsController();
+const quoteController = new QuoteController();
 
 // Configure multer for file uploads
 const upload = multer({
@@ -66,14 +71,14 @@ const handleMulterError = (
 router.use(authenticate);
 
 // Company Profile
-router.get("/profile", (req: Request, res: Response, next: NextFunction) =>
+router.get("/profile", standardRateLimit, (req: Request, res: Response, next: NextFunction) =>
   companyController.getCompanyProfile(
     req as unknown as CompanyRequest,
     res,
     next
   )
 );
-router.put("/profile", (req: Request, res: Response, next: NextFunction) =>
+router.put("/profile", mutationRateLimit, (req: Request, res: Response, next: NextFunction) =>
   companyController.updateCompanyProfile(
     req as unknown as CompanyRequest,
     res,
@@ -82,6 +87,7 @@ router.put("/profile", (req: Request, res: Response, next: NextFunction) =>
 );
 router.post(
   "/logo",
+  mutationRateLimit,
   upload.single("logo"),
   handleMulterError,
   (req: Request, res: Response, next: NextFunction) =>
@@ -95,6 +101,7 @@ router.post(
 // User Preferences
 router.get(
   "/user-preferences",
+  standardRateLimit,
   (req: Request, res: Response, next: NextFunction) =>
     companyController.getUserPreferences(
       req as unknown as CompanyRequest,
@@ -104,6 +111,7 @@ router.get(
 );
 router.put(
   "/user-preferences",
+  mutationRateLimit,
   (req: Request, res: Response, next: NextFunction) =>
     companyController.updateUserPreferences(
       req as unknown as CompanyRequest,
@@ -115,6 +123,41 @@ router.put(
 // Billing History
 router.get(
   "/billing-history",
+  standardRateLimit,
+  (req: Request, res: Response, next: NextFunction) =>
+    companyController.getBillingHistory(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
+);
+
+// Billing & Usage Statistics
+router.get(
+  "/usage",
+  standardRateLimit,
+  (req: Request, res: Response, next: NextFunction) =>
+    analyticsController.getPlanFeatureAnalytics(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
+);
+
+router.get(
+  "/billing/optimization",
+  standardRateLimit,
+  (req: Request, res: Response, next: NextFunction) =>
+    quoteController.getRateOptimization(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
+);
+
+router.get(
+  "/billing/history",
+  standardRateLimit,
   (req: Request, res: Response, next: NextFunction) =>
     companyController.getBillingHistory(
       req as unknown as CompanyRequest,
@@ -126,6 +169,7 @@ router.get(
 // Payment Methods
 router.get(
   "/payment-methods",
+  standardRateLimit,
   (req: Request, res: Response, next: NextFunction) =>
     companyController.getPaymentMethods(
       req as unknown as CompanyRequest,
@@ -135,6 +179,7 @@ router.get(
 );
 router.post(
   "/payment-methods",
+  mutationRateLimit,
   (req: Request, res: Response, next: NextFunction) =>
     companyController.addPaymentMethod(
       req as unknown as CompanyRequest,
@@ -144,6 +189,7 @@ router.post(
 );
 router.delete(
   "/payment-methods/:id",
+  mutationRateLimit,
   (req: Request, res: Response, next: NextFunction) =>
     companyController.deletePaymentMethod(
       req as unknown as CompanyRequest,
@@ -153,6 +199,7 @@ router.delete(
 );
 router.put(
   "/payment-methods/:id/default",
+  mutationRateLimit,
   (req: Request, res: Response, next: NextFunction) =>
     companyController.setDefaultPaymentMethod(
       req as unknown as CompanyRequest,
@@ -164,6 +211,7 @@ router.put(
 // Billing Settings
 router.get(
   "/billing-settings",
+  standardRateLimit,
   (req: Request, res: Response, next: NextFunction) =>
     companyController.getBillingSettings(
       req as unknown as CompanyRequest,
@@ -173,40 +221,43 @@ router.get(
 );
 
 // API Keys
-router.get("/api-keys", (req: Request, res: Response, next: NextFunction) =>
+router.get("/api-keys", standardRateLimit, (req: Request, res: Response, next: NextFunction) =>
   companyController.getAPIKeys(req as unknown as CompanyRequest, res, next)
 );
-router.post("/api-keys", (req: Request, res: Response, next: NextFunction) =>
+router.post("/api-keys", mutationRateLimit, (req: Request, res: Response, next: NextFunction) =>
   companyController.createAPIKey(req as unknown as CompanyRequest, res, next)
 );
 router.delete(
   "/api-keys/:id",
+  mutationRateLimit,
   (req: Request, res: Response, next: NextFunction) =>
     companyController.revokeAPIKey(req as unknown as CompanyRequest, res, next)
 );
 
 // Webhooks
-router.get("/webhooks", (req: Request, res: Response, next: NextFunction) =>
+router.get("/webhooks", standardRateLimit, (req: Request, res: Response, next: NextFunction) =>
   companyController.getWebhooks(req as unknown as CompanyRequest, res, next)
 );
-router.post("/webhooks", (req: Request, res: Response, next: NextFunction) =>
+router.post("/webhooks", mutationRateLimit, (req: Request, res: Response, next: NextFunction) =>
   companyController.createWebhook(req as unknown as CompanyRequest, res, next)
 );
-router.put("/webhooks/:id", (req: Request, res: Response, next: NextFunction) =>
+router.put("/webhooks/:id", mutationRateLimit, (req: Request, res: Response, next: NextFunction) =>
   companyController.updateWebhook(req as unknown as CompanyRequest, res, next)
 );
 router.delete(
   "/webhooks/:id",
+  mutationRateLimit,
   (req: Request, res: Response, next: NextFunction) =>
     companyController.deleteWebhook(req as unknown as CompanyRequest, res, next)
 );
 
 // Integrations
-router.get("/integrations", (req: Request, res: Response, next: NextFunction) =>
+router.get("/integrations", standardRateLimit, (req: Request, res: Response, next: NextFunction) =>
   companyController.getIntegrations(req as unknown as CompanyRequest, res, next)
 );
 router.post(
   "/integrations/:type/connect",
+  mutationRateLimit,
   (req: Request, res: Response, next: NextFunction) =>
     companyController.connectIntegration(
       req as unknown as CompanyRequest,
@@ -216,6 +267,7 @@ router.post(
 );
 router.delete(
   "/integrations/:type/disconnect",
+  mutationRateLimit,
   (req: Request, res: Response, next: NextFunction) =>
     companyController.disconnectIntegration(
       req as unknown as CompanyRequest,

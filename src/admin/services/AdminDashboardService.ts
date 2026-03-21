@@ -1,6 +1,7 @@
 import { prisma } from "../../app";
 import { AppError } from "../../utils/errors";
 import logger from "../../utils/logger";
+import { CacheService } from "../../services/CacheService";
 
 export interface AdminDashboardData {
   overview: {
@@ -71,313 +72,338 @@ export class AdminDashboardService {
    * Get comprehensive dashboard data
    */
   async getDashboardData(): Promise<AdminDashboardData> {
-    try {
-      const [
-        overview,
-        recentActivity,
-        subscriptionStats,
-        companyStats,
-        emailStats,
-        rfqStats,
-        quoteStats,
-      ] = await Promise.all([
-        this.getOverviewStats(),
-        this.getRecentActivity(),
-        this.getSubscriptionStats(),
-        this.getCompanyStats(),
-        this.getEmailStats(),
-        this.getRFQStats(),
-        this.getQuoteStats(),
-      ]);
+    return CacheService.getOrSet(
+      "dashboard:overview",
+      async () => {
+        try {
+          const [
+            overview,
+            recentActivity,
+            subscriptionStats,
+            companyStats,
+            emailStats,
+            rfqStats,
+            quoteStats,
+          ] = await Promise.all([
+            this.getOverviewStats(),
+            this.getRecentActivity(),
+            this.getSubscriptionStats(),
+            this.getCompanyStats(),
+            this.getEmailStats(),
+            this.getRFQStats(),
+            this.getQuoteStats(),
+          ]);
 
-      return {
-        overview,
-        recentActivity,
-        subscriptionStats,
-        companyStats,
-        emailStats,
-        rfqStats,
-        quoteStats,
-      };
-    } catch (error) {
-      logger.error("Error getting dashboard data:", error);
-      throw new AppError("Failed to get dashboard data", 500);
-    }
+          return {
+            overview,
+            recentActivity,
+            subscriptionStats,
+            companyStats,
+            emailStats,
+            rfqStats,
+            quoteStats,
+          };
+        } catch (error) {
+          logger.error("Error getting dashboard data:", error);
+          throw new AppError("Failed to get dashboard data", 500);
+        }
+      },
+      120 // 2 minutes
+    );
   }
 
   /**
    * Get overview statistics
    */
   private async getOverviewStats() {
-    const [
-      totalCompanies,
-      activeCompanies,
-      totalUsers,
-      totalRFQs,
-      totalQuotes,
-      totalContacts,
-      totalShippingLines,
-      totalEmails,
-      totalTemplates,
-    ] = await Promise.all([
-      prisma.company.count(),
-      prisma.company.count({ where: { isActive: true } }),
-      prisma.companyUser.count({ where: { isActive: true } }),
-      prisma.rFQ.count(),
-      prisma.quote.count(),
-      prisma.contact.count(),
-      prisma.shippingLine.count(),
-      prisma.emailLog.count(),
-      prisma.rFQTemplate.count(),
-    ]);
+    return CacheService.getOrSet(
+      "dashboard:overview:stats",
+      async () => {
+        const [
+          totalCompanies,
+          activeCompanies,
+          totalUsers,
+          totalRFQs,
+          totalQuotes,
+          totalContacts,
+          totalShippingLines,
+          totalEmails,
+          totalTemplates,
+        ] = await Promise.all([
+          prisma.company.count(),
+          prisma.company.count({ where: { isActive: true } }),
+          prisma.companyUser.count({ where: { isActive: true } }),
+          prisma.rFQ.count(),
+          prisma.quote.count(),
+          prisma.contact.count(),
+          prisma.shippingLine.count(),
+          prisma.emailLog.count(),
+          prisma.rFQTemplate.count(),
+        ]);
 
-    return {
-      totalCompanies,
-      activeCompanies,
-      totalUsers,
-      totalRFQs,
-      totalQuotes,
-      totalContacts,
-      totalShippingLines,
-      totalEmails,
-      totalTemplates,
-    };
+        return {
+          totalCompanies,
+          activeCompanies,
+          totalUsers,
+          totalRFQs,
+          totalQuotes,
+          totalContacts,
+          totalShippingLines,
+          totalEmails,
+          totalTemplates,
+        };
+      },
+      120 // 2 minutes
+    );
   }
 
   /**
    * Get recent activity across all companies
    */
   private async getRecentActivity() {
-    const activities = await prisma.$queryRaw`
-      SELECT 
-        'RFQ' as type,
-        id,
-        title as description,
-        created_at as timestamp,
-        company_id
-      FROM "rfqs" 
-      WHERE created_at >= NOW() - INTERVAL '7 days'
-      
-      UNION ALL
-      
-      SELECT 
-        'QUOTE' as type,
-        id,
-        CONCAT('Quote for RFQ: ', rfq_id) as description,
-        created_at as timestamp,
-        (SELECT company_id FROM "rfqs" WHERE id = rfq_id) as company_id
-      FROM "quotes" 
-      WHERE created_at >= NOW() - INTERVAL '7 days'
-      
-      UNION ALL
-      
-      SELECT 
-        'EMAIL' as type,
-        id,
-        CONCAT('Email sent: ', subject) as description,
-        sent_at as timestamp,
-        company_id
-      FROM "email_logs" 
-      WHERE sent_at >= NOW() - INTERVAL '7 days'
-      
-      ORDER BY timestamp DESC
-      LIMIT 20
-    `;
+    return CacheService.getOrSet(
+      "dashboard:recent-activity",
+      async () => {
+        const activities = await prisma.$queryRaw`
+          SELECT 
+            'RFQ' as type,
+            id,
+            title as description,
+            created_at as timestamp,
+            company_id
+          FROM "rfqs" 
+          WHERE created_at >= NOW() - INTERVAL '7 days'
+          
+          UNION ALL
+          
+          SELECT 
+            'QUOTE' as type,
+            id,
+            CONCAT('Quote for RFQ: ', rfq_id) as description,
+            created_at as timestamp,
+            (SELECT company_id FROM "rfqs" WHERE id = rfq_id) as company_id
+          FROM "quotes" 
+          WHERE created_at >= NOW() - INTERVAL '7 days'
+          
+          UNION ALL
+          
+          SELECT 
+            'EMAIL' as type,
+            id,
+            CONCAT('Email sent: ', subject) as description,
+            sent_at as timestamp,
+            company_id
+          FROM "email_logs" 
+          WHERE sent_at >= NOW() - INTERVAL '7 days'
+          
+          ORDER BY timestamp DESC
+          LIMIT 20
+        `;
 
-    // Get company names for activities
-    const activitiesWithCompanyNames = await Promise.all(
-      (activities as any[]).map(async (activity) => {
-        const company = await prisma.company.findUnique({
-          where: { id: activity.company_id },
-          select: { name: true },
-        });
+        // Get company names for activities
+        const activitiesWithCompanyNames = await Promise.all(
+          (activities as any[]).map(async (activity) => {
+            const company = await prisma.company.findUnique({
+              where: { id: activity.company_id },
+              select: { name: true },
+            });
 
-        return {
-          id: activity.id,
-          type: activity.type,
-          description: activity.description,
-          timestamp: activity.timestamp,
-          companyName: company?.name,
-        };
-      })
+            return {
+              id: activity.id,
+              type: activity.type,
+              description: activity.description,
+              timestamp: activity.timestamp,
+              companyName: company?.name,
+            };
+          })
+        );
+
+        return activitiesWithCompanyNames;
+      },
+      60 // 1 minute
     );
-
-    return activitiesWithCompanyNames;
   }
 
   /**
    * Get subscription statistics
    */
   private async getSubscriptionStats() {
-    const [
-      totalSubscriptions,
-      activeSubscriptions,
-      trialSubscriptions,
-      expiredSubscriptions,
-    ] = await Promise.all([
-      prisma.company.count(),
-      prisma.company.count({
-        where: { subscriptionStatus: "ACTIVE" },
-      }),
-      prisma.company.count({
-        where: { subscriptionStatus: "ACTIVE" }, // Using ACTIVE instead of TRIAL
-      }),
-      prisma.company.count({
-        where: { subscriptionStatus: "INACTIVE" }, // Using INACTIVE instead of EXPIRED
-      }),
-    ]);
+    return CacheService.getOrSet(
+      "dashboard:subscriptions",
+      async () => {
+        const [
+          totalSubscriptions,
+          activeSubscriptions,
+          trialSubscriptions,
+          expiredSubscriptions,
+        ] = await Promise.all([
+          prisma.company.count(),
+          prisma.company.count({
+            where: { subscriptionStatus: "ACTIVE" },
+          }),
+          prisma.company.count({
+            where: { subscriptionStatus: "ACTIVE" }, // Using ACTIVE instead of TRIAL
+          }),
+          prisma.company.count({
+            where: { subscriptionStatus: "INACTIVE" }, // Using INACTIVE instead of EXPIRED
+          }),
+        ]);
 
-    // Calculate revenue (mock calculation - you'd implement real billing logic)
-    // const revenue = await prisma.company.aggregate({
-    //   where: { subscriptionStatus: "ACTIVE" },
-    //   _sum: {
-    //     // Assuming you have a monthlyFee field in Company model
-    //     // monthlyFee: true
-    //   },
-    // });
-
-    return {
-      totalSubscriptions,
-      activeSubscriptions,
-      trialSubscriptions,
-      expiredSubscriptions,
-      revenue: 0, // revenue._sum.monthlyFee || 0
-    };
+        return {
+          totalSubscriptions,
+          activeSubscriptions,
+          trialSubscriptions,
+          expiredSubscriptions,
+          revenue: 0,
+        };
+      },
+      300 // 5 minutes
+    );
   }
 
   /**
    * Get company statistics with activity data
    */
   private async getCompanyStats() {
-    const companies = await prisma.company.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        subscriptionPlan: true,
-        subscriptionStatus: true,
-        createdAt: true,
-        users: {
-          select: { id: true },
-        },
-        rfqs: {
-          select: { id: true, updatedAt: true },
-          orderBy: { updatedAt: "desc" },
-          take: 1,
-        },
-        _count: {
+    return CacheService.getOrSet(
+      "dashboard:company-stats",
+      async () => {
+        const companies = await prisma.company.findMany({
           select: {
-            users: true,
-            rfqs: true,
+            id: true,
+            name: true,
+            email: true,
+            subscriptionPlan: true,
+            subscriptionStatus: true,
+            createdAt: true,
+            users: {
+              select: { id: true },
+            },
+            rfqs: {
+              select: { id: true, updatedAt: true },
+              orderBy: { updatedAt: "desc" },
+              take: 1,
+            },
+            _count: {
+              select: {
+                users: true,
+                rfqs: true,
+              },
+            },
           },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    });
+          orderBy: { createdAt: "desc" },
+          take: 20,
+        });
 
-    return companies.map((company) => ({
-      id: company.id,
-      name: company.name,
-      email: company.email,
-      subscriptionPlan: company.subscriptionPlan,
-      subscriptionStatus: company.subscriptionStatus,
-      userCount: company._count?.users || 0,
-      rfqCount: company._count?.rfqs || 0,
-      quoteCount: 0, // quotes count not available
-      lastActivity: company.rfqs[0]?.updatedAt || company.createdAt,
-      createdAt: company.createdAt,
-    }));
+        return companies.map((company) => ({
+          id: company.id,
+          name: company.name,
+          email: company.email,
+          subscriptionPlan: company.subscriptionPlan,
+          subscriptionStatus: company.subscriptionStatus,
+          userCount: company._count?.users || 0,
+          rfqCount: company._count?.rfqs || 0,
+          quoteCount: 0,
+          lastActivity: company.rfqs[0]?.updatedAt || company.createdAt,
+          createdAt: company.createdAt,
+        }));
+      },
+      180 // 3 minutes
+    );
   }
 
   /**
    * Get email statistics
    */
   private async getEmailStats() {
-    const [totalSent, totalDelivered, totalOpened, totalClicked] =
-      await Promise.all([
-        prisma.emailLog.count(),
-        prisma.emailLog.count({ where: { status: "DELIVERED" } }),
-        prisma.emailLog.count({ where: { status: "OPENED" } }),
-        prisma.emailLog.count({ where: { status: "CLICKED" } }),
-      ]);
+    return CacheService.getOrSet(
+      "dashboard:email-stats",
+      async () => {
+        const [totalSent, totalDelivered, totalOpened, totalClicked] =
+          await Promise.all([
+            prisma.emailLog.count(),
+            prisma.emailLog.count({ where: { status: "DELIVERED" } }),
+            prisma.emailLog.count({ where: { status: "OPENED" } }),
+            prisma.emailLog.count({ where: { status: "CLICKED" } }),
+          ]);
 
-    const bounceRate =
-      totalSent > 0 ? (totalSent - totalDelivered) / totalSent : 0;
-    const openRate = totalDelivered > 0 ? totalOpened / totalDelivered : 0;
-    const clickRate = totalOpened > 0 ? totalClicked / totalOpened : 0;
+        const bounceRate =
+          totalSent > 0 ? (totalSent - totalDelivered) / totalSent : 0;
+        const openRate = totalDelivered > 0 ? totalOpened / totalDelivered : 0;
+        const clickRate = totalOpened > 0 ? totalClicked / totalOpened : 0;
 
-    return {
-      totalSent,
-      totalDelivered,
-      totalOpened,
-      totalClicked,
-      bounceRate,
-      openRate,
-      clickRate,
-    };
+        return {
+          totalSent,
+          totalDelivered,
+          totalOpened,
+          totalClicked,
+          bounceRate,
+          openRate,
+          clickRate,
+        };
+      },
+      180 // 3 minutes
+    );
   }
 
   /**
    * Get RFQ statistics
    */
   private async getRFQStats() {
-    const [totalRFQs, draftRFQs, sentRFQs, closedRFQs] = await Promise.all([
-      prisma.rFQ.count(),
-      prisma.rFQ.count({ where: { status: "DRAFT" } }),
-      prisma.rFQ.count({ where: { status: "SENT" } }),
-      prisma.rFQ.count({ where: { status: "CLOSED" } }),
-    ]);
+    return CacheService.getOrSet(
+      "dashboard:rfq-stats",
+      async () => {
+        const [totalRFQs, draftRFQs, sentRFQs, closedRFQs] = await Promise.all([
+          prisma.rFQ.count(),
+          prisma.rFQ.count({ where: { status: "DRAFT" } }),
+          prisma.rFQ.count({ where: { status: "SENT" } }),
+          prisma.rFQ.count({ where: { status: "CLOSED" } }),
+        ]);
 
-    // Calculate average response time
-    // const responseTimeData = await prisma.rFQ.aggregate({
-    //   where: {
-    //     status: "CLOSED",
-    //     sentAt: { not: null },
-    //     closedAt: { not: null },
-    //   },
-    //   _avg: {
-    //     // This would need a computed field for response time
-    //     // responseTime: true
-    //   },
-    // });
-
-    return {
-      totalRFQs,
-      draftRFQs,
-      sentRFQs,
-      closedRFQs,
-      averageResponseTime: 0, // responseTimeData._avg.responseTime || 0
-    };
+        return {
+          totalRFQs,
+          draftRFQs,
+          sentRFQs,
+          closedRFQs,
+          averageResponseTime: 0,
+        };
+      },
+      180 // 3 minutes
+    );
   }
 
   /**
    * Get quote statistics
    */
   private async getQuoteStats() {
-    const [totalQuotes, activeQuotes, awardedQuotes, withdrawnQuotes] =
-      await Promise.all([
-        prisma.quote.count(),
-        prisma.quote.count({ where: { status: "ACTIVE" } }),
-        prisma.quote.count({ where: { status: "AWARDED" } }),
-        prisma.quote.count({ where: { status: "WITHDRAWN" } }),
-      ]);
+    return CacheService.getOrSet(
+      "dashboard:quote-stats",
+      async () => {
+        const [totalQuotes, activeQuotes, awardedQuotes, withdrawnQuotes] =
+          await Promise.all([
+            prisma.quote.count(),
+            prisma.quote.count({ where: { status: "ACTIVE" } }),
+            prisma.quote.count({ where: { status: "AWARDED" } }),
+            prisma.quote.count({ where: { status: "WITHDRAWN" } }),
+          ]);
 
-    // Calculate average quote value
-    const averageValueData = await prisma.quote.aggregate({
-      where: { status: { not: "EXPIRED" } },
-      _avg: {
-        totalAmount: true,
+        const averageValueData = await prisma.quote.aggregate({
+          where: { status: { not: "EXPIRED" } },
+          _avg: {
+            totalAmount: true,
+          },
+        });
+
+        return {
+          totalQuotes,
+          activeQuotes,
+          awardedQuotes,
+          withdrawnQuotes,
+          averageValue: Number(averageValueData._avg?.totalAmount) || 0,
+        };
       },
-    });
-
-    return {
-      totalQuotes,
-      activeQuotes,
-      awardedQuotes,
-      withdrawnQuotes,
-      averageValue: Number(averageValueData._avg?.totalAmount) || 0,
-    };
+      180 // 3 minutes
+    );
   }
 
   /**
@@ -515,49 +541,57 @@ export class AdminDashboardService {
     } = {}
   ) {
     const { page = 1, limit = 20, status, companyId, search } = filters;
-    const skip = (page - 1) * limit;
+    const cacheKey = CacheService.buildKey("dashboard:rfqs", { page, limit, status, companyId, search });
 
-    const where: any = {};
-    if (status) where.status = status;
-    if (companyId) where.companyId = companyId;
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { description: { contains: search, mode: "insensitive" } },
-      ];
-    }
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const skip = (page - 1) * limit;
 
-    const [rfqs, total] = await Promise.all([
-      prisma.rFQ.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          company: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
+        const where: any = {};
+        if (status) where.status = status;
+        if (companyId) where.companyId = companyId;
+        if (search) {
+          where.OR = [
+            { title: { contains: search, mode: "insensitive" } },
+            { description: { contains: search, mode: "insensitive" } },
+          ];
+        }
+
+        const [rfqs, total] = await Promise.all([
+          prisma.rFQ.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { createdAt: "desc" },
+            include: {
+              company: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+              _count: {
+                select: {
+                  recipients: true,
+                },
+              },
             },
-          },
-          _count: {
-            select: {
-              recipients: true,
-            },
-          },
-        },
-      }),
-      prisma.rFQ.count({ where }),
-    ]);
+          }),
+          prisma.rFQ.count({ where }),
+        ]);
 
-    return {
-      rfqs,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+        return {
+          rfqs,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        };
+      },
+      120 // 2 minutes
+    );
   }
 
   /**
@@ -573,64 +607,72 @@ export class AdminDashboardService {
     } = {}
   ) {
     const { page = 1, limit = 20, status, companyId, search } = filters;
-    const skip = (page - 1) * limit;
+    const cacheKey = CacheService.buildKey("dashboard:quotes", { page, limit, status, companyId, search });
 
-    const where: any = {};
-    if (status) where.status = status;
-    if (companyId) where.companyId = companyId;
-    if (search) {
-      where.OR = [
-        { quoteReference: { contains: search, mode: "insensitive" } },
-        { specialNotes: { contains: search, mode: "insensitive" } },
-      ];
-    }
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const skip = (page - 1) * limit;
 
-    const [quotes, total] = await Promise.all([
-      prisma.quote.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          contact: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
+        const where: any = {};
+        if (status) where.status = status;
+        if (companyId) where.companyId = companyId;
+        if (search) {
+          where.OR = [
+            { quoteReference: { contains: search, mode: "insensitive" } },
+            { specialNotes: { contains: search, mode: "insensitive" } },
+          ];
+        }
+
+        const [quotes, total] = await Promise.all([
+          prisma.quote.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { createdAt: "desc" },
+            include: {
+              contact: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                  shippingLine: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+              rfq: {
+                select: {
+                  id: true,
+                  title: true,
+                },
+              },
               shippingLine: {
                 select: {
                   id: true,
                   name: true,
+                  code: true,
                 },
               },
             },
-          },
-          rfq: {
-            select: {
-              id: true,
-              title: true,
-            },
-          },
-          shippingLine: {
-            select: {
-              id: true,
-              name: true,
-              code: true,
-            },
-          },
-        },
-      }),
-      prisma.quote.count({ where }),
-    ]);
+          }),
+          prisma.quote.count({ where }),
+        ]);
 
-    return {
-      quotes,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+        return {
+          quotes,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        };
+      },
+      120 // 2 minutes
+    );
   }
 
   /**
@@ -645,52 +687,60 @@ export class AdminDashboardService {
     } = {}
   ) {
     const { page = 1, limit = 20, companyId, search } = filters;
-    const skip = (page - 1) * limit;
+    const cacheKey = CacheService.buildKey("dashboard:contacts", { page, limit, companyId, search });
 
-    const where: any = {};
-    if (companyId) where.companyId = companyId;
-    if (search) {
-      where.OR = [
-        { firstName: { contains: search, mode: "insensitive" } },
-        { lastName: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-        { company: { contains: search, mode: "insensitive" } },
-      ];
-    }
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const skip = (page - 1) * limit;
 
-    const [contacts, total] = await Promise.all([
-      prisma.contact.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          company: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
+        const where: any = {};
+        if (companyId) where.companyId = companyId;
+        if (search) {
+          where.OR = [
+            { firstName: { contains: search, mode: "insensitive" } },
+            { lastName: { contains: search, mode: "insensitive" } },
+            { email: { contains: search, mode: "insensitive" } },
+            { company: { contains: search, mode: "insensitive" } },
+          ];
+        }
+
+        const [contacts, total] = await Promise.all([
+          prisma.contact.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { createdAt: "desc" },
+            include: {
+              company: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+              shippingLine: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true,
+                },
+              },
             },
-          },
-          shippingLine: {
-            select: {
-              id: true,
-              name: true,
-              code: true,
-            },
-          },
-        },
-      }),
-      prisma.contact.count({ where }),
-    ]);
+          }),
+          prisma.contact.count({ where }),
+        ]);
 
-    return {
-      contacts,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+        return {
+          contacts,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        };
+      },
+      120 // 2 minutes
+    );
   }
 
   /**
@@ -705,48 +755,56 @@ export class AdminDashboardService {
     } = {}
   ) {
     const { page = 1, limit = 20, companyId, search } = filters;
-    const skip = (page - 1) * limit;
+    const cacheKey = CacheService.buildKey("dashboard:shipping-lines", { page, limit, companyId, search });
 
-    const where: any = {};
-    if (companyId) where.companyId = companyId;
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { code: { contains: search, mode: "insensitive" } },
-      ];
-    }
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const skip = (page - 1) * limit;
 
-    const [shippingLines, total] = await Promise.all([
-      prisma.shippingLine.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          company: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
+        const where: any = {};
+        if (companyId) where.companyId = companyId;
+        if (search) {
+          where.OR = [
+            { name: { contains: search, mode: "insensitive" } },
+            { code: { contains: search, mode: "insensitive" } },
+          ];
+        }
+
+        const [shippingLines, total] = await Promise.all([
+          prisma.shippingLine.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { createdAt: "desc" },
+            include: {
+              company: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+              _count: {
+                select: {
+                  contacts: true,
+                },
+              },
             },
-          },
-          _count: {
-            select: {
-              contacts: true,
-            },
-          },
-        },
-      }),
-      prisma.shippingLine.count({ where }),
-    ]);
+          }),
+          prisma.shippingLine.count({ where }),
+        ]);
 
-    return {
-      shippingLines,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+        return {
+          shippingLines,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        };
+      },
+      120 // 2 minutes
+    );
   }
 
   /**
@@ -762,49 +820,57 @@ export class AdminDashboardService {
     } = {}
   ) {
     const { page = 1, limit = 20, companyId, status, search } = filters;
-    const skip = (page - 1) * limit;
+    const cacheKey = CacheService.buildKey("dashboard:emails", { page, limit, companyId, status, search });
 
-    const where: any = {};
-    if (companyId) where.companyId = companyId;
-    if (status) where.status = status;
-    if (search) {
-      where.OR = [
-        { subject: { contains: search, mode: "insensitive" } },
-        { to: { contains: search, mode: "insensitive" } },
-      ];
-    }
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const skip = (page - 1) * limit;
 
-    const [emailLogs, total] = await Promise.all([
-      prisma.emailLog.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { sentAt: "desc" },
-        include: {
-          company: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
+        const where: any = {};
+        if (companyId) where.companyId = companyId;
+        if (status) where.status = status;
+        if (search) {
+          where.OR = [
+            { subject: { contains: search, mode: "insensitive" } },
+            { to: { contains: search, mode: "insensitive" } },
+          ];
+        }
+
+        const [emailLogs, total] = await Promise.all([
+          prisma.emailLog.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { sentAt: "desc" },
+            include: {
+              company: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+              rfq: {
+                select: {
+                  id: true,
+                  title: true,
+                },
+              },
             },
-          },
-          rfq: {
-            select: {
-              id: true,
-              title: true,
-            },
-          },
-        },
-      }),
-      prisma.emailLog.count({ where }),
-    ]);
+          }),
+          prisma.emailLog.count({ where }),
+        ]);
 
-    return {
-      emailLogs,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+        return {
+          emailLogs,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        };
+      },
+      120 // 2 minutes
+    );
   }
 }

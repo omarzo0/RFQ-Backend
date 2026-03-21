@@ -3,12 +3,14 @@ import express from "express";
 import { TemplateController } from "../controllers/TemplateController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
 import { enforceFeature } from "../middleware/subscriptionLimits";
+import { standardRateLimit, mutationRateLimit } from "../../middleware/rateLimiter";
 
 const router = express.Router();
 const templateController = new TemplateController();
 
 // Apply authentication middleware to all routes
 router.use(authenticateCompanyUser);
+router.use(standardRateLimit);
 
 // Template Management - List templates
 router.get("/", (req, res, next) =>

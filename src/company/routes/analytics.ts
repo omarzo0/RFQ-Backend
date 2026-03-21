@@ -3,12 +3,14 @@ import { AnalyticsController } from "../controllers/AnalyticsController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
 import { enforceFeature } from "../middleware/subscriptionLimits";
 import { CompanyRequest } from "../types/auth";
+import { analyticsRateLimit } from "../../middleware/rateLimiter";
 
 const router = express.Router();
 const analyticsController = new AnalyticsController();
 
 // Apply authentication middleware to all routes
 router.use(authenticateCompanyUser);
+router.use(analyticsRateLimit);
 
 // Performance Metrics
 router.get(
@@ -205,11 +207,11 @@ router.get(
 router.post("/export",
   enforceFeature("exportReports"),
   (req: Request, res: Response, next: NextFunction) =>
-  analyticsController.exportAnalytics(
-    req as unknown as CompanyRequest,
-    res,
-    next
-  )
+    analyticsController.exportAnalytics(
+      req as unknown as CompanyRequest,
+      res,
+      next
+    )
 );
 
 export default router;

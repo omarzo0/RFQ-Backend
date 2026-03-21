@@ -55,20 +55,35 @@ export class PaymentService {
   }
   constructor() {
     // Check if Stripe is configured
-    if (process.env.STRIPE_SECRET_KEY) {
-      this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    this.isStripeEnabled = !!stripeKey && stripeKey !== "sk_test_your-stripe-secret-key";
+
+    if (stripeKey) {
+      this.stripe = new Stripe(stripeKey, {
         apiVersion: "2025-08-27.basil",
       });
-      this.isStripeEnabled = true;
-      logger.info("Stripe payment service initialized");
+
+      if (stripeKey === "sk_test_your-stripe-secret-key") {
+        logger.warn(
+          "STRIPE_SECRET_KEY is the default placeholder. Payment features will run in MOCK MODE."
+        );
+      } else {
+        logger.info("Stripe payment service initialized");
+      }
     } else {
       logger.warn(
         "STRIPE_SECRET_KEY not found. Payment features will be disabled."
       );
-      this.isStripeEnabled = false;
     }
 
     this.paymentEmailService = new PaymentEmailService();
+  }
+
+  /**
+   * Check if we are in mock mode
+   */
+  private isMockMode(): boolean {
+    return process.env.STRIPE_SECRET_KEY === "sk_test_your-stripe-secret-key" || !this.isStripeEnabled;
   }
 
   /**
@@ -85,6 +100,25 @@ export class PaymentService {
 
       if (!company) {
         throw new Error("Company not found");
+      }
+
+      // If we're in mock mode, return a mock customer
+      if (this.isMockMode()) {
+        const mockCustomer = {
+          id: company.stripeCustomerId || `cus_mock_${companyId.substring(0, 8)}`,
+          object: "customer",
+          name: company.name,
+          email: company.email,
+          metadata: { companyId: companyId },
+        } as any;
+
+        if (!company.stripeCustomerId) {
+          await prisma.company.update({
+            where: { id: companyId },
+            data: { stripeCustomerId: mockCustomer.id },
+          });
+        }
+        return mockCustomer;
       }
 
       if (company.stripeCustomerId) {
@@ -463,11 +497,11 @@ export class PaymentService {
         type: pm.type,
         card: pm.card
           ? {
-              brand: pm.card.brand,
-              last4: pm.card.last4,
-              expMonth: pm.card.exp_month,
-              expYear: pm.card.exp_year,
-            }
+            brand: pm.card.brand,
+            last4: pm.card.last4,
+            expMonth: pm.card.exp_month,
+            expYear: pm.card.exp_year,
+          }
           : undefined,
         billing_details: {
           email: pm.billing_details.email || undefined,
@@ -780,9 +814,9 @@ export class PaymentService {
         company.trialEndsAt && new Date() > company.trialEndsAt;
       const daysLeftInTrial = company.trialEndsAt
         ? Math.ceil(
-            (company.trialEndsAt.getTime() - new Date().getTime()) /
-              (1000 * 60 * 60 * 24)
-          )
+          (company.trialEndsAt.getTime() - new Date().getTime()) /
+          (1000 * 60 * 60 * 24)
+        )
         : 0;
 
       // Check if payment deadline has passed
@@ -1104,25 +1138,42 @@ export class PaymentService {
 
       // Create payment intent
       // Note: PaymentMethod will be automatically attached to customer when confirmed
-      const paymentIntent = await this.getStripe().paymentIntents.create({
-        amount: Math.round(invoice.billing.total * 100), // Convert to cents
-        currency: invoice.billing.currency.toLowerCase(),
-        customer: customer.id,
-        payment_method: paymentMethodId,
-        confirm: true,
-        description: `Subscription upgrade to ${invoice.pendingPlan.name}`,
-        metadata: {
-          companyId: companyId,
-          planId: invoice.pendingPlan.id,
-          planName: invoice.pendingPlan.name,
-          invoiceId: invoice.invoiceId,
-        },
-        automatic_payment_methods: {
-          enabled: true,
-          allow_redirects: "never",
-        },
-        setup_future_usage: "off_session",
-      });
+      let paymentIntent;
+
+      if (this.isMockMode()) {
+        logger.info(`Processing MOCK payment for company ${companyId}`);
+        paymentIntent = {
+          id: `pi_mock_${Date.now()}`,
+          status: "succeeded",
+          amount: Math.round(invoice.billing.total * 100),
+          currency: invoice.billing.currency.toLowerCase(),
+          customer: customer.id,
+          metadata: {
+            companyId: companyId,
+            planId: invoice.pendingPlan.id,
+          },
+        } as any;
+      } else {
+        paymentIntent = await this.getStripe().paymentIntents.create({
+          amount: Math.round(invoice.billing.total * 100), // Convert to cents
+          currency: invoice.billing.currency.toLowerCase(),
+          customer: customer.id,
+          payment_method: paymentMethodId,
+          confirm: true,
+          description: `Subscription upgrade to ${invoice.pendingPlan.name}`,
+          metadata: {
+            companyId: companyId,
+            planId: invoice.pendingPlan.id,
+            planName: invoice.pendingPlan.name,
+            invoiceId: invoice.invoiceId,
+          },
+          automatic_payment_methods: {
+            enabled: true,
+            allow_redirects: "never",
+          },
+          setup_future_usage: "off_session",
+        });
+      }
 
       // If payment succeeded, complete the upgrade
       if (paymentIntent.status === "succeeded") {

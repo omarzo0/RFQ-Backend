@@ -3,6 +3,7 @@ import WarningController, {
   issueWarningValidation,
 } from "../controllers/WarningController";
 import { authenticate } from "../middleware/auth";
+import { standardRateLimit, mutationRateLimit } from "../../middleware/rateLimiter";
 
 const router = express.Router();
 const warningController = new WarningController();
@@ -11,18 +12,18 @@ const warningController = new WarningController();
 router.use(authenticate);
 
 // POST /api/v1/admin/warnings - Issue warning
-router.post("/", issueWarningValidation, warningController.issueWarning);
+router.post("/", mutationRateLimit, issueWarningValidation, warningController.issueWarning);
 
 // GET /api/v1/admin/warnings - Get all warnings
-router.get("/", warningController.getAllWarnings);
+router.get("/", standardRateLimit, warningController.getAllWarnings);
 
 // GET /api/v1/admin/warnings/stats - Get warning statistics
-router.get("/stats", warningController.getWarningStats);
+router.get("/stats", standardRateLimit, warningController.getWarningStats);
 
 // PUT /api/v1/admin/warnings/:id/resolve - Resolve warning
-router.put("/:id/resolve", warningController.resolveWarning);
+router.put("/:id/resolve", mutationRateLimit, warningController.resolveWarning);
 
 // DELETE /api/v1/admin/warnings/:id - Delete warning
-router.delete("/:id", warningController.deleteWarning);
+router.delete("/:id", mutationRateLimit, warningController.deleteWarning);
 
 export default router;

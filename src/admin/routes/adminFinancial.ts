@@ -4,6 +4,11 @@ import {
   authenticateAdmin,
   requireAdminOrSuperAdmin,
 } from "../middleware/adminAuth";
+import {
+  standardRateLimit,
+  analyticsRateLimit,
+  mutationRateLimit,
+} from "../../middleware/rateLimiter";
 
 const router = Router();
 const adminFinancialController = new AdminFinancialController();
@@ -14,10 +19,10 @@ router.use(authenticateAdmin);
 /**
  * @route GET /api/v1/admin/financial
  * @desc Get all financial details with filtering and pagination
- * @access Admin, SuperAdmin
  */
 router.get(
   "/",
+  standardRateLimit,
   requireAdminOrSuperAdmin,
   adminFinancialController.getFinancialDetails
 );
@@ -25,10 +30,10 @@ router.get(
 /**
  * @route GET /api/v1/admin/financial/dashboard
  * @desc Get financial dashboard data
- * @access Admin, SuperAdmin
  */
 router.get(
   "/dashboard",
+  analyticsRateLimit,
   requireAdminOrSuperAdmin,
   adminFinancialController.getFinancialDashboard
 );
@@ -36,10 +41,10 @@ router.get(
 /**
  * @route GET /api/v1/admin/financial/analytics
  * @desc Get financial analytics and overview
- * @access Admin, SuperAdmin
  */
 router.get(
   "/analytics",
+  analyticsRateLimit,
   requireAdminOrSuperAdmin,
   adminFinancialController.getFinancialAnalytics
 );
@@ -47,10 +52,10 @@ router.get(
 /**
  * @route GET /api/v1/admin/financial/revenue-trends
  * @desc Get revenue trends
- * @access Admin, SuperAdmin
  */
 router.get(
   "/revenue-trends",
+  analyticsRateLimit,
   requireAdminOrSuperAdmin,
   adminFinancialController.getRevenueTrends
 );
@@ -58,10 +63,10 @@ router.get(
 /**
  * @route GET /api/v1/admin/financial/top-companies
  * @desc Get top performing companies
- * @access Admin, SuperAdmin
  */
 router.get(
   "/top-companies",
+  analyticsRateLimit,
   requireAdminOrSuperAdmin,
   adminFinancialController.getTopPerformingCompanies
 );
@@ -69,10 +74,10 @@ router.get(
 /**
  * @route GET /api/v1/admin/financial/health
  * @desc Get financial health metrics
- * @access Admin, SuperAdmin
  */
 router.get(
   "/health",
+  standardRateLimit,
   requireAdminOrSuperAdmin,
   adminFinancialController.getFinancialHealth
 );
@@ -80,10 +85,10 @@ router.get(
 /**
  * @route GET /api/v1/admin/financial/company/:companyId
  * @desc Get financial details by company ID
- * @access Admin, SuperAdmin
  */
 router.get(
   "/company/:companyId",
+  standardRateLimit,
   requireAdminOrSuperAdmin,
   adminFinancialController.getFinancialDetailsByCompany
 );
@@ -91,10 +96,10 @@ router.get(
 /**
  * @route PUT /api/v1/admin/financial/company/:companyId
  * @desc Update financial details for a company
- * @access Admin, SuperAdmin
  */
 router.put(
   "/company/:companyId",
+  mutationRateLimit,
   requireAdminOrSuperAdmin,
   adminFinancialController.updateFinancialDetails
 );
@@ -102,10 +107,10 @@ router.put(
 /**
  * @route POST /api/v1/admin/financial/company/:companyId/recalculate
  * @desc Recalculate financial details for a company
- * @access Admin, SuperAdmin
  */
 router.post(
   "/company/:companyId/recalculate",
+  mutationRateLimit,
   requireAdminOrSuperAdmin,
   adminFinancialController.recalculateFinancialDetails
 );

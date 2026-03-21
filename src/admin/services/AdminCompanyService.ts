@@ -1,6 +1,7 @@
 import { prisma } from "../../app";
 import { AppError, ValidationError } from "../../utils/errors";
 import logger from "../../utils/logger";
+import { CacheService } from "../../services/CacheService";
 import {
   CreateCompanyData,
   UpdateCompanyData,
@@ -44,6 +45,10 @@ export class AdminCompanyService {
     });
 
     logger.info(`New company created: ${company.name} (${company.email})`);
+
+    // Invalidate dashboard and analytics caches
+    await CacheService.invalidatePattern("dashboard:*");
+    await CacheService.invalidatePattern("analytics:*");
 
     return company;
   }
@@ -269,6 +274,10 @@ export class AdminCompanyService {
       `Company updated: ${updatedCompany.name} (${updatedCompany.email})`
     );
 
+    // Invalidate dashboard and analytics caches
+    await CacheService.invalidatePattern("dashboard:*");
+    await CacheService.invalidatePattern("analytics:*");
+
     return updatedCompany;
   }
 
@@ -293,6 +302,10 @@ export class AdminCompanyService {
     logger.info(
       `Company deleted: ${deletedCompany.name} (${deletedCompany.email})`
     );
+
+    // Invalidate dashboard and analytics caches
+    await CacheService.invalidatePattern("dashboard:*");
+    await CacheService.invalidatePattern("analytics:*");
 
     return deletedCompany;
   }

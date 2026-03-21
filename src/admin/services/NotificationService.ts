@@ -1,5 +1,6 @@
 import { prisma } from "../../app";
 import logger from "../../utils/logger";
+import { NotificationAudience } from "@prisma/client";
 
 export interface CreateNotificationData {
   title: string;
@@ -8,6 +9,7 @@ export interface CreateNotificationData {
   priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
   companyId?: string;
   isGlobal?: boolean;
+  audience?: NotificationAudience;
   expiresAt?: Date;
   actionUrl?: string;
   actionLabel?: string;
@@ -30,6 +32,7 @@ export class NotificationService {
           priority: data.priority || "NORMAL",
           companyId: data.companyId,
           isGlobal: data.isGlobal || false,
+          audience: data.audience || "ALL",
           expiresAt: data.expiresAt,
           actionUrl: data.actionUrl,
           actionLabel: data.actionLabel,
@@ -75,6 +78,7 @@ export class NotificationService {
   async getAllNotifications(filters?: {
     companyId?: string;
     isGlobal?: boolean;
+    audience?: NotificationAudience;
     type?: string;
     limit?: number;
     offset?: number;
@@ -94,6 +98,10 @@ export class NotificationService {
 
       if (filters?.type) {
         where.type = filters.type;
+      }
+
+      if (filters?.audience) {
+        where.audience = filters.audience;
       }
 
       logger.info(`[Admin NotificationService] Fetching notifications with filters:`, filters);

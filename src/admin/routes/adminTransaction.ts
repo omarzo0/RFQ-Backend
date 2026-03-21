@@ -4,6 +4,11 @@ import {
   authenticateAdmin,
   requireAdminOrSuperAdmin,
 } from "../middleware/adminAuth";
+import {
+  standardRateLimit,
+  analyticsRateLimit,
+  mutationRateLimit,
+} from "../../middleware/rateLimiter";
 
 const router = Router();
 const adminTransactionController = new AdminTransactionController();
@@ -14,10 +19,10 @@ router.use(authenticateAdmin);
 /**
  * @route GET /api/v1/admin/transactions
  * @desc Get all transactions with filtering and pagination
- * @access Admin, SuperAdmin
  */
 router.get(
   "/",
+  standardRateLimit,
   requireAdminOrSuperAdmin,
   adminTransactionController.getTransactions
 );
@@ -25,10 +30,10 @@ router.get(
 /**
  * @route GET /api/v1/admin/transactions/analytics
  * @desc Get transaction analytics
- * @access Admin, SuperAdmin
  */
 router.get(
   "/analytics",
+  analyticsRateLimit,
   requireAdminOrSuperAdmin,
   adminTransactionController.getTransactionAnalytics
 );
@@ -36,10 +41,10 @@ router.get(
 /**
  * @route GET /api/v1/admin/transactions/company/:companyId
  * @desc Get transactions by company
- * @access Admin, SuperAdmin
  */
 router.get(
   "/company/:companyId",
+  standardRateLimit,
   requireAdminOrSuperAdmin,
   adminTransactionController.getTransactionsByCompany
 );
@@ -47,10 +52,10 @@ router.get(
 /**
  * @route GET /api/v1/admin/transactions/:id
  * @desc Get transaction by ID
- * @access Admin, SuperAdmin
  */
 router.get(
   "/:id",
+  standardRateLimit,
   requireAdminOrSuperAdmin,
   adminTransactionController.getTransaction
 );
@@ -58,10 +63,10 @@ router.get(
 /**
  * @route POST /api/v1/admin/transactions
  * @desc Create new transaction
- * @access Admin, SuperAdmin
  */
 router.post(
   "/",
+  mutationRateLimit,
   requireAdminOrSuperAdmin,
   adminTransactionController.createTransaction
 );
@@ -69,10 +74,10 @@ router.post(
 /**
  * @route PUT /api/v1/admin/transactions/:id
  * @desc Update transaction
- * @access Admin, SuperAdmin
  */
 router.put(
   "/:id",
+  mutationRateLimit,
   requireAdminOrSuperAdmin,
   adminTransactionController.updateTransaction
 );
@@ -80,10 +85,10 @@ router.put(
 /**
  * @route DELETE /api/v1/admin/transactions/:id
  * @desc Delete transaction
- * @access Admin, SuperAdmin
  */
 router.delete(
   "/:id",
+  mutationRateLimit,
   requireAdminOrSuperAdmin,
   adminTransactionController.deleteTransaction
 );
@@ -91,10 +96,10 @@ router.delete(
 /**
  * @route PATCH /api/v1/admin/transactions/:id/status
  * @desc Update transaction status
- * @access Admin, SuperAdmin
  */
 router.patch(
   "/:id/status",
+  mutationRateLimit,
   requireAdminOrSuperAdmin,
   adminTransactionController.updateTransactionStatus
 );
@@ -102,10 +107,10 @@ router.patch(
 /**
  * @route POST /api/v1/admin/transactions/:id/refund
  * @desc Process refund for transaction
- * @access Admin, SuperAdmin
  */
 router.post(
   "/:id/refund",
+  mutationRateLimit,
   requireAdminOrSuperAdmin,
   adminTransactionController.processRefund
 );

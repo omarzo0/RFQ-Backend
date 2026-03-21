@@ -1,15 +1,16 @@
 import { prisma } from "../../app";
 import { AppError, ValidationError } from "../../utils/errors";
 import logger from "../../utils/logger";
+import { CacheService } from "../../services/CacheService";
 
 export interface SubscriptionUpdateData {
   subscriptionPlan?: string;
   subscriptionStatus?:
-    | "ACTIVE"
-    | "INACTIVE"
-    | "SUSPENDED"
-    | "CANCELED"
-    | "ACTIVE"; // Changed from TRIAL as it's not a valid SubscriptionStatus;
+  | "ACTIVE"
+  | "INACTIVE"
+  | "SUSPENDED"
+  | "CANCELED"
+  | "ACTIVE"; // Changed from TRIAL as it's not a valid SubscriptionStatus;
   trialEndsAt?: Date;
   billingCycle?: "MONTHLY" | "YEARLY";
   monthlyFee?: number;
@@ -173,6 +174,10 @@ export class AdminSubscriptionService {
       `Subscription updated for company ${companyId}: ${JSON.stringify(data)}`
     );
 
+    // Invalidate dashboard and analytics caches
+    await CacheService.invalidatePattern("dashboard:*");
+    await CacheService.invalidatePattern("analytics:*");
+
     return updatedCompany;
   }
 
@@ -201,10 +206,13 @@ export class AdminSubscriptionService {
     });
 
     logger.info(
-      `Subscription suspended for company ${companyId}. Reason: ${
-        reason || "No reason provided"
+      `Subscription suspended for company ${companyId}. Reason: ${reason || "No reason provided"
       }`
     );
+
+    // Invalidate dashboard and analytics caches
+    await CacheService.invalidatePattern("dashboard:*");
+    await CacheService.invalidatePattern("analytics:*");
 
     return updatedCompany;
   }
@@ -264,8 +272,7 @@ export class AdminSubscriptionService {
     });
 
     logger.info(
-      `Subscription canceled for company ${companyId}. Reason: ${
-        reason || "No reason provided"
+      `Subscription canceled for company ${companyId}. Reason: ${reason || "No reason provided"
       }`
     );
 

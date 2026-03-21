@@ -40,6 +40,9 @@ router.get("/", (req, res) => {
         users: "/api/v1/company/users",
         analytics: "/api/v1/company/analytics",
         replyIngestion: "/api/v1/company/reply-ingestion",
+        payments: "/api/v1/company/payments",
+        usage: "/api/v1/company/usage",
+        billingOptimization: "/api/v1/company/billing/optimization",
       }
     },
     documentation: "/api/docs",

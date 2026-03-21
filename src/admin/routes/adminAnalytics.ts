@@ -1,12 +1,14 @@
 import { Router } from "express";
 import { AdminDashboardController } from "../controllers/AdminDashboardController";
 import { authenticateAdmin } from "../middleware/adminAuth";
+import { analyticsRateLimit } from "../../middleware/rateLimiter";
 
 const router = Router();
 const controller = new AdminDashboardController();
 
 // All routes require admin authentication
 router.use(authenticateAdmin);
+router.use(analyticsRateLimit);
 
 // ─── Detailed Analytics ────────────────────────────────────────────────
 router.get("/company-growth", controller.getCompanyGrowth);

@@ -24,6 +24,9 @@ export class CompanyNotificationService {
             ],
           },
           {
+            audience: { in: ["ALL", "COMPANY_ONLY"] },
+          },
+          {
             OR: [
               { expiresAt: null },
               { expiresAt: { gt: new Date() } },
@@ -99,6 +102,7 @@ export class CompanyNotificationService {
             { companyId: companyId },
             { isGlobal: true },
           ],
+          audience: { in: ["ALL", "COMPANY_ONLY"] },
         },
       });
 
@@ -136,6 +140,7 @@ export class CompanyNotificationService {
             { companyId: companyId },
             { isGlobal: true },
           ],
+          audience: { in: ["ALL", "COMPANY_ONLY"] },
           isRead: false,
         },
         data: {
@@ -168,6 +173,9 @@ export class CompanyNotificationService {
                 { companyId: companyId },
                 { isGlobal: true },
               ],
+            },
+            {
+              audience: { in: ["ALL", "COMPANY_ONLY"] },
             },
             {
               isRead: false,

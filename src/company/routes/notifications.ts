@@ -1,12 +1,14 @@
 import express from "express";
 import CompanyNotificationController from "../controllers/CompanyNotificationController";
 import { authenticate } from "../middleware/companyAuth";
+import { standardRateLimit } from "../../middleware/rateLimiter";
 
 const router = express.Router();
 const notificationController = new CompanyNotificationController();
 
 // Apply company authentication to all routes
 router.use(authenticate);
+router.use(standardRateLimit);
 
 // GET /api/v1/company/notifications - Get all notifications
 router.get("/", notificationController.getNotifications);

@@ -27,6 +27,13 @@ export class NotificationController {
         return errorResponse(res, "Admin ID not found", 401);
       }
 
+      const { audience } = req.body;
+
+      // Only SUPER_ADMIN can send targeted notifications
+      if (audience && audience !== "ALL" && req.user?.role !== "SUPER_ADMIN") {
+        return errorResponse(res, "Only SUPER_ADMIN can send targeted notifications", 403);
+      }
+
       const notification = await this.notificationService.createNotification(
         adminId,
         req.body
@@ -49,11 +56,12 @@ export class NotificationController {
    */
   getAllNotifications = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { companyId, isGlobal, type, limit, offset } = req.query;
+      const { companyId, isGlobal, audience, type, limit, offset } = req.query;
 
       const result = await this.notificationService.getAllNotifications({
         companyId: companyId as string,
         isGlobal: isGlobal === "true" ? true : isGlobal === "false" ? false : undefined,
+        audience: audience as any,
         type: type as string,
         limit: limit ? parseInt(limit as string) : undefined,
         offset: offset ? parseInt(offset as string) : undefined,
@@ -136,6 +144,10 @@ export const createNotificationValidation = [
     .optional()
     .isBoolean()
     .withMessage("isGlobal must be a boolean"),
+  body("audience")
+    .optional()
+    .isIn(["ALL", "ADMIN_ONLY", "COMPANY_ONLY"])
+    .withMessage("Invalid audience type"),
   body("expiresAt")
     .optional()
     .isISO8601()

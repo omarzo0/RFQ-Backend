@@ -3,12 +3,14 @@ import { ContactController } from "../controllers/ContactController";
 import { authenticateCompanyUser } from "../middleware/companyAuth";
 import { enforceContactLimit, enforceFeature } from "../middleware/subscriptionLimits";
 import { CompanyRequest } from "../types/auth";
+import { standardRateLimit, mutationRateLimit } from "../../middleware/rateLimiter";
 
 const router = express.Router();
 const contactController = new ContactController();
 
 // Apply authentication middleware to all routes
 router.use(authenticateCompanyUser);
+router.use(standardRateLimit);
 
 // Contact Data (must come before /:id routes)
 router.get("/departments", (req, res, next) =>
